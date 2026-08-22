@@ -238,6 +238,12 @@ async function loadDatabase() {
 // Handler for real-time updates from Firebase Firestore
 window.onRemoteStateUpdate = function(remoteDb) {
     if (remoteDb && typeof remoteDb === 'object') {
+        const prevNotifIds = new Set((db.notifications || []).map(n => n.id));
+        const remoteNotifs = Array.isArray(remoteDb.notifications) ? remoteDb.notifications : [];
+        
+        // Detect if brand new unread notifications arrived from cloud
+        const hasNewUnreadFromRemote = remoteNotifs.some(n => !n.read && !prevNotifIds.has(n.id));
+
         db = sanitizeDatabase({
             ...db,
             ...remoteDb,
@@ -248,12 +254,26 @@ window.onRemoteStateUpdate = function(remoteDb) {
         });
         localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(db));
         refreshAllViews();
+
+        if (hasNewUnreadFromRemote && typeof playNotificationSound === 'function') {
+            playNotificationSound();
+        }
     }
 };
 
 window.onload = async function() {
     await loadDatabase();
     
+    // Unlock Web Audio context on first user interaction
+    const unlockAudio = () => {
+        if (typeof getAudioContext === 'function') {
+            getAudioContext();
+        }
+    };
+    window.addEventListener('click', unlockAudio, { once: true });
+    window.addEventListener('touchstart', unlockAudio, { once: true });
+    window.addEventListener('keydown', unlockAudio, { once: true });
+
     // Initialize flatpickr on date inputs
     flatpickr(".custom-datepicker", {
         dateFormat: "d/m/Y",
@@ -293,6 +313,7 @@ window.onload = async function() {
     renderNavTabs();
     refreshAllViews();
     checkPasscodeOnLaunch();
+    if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 
     // Restore Theme Settings
     if (db.theme) {
@@ -349,6 +370,7 @@ function refreshAllViews() {
     renderNotifications();
     renderGrowthChart();
     applyBgCustomization();
+    if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 }
 
 function checkPasscodeOnLaunch() {

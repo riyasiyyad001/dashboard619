@@ -231,7 +231,8 @@ function switchGoalSubTab(tabKey) {
         personal: { id: 'btnGoalSubPersonal', icon: 'fa-user-astronaut', label: 'Personal Milestones' },
         books: { id: 'btnGoalSubBooks', icon: 'fa-book', label: 'Reading Goals' },
         travel: { id: 'btnGoalSubTravel', icon: 'fa-plane', label: 'Travel Goals' },
-        ziyara: { id: 'btnGoalSubZiyara', icon: 'fa-kaaba', label: 'Ziyara Goals' }
+        ziyara: { id: 'btnGoalSubZiyara', icon: 'fa-kaaba', label: 'Ziyara Goals' },
+        analytics: { id: 'btnGoalSubAnalytics', icon: 'fa-chart-pie', label: 'Overall Status' }
     };
 
     Object.keys(tabs).forEach(k => {
@@ -246,6 +247,12 @@ function switchGoalSubTab(tabKey) {
             }
         }
     });
+
+    if (tabKey === 'analytics' && typeof renderGoalAnalytics === 'function') {
+        setTimeout(() => {
+            renderGoalAnalytics();
+        }, 50);
+    }
 }
 
 function switchBudgetSubTab(tabKey) {

@@ -238,6 +238,12 @@ async function loadDatabase() {
 // Handler for real-time updates from Firebase Firestore
 window.onRemoteStateUpdate = function(remoteDb) {
     if (remoteDb && typeof remoteDb === 'object') {
+        const prevNotifIds = new Set((db.notifications || []).map(n => n.id));
+        const remoteNotifs = Array.isArray(remoteDb.notifications) ? remoteDb.notifications : [];
+        
+        // Detect if brand new unread notifications arrived from cloud
+        const hasNewUnreadFromRemote = remoteNotifs.some(n => !n.read && !prevNotifIds.has(n.id));
+
         db = sanitizeDatabase({
             ...db,
             ...remoteDb,
@@ -248,12 +254,26 @@ window.onRemoteStateUpdate = function(remoteDb) {
         });
         localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(db));
         refreshAllViews();
+
+        if (hasNewUnreadFromRemote && typeof playNotificationSound === 'function') {
+            playNotificationSound();
+        }
     }
 };
 
 window.onload = async function() {
     await loadDatabase();
     
+    // Unlock Web Audio context on first user interaction
+    const unlockAudio = () => {
+        if (typeof getAudioContext === 'function') {
+            getAudioContext();
+        }
+    };
+    window.addEventListener('click', unlockAudio, { once: true });
+    window.addEventListener('touchstart', unlockAudio, { once: true });
+    window.addEventListener('keydown', unlockAudio, { once: true });
+
     // Initialize flatpickr on date inputs
     flatpickr(".custom-datepicker", {
         dateFormat: "d/m/Y",
@@ -293,6 +313,7 @@ window.onload = async function() {
     renderNavTabs();
     refreshAllViews();
     checkPasscodeOnLaunch();
+    if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 
     // Restore Theme Settings
     if (db.theme) {
@@ -349,6 +370,7 @@ function refreshAllViews() {
     renderNotifications();
     renderGrowthChart();
     applyBgCustomization();
+    if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 }
 
 function checkPasscodeOnLaunch() {
@@ -884,7 +906,8 @@ function switchGoalSubTab(tabKey) {
         personal: { id: 'btnGoalSubPersonal', icon: 'fa-user-astronaut', label: 'Personal Milestones' },
         books: { id: 'btnGoalSubBooks', icon: 'fa-book', label: 'Reading Goals' },
         travel: { id: 'btnGoalSubTravel', icon: 'fa-plane', label: 'Travel Goals' },
-        ziyara: { id: 'btnGoalSubZiyara', icon: 'fa-kaaba', label: 'Ziyara Goals' }
+        ziyara: { id: 'btnGoalSubZiyara', icon: 'fa-kaaba', label: 'Ziyara Goals' },
+        analytics: { id: 'btnGoalSubAnalytics', icon: 'fa-chart-pie', label: 'Overall Status' }
     };
 
     Object.keys(tabs).forEach(k => {
@@ -899,6 +922,12 @@ function switchGoalSubTab(tabKey) {
             }
         }
     });
+
+    if (tabKey === 'analytics' && typeof renderGoalAnalytics === 'function') {
+        setTimeout(() => {
+            renderGoalAnalytics();
+        }, 50);
+    }
 }
 
 function switchBudgetSubTab(tabKey) {
@@ -2643,6 +2672,40 @@ function deleteDailyExpenseFromLog(id) {
 }
 window.deleteDailyExpenseFromLog = deleteDailyExpenseFromLog;
 
+function switchGoalSubTab(tabKey) {
+    document.querySelectorAll('.goal-sub-view').forEach(v => v.classList.add('hidden'));
+    const target = document.getElementById(`goalSubView-${tabKey}`);
+    if (target) target.classList.remove('hidden');
+
+    const tabs = {
+        financial: { id: 'btnGoalSubFinancial', icon: 'fa-coins', label: 'Financial Milestones' },
+        business: { id: 'btnGoalSubBusiness', icon: 'fa-briefcase', label: 'Business Plans' },
+        personal: { id: 'btnGoalSubPersonal', icon: 'fa-user-astronaut', label: 'Personal Milestones' },
+        books: { id: 'btnGoalSubBooks', icon: 'fa-book', label: 'Reading Goals' },
+        travel: { id: 'btnGoalSubTravel', icon: 'fa-plane', label: 'Travel Goals' },
+        ziyara: { id: 'btnGoalSubZiyara', icon: 'fa-kaaba', label: 'Ziyara Goals' },
+        analytics: { id: 'btnGoalSubAnalytics', icon: 'fa-chart-pie', label: 'Overall Status' }
+    };
+
+    Object.keys(tabs).forEach(k => {
+        const btn = document.getElementById(tabs[k].id);
+        if (btn) {
+            if (k === tabKey) {
+                btn.className = 'px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-brand-600 to-brand-700 text-surface-950 font-bold transition-all whitespace-nowrap shadow-[0_4px_15px_rgba(201,164,107,0.25)] flex items-center gap-2 border border-brand-500/30';
+                btn.innerHTML = `<i class="fa-solid ${tabs[k].icon} text-[10px]"></i> ${tabs[k].label}`;
+            } else {
+                btn.className = 'px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white hover:border-brand-500/40 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm';
+                btn.innerHTML = `<i class="fa-solid ${tabs[k].icon} text-[10px]"></i> ${tabs[k].label}`;
+            }
+        }
+    });
+
+    if (tabKey === 'analytics') {
+        renderGoalAnalytics();
+    }
+}
+window.switchGoalSubTab = switchGoalSubTab;
+
 function renderGoalsTable() {
     const categories = ['financial', 'business', 'personal', 'books', 'travel', 'ziyara'];
     
@@ -2767,8 +2830,292 @@ function renderGoalsTable() {
             completedTableBody.innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-box-archive text-2xl mb-2 block opacity-40"></i> No archived milestones.</td></tr>`;
         }
     });
+
+    renderGoalAnalytics();
 }
 window.renderGoalsTable = renderGoalsTable;
+
+function renderGoalAnalytics() {
+    if (!db.goals) db.goals = [];
+
+    const totalGoals = db.goals.length;
+    const completedGoals = db.goals.filter(g => g.completed).length;
+    const activeGoals = totalGoals - completedGoals;
+    const completionRate = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
+
+    // Financial calculations
+    const finGoals = db.goals.filter(g => (g.category || '').toLowerCase() === 'financial');
+    let finEstTotal = 0;
+    let finPaidTotal = 0;
+    finGoals.forEach(g => {
+        finEstTotal += parseFloat(g.estimate || 0);
+        finPaidTotal += parseFloat(g.paid || 0);
+    });
+    const finProgPct = finEstTotal > 0 ? Math.min(100, Math.round((finPaidTotal / finEstTotal) * 100)) : 0;
+
+    // KPI Elements
+    const elTotal = document.getElementById('goalStatTotal');
+    const elCompleted = document.getElementById('goalStatCompleted');
+    const elRate = document.getElementById('goalStatRate');
+    const elActive = document.getElementById('goalStatActive');
+    const elFinProg = document.getElementById('goalStatFinProgressPct');
+    const elFinPaid = document.getElementById('goalStatFinPaidText');
+
+    if (elTotal) elTotal.innerText = totalGoals.toString();
+    if (elCompleted) elCompleted.innerText = completedGoals.toString();
+    if (elRate) elRate.innerText = `${completionRate}%`;
+    if (elActive) elActive.innerText = activeGoals.toString();
+    if (elFinProg) elFinProg.innerText = `${finProgPct}%`;
+    if (elFinPaid) {
+        if (finEstTotal > 0) {
+            elFinPaid.innerText = `₹${(finPaidTotal / 100000).toFixed(1)}L of ₹${(finEstTotal / 100000).toFixed(1)}L`;
+        } else {
+            elFinPaid.innerText = `₹0 Paid`;
+        }
+    }
+
+    // Category breakdown definitions
+    const trackDefs = [
+        { key: 'financial', label: 'Financial Milestones', icon: 'fa-coins', color: 'text-brand-500', barColor: 'bg-brand-500', match: c => c === 'financial' },
+        { key: 'business', label: 'Business Plans', icon: 'fa-briefcase', color: 'text-accent-blue', barColor: 'bg-accent-blue', match: c => c === 'business' },
+        { key: 'personal', label: 'Personal Goals', icon: 'fa-user-astronaut', color: 'text-accent-cyan', barColor: 'bg-accent-cyan', match: c => c === 'personal' || c === 'health' },
+        { key: 'books', label: 'Reading Goals', icon: 'fa-book', color: 'text-amber-400', barColor: 'bg-amber-400', match: c => c === 'reading' || c === 'books' },
+        { key: 'travel', label: 'Travel Goals', icon: 'fa-plane', color: 'text-emerald-400', barColor: 'bg-emerald-400', match: c => c === 'travel' },
+        { key: 'ziyara', label: 'Ziyara Milestones', icon: 'fa-kaaba', color: 'text-brand-400', barColor: 'bg-brand-400', match: c => c === 'ziyara' }
+    ];
+
+    const trackCounts = [];
+    const trackActiveCounts = [];
+    const trackCompCounts = [];
+
+    const gridContainer = document.getElementById('goalCategoryBreakdownGrid');
+    if (gridContainer) {
+        gridContainer.innerHTML = '';
+        trackDefs.forEach(track => {
+            const items = db.goals.filter(g => track.match((g.category || 'financial').toLowerCase()));
+            const total = items.length;
+            const comp = items.filter(g => g.completed).length;
+            const act = total - comp;
+            const pct = total > 0 ? Math.round((comp / total) * 100) : 0;
+
+            trackCounts.push(total);
+            trackActiveCounts.push(act);
+            trackCompCounts.push(comp);
+
+            const card = document.createElement('div');
+            card.className = 'p-5 rounded-2xl bg-surface-900/60 border border-surface-800 hover:border-surface-700 transition-all flex flex-col justify-between gap-4 group';
+            card.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-surface-800/80 border border-surface-700/60 flex items-center justify-center ${track.color}">
+                            <i class="fa-solid ${track.icon}"></i>
+                        </div>
+                        <div>
+                            <div class="font-display font-bold text-sm text-white">${track.label}</div>
+                            <div class="text-[10px] font-mono text-slate-400">${total} Total &bull; ${act} Active</div>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${pct === 100 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-surface-800 text-slate-400'}">${pct}%</span>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1.5">
+                        <span>Completed: <span class="text-emerald-400 font-bold">${comp}</span></span>
+                        <span>Pending: <span class="text-brand-400 font-bold">${act}</span></span>
+                    </div>
+                    <div class="w-full bg-surface-950 rounded-full h-2 overflow-hidden border border-surface-800">
+                        <div class="h-full ${track.barColor} transition-all duration-500 rounded-full" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-surface-800/60 flex items-center justify-between">
+                    <button onclick="switchGoalSubTab('${track.key}')" class="text-xs font-mono text-brand-400 hover:text-brand-300 flex items-center gap-1.5 transition-colors cursor-pointer">
+                        View Track <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-0.5 transition-transform"></i>
+                    </button>
+                    <button onclick="openGoalModal('${track.key}')" class="text-[10px] font-mono text-slate-500 hover:text-white transition-colors cursor-pointer" title="Add milestone to ${track.label}">
+                        <i class="fa-solid fa-plus"></i> Add
+                    </button>
+                </div>
+            `;
+            gridContainer.appendChild(card);
+        });
+    } else {
+        trackDefs.forEach(track => {
+            const items = db.goals.filter(g => track.match((g.category || 'financial').toLowerCase()));
+            const total = items.length;
+            const comp = items.filter(g => g.completed).length;
+            const act = total - comp;
+            trackCounts.push(total);
+            trackActiveCounts.push(act);
+            trackCompCounts.push(comp);
+        });
+    }
+
+    // Chart 1: Category Distribution Doughnut
+    const chartCatCanvas = document.getElementById('goalCategoryChartCanvas');
+    if (chartCatCanvas && typeof Chart !== 'undefined') {
+        const ctx = chartCatCanvas.getContext('2d');
+        if (window.goalCategoryChartInst) window.goalCategoryChartInst.destroy();
+
+        const hasAny = trackCounts.some(c => c > 0);
+        const dataValues = hasAny ? trackCounts : [1, 1, 1, 1, 1, 1];
+        const bgColors = hasAny 
+            ? ['#C9A46B', '#88A3D6', '#00f2fe', '#f59e0b', '#34d399', '#fbbf24']
+            : ['#334155', '#334155', '#334155', '#334155', '#334155', '#334155'];
+
+        window.goalCategoryChartInst = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Financial', 'Business', 'Personal', 'Reading', 'Travel', 'Ziyara'],
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: bgColors,
+                    borderColor: '#070A0F',
+                    borderWidth: 2,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#94a3b8',
+                            usePointStyle: true,
+                            padding: 12,
+                            font: { family: "'JetBrains Mono', monospace", size: 10 }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Chart 2: Active vs Completed Bar Chart
+    const chartStatusCanvas = document.getElementById('goalStatusChartCanvas');
+    if (chartStatusCanvas && typeof Chart !== 'undefined') {
+        const ctx2 = chartStatusCanvas.getContext('2d');
+        if (window.goalStatusChartInst) window.goalStatusChartInst.destroy();
+
+        window.goalStatusChartInst = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: ['Financial', 'Business', 'Personal', 'Reading', 'Travel', 'Ziyara'],
+                datasets: [
+                    {
+                        label: 'Active',
+                        data: trackActiveCounts,
+                        backgroundColor: 'rgba(201, 164, 107, 0.85)',
+                        borderColor: '#C9A46B',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Completed',
+                        data: trackCompCounts,
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                        borderColor: '#10b981',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: chartGridOptions,
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { family: "'JetBrains Mono', monospace", size: 10 }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: chartGridOptions,
+                        ticks: {
+                            stepSize: 1,
+                            color: '#94a3b8',
+                            font: { family: "'JetBrains Mono', monospace", size: 10 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#94a3b8',
+                            usePointStyle: true,
+                            padding: 12,
+                            font: { family: "'JetBrains Mono', monospace", size: 10 }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Top Active Target Trajectory Table
+    const activeTable = document.getElementById('goalAnalyticsActiveTableBody');
+    if (activeTable) {
+        activeTable.innerHTML = '';
+        const activeList = db.goals.filter(g => !g.completed);
+
+        if (activeList.length === 0) {
+            activeTable.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> All milestones completed or no active targets logged.</td></tr>`;
+        } else {
+            activeList.slice(0, 10).forEach((g, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'group hover:bg-surface-800/20 transition-colors border-b border-surface-800/40 last:border-0';
+                
+                let progressPct = parseInt(g.progress) || 0;
+                if ((g.category || '').toLowerCase() === 'financial') {
+                    const est = parseFloat(g.estimate) || 0;
+                    const paid = parseFloat(g.paid) || 0;
+                    if (est > 0) progressPct = Math.min(100, Math.round((paid / est) * 100));
+                }
+
+                const catName = capitalize(g.category || 'Financial');
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-3 w-12 text-center font-mono text-xs text-slate-400">${idx + 1}</td>
+                    <td class="py-3 px-3">
+                        <div class="font-semibold text-slate-100">${g.title}</div>
+                        ${(g.notes || g.desc) ? `<div class="text-[10px] text-slate-400 font-light mt-0.5">${g.notes || g.desc}</div>` : ''}
+                    </td>
+                    <td class="py-3 px-3">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-surface-800 text-brand-400 border border-surface-700">${catName}</span>
+                    </td>
+                    <td class="py-3 px-3 font-mono text-xs text-slate-300">${g.targetDate || '-'}</td>
+                    <td class="py-3 px-3 text-center">
+                        <div class="flex items-center gap-2 justify-center">
+                            <div class="w-20 bg-surface-950 rounded-full h-1.5 overflow-hidden border border-surface-700/60">
+                                <div class="h-full bg-brand-500 rounded-full" style="width: ${progressPct}%"></div>
+                            </div>
+                            <span class="text-[10px] font-mono text-slate-400 shrink-0 w-8 text-right">${progressPct}%</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="toggleGoalStatus('${g.id}')" class="p-1 text-slate-400 hover:text-emerald-400 transition-colors" title="Mark as Complete">
+                                <i class="fa-solid fa-check text-xs"></i>
+                            </button>
+                            <button onclick="openGoalModal('${g.id}')" class="p-1 text-slate-400 hover:text-brand-500 transition-colors" title="Edit">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                activeTable.appendChild(tr);
+            });
+        }
+    }
+}
+window.renderGoalAnalytics = renderGoalAnalytics;
 
 function toggleGoalModalFields() {
     const catEl = document.getElementById('goalCategoryInput');
@@ -2938,6 +3285,16 @@ function toggleGoalStatus(id) {
     if (g) {
         g.completed = !g.completed;
         g.status = g.completed ? 'Completed' : 'In Progress';
+        if (g.completed && typeof pushNotification === 'function') {
+            pushNotification({
+                title: `Milestone Achieved: ${g.title}`,
+                desc: `${g.category || 'Executive Target'} completed successfully`,
+                type: 'goal',
+                category: 'goal',
+                linkPage: 'goals',
+                playSound: true
+            });
+        }
         saveDatabase();
         renderGoalsTable();
         showToast(g.completed ? 'Milestone marked as complete' : 'Milestone reactivated');
@@ -3112,6 +3469,7 @@ function deleteNote(id) {
 window.deleteNote = deleteNote;
 
 let currentReminderFilter = 'all';
+let currentReminderViewMode = localStorage.getItem('executive_reminder_view_mode') || 'cards';
 
 function isReminderOverdue(r) {
     if (r.completed || r.status === 'completed') return false;
@@ -3126,49 +3484,152 @@ function isReminderOverdue(r) {
     return !isNaN(due.getTime()) && due < new Date();
 }
 
+function isReminderToday(r) {
+    if (!r.date) return false;
+    let dStr = r.date;
+    if (dStr.includes('/')) {
+        const p = dStr.split('/');
+        if (p.length === 3) dStr = `${p[2]}-${p[1]}-${p[0]}`;
+    }
+    const today = new Date().toISOString().split('T')[0];
+    return dStr === today;
+}
+
 function setReminderFilter(filter) {
     currentReminderFilter = filter;
-    ['all', 'active', 'high', 'completed'].forEach(f => {
+    ['all', 'active', 'high', 'overdue', 'completed'].forEach(f => {
         const btn = document.getElementById(`btnReminderFilter-${f}`);
         if (!btn) return;
         if (f === filter) {
-            btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface-800 text-white shadow-sm transition-all';
+            btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-medium bg-brand-500/15 text-brand-300 border border-brand-500/30 transition-all whitespace-nowrap cursor-pointer shadow-sm';
         } else {
-            btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all';
+            btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 transition-all whitespace-nowrap cursor-pointer';
         }
     });
     renderRemindersTable();
 }
 window.setReminderFilter = setReminderFilter;
 
+function setReminderViewMode(mode) {
+    currentReminderViewMode = mode;
+    localStorage.setItem('executive_reminder_view_mode', mode);
+    
+    const btnCards = document.getElementById('btnReminderViewCards');
+    const btnTable = document.getElementById('btnReminderViewTable');
+    const containerCards = document.getElementById('remindersCardsContainer');
+    const containerTable = document.getElementById('remindersTableContainer');
+
+    if (btnCards && btnTable) {
+        if (mode === 'cards') {
+            btnCards.className = 'p-1.5 px-2.5 rounded-lg text-xs text-brand-400 bg-surface-800/90 transition-all cursor-pointer shadow-sm';
+            btnTable.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+            if (containerCards) containerCards.classList.remove('hidden');
+            if (containerTable) containerTable.classList.add('hidden');
+        } else {
+            btnCards.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+            btnTable.className = 'p-1.5 px-2.5 rounded-lg text-xs text-brand-400 bg-surface-800/90 transition-all cursor-pointer shadow-sm';
+            if (containerCards) containerCards.classList.add('hidden');
+            if (containerTable) containerTable.classList.remove('hidden');
+        }
+    }
+}
+window.setReminderViewMode = setReminderViewMode;
+
+function clearReminderSearch() {
+    const searchInput = document.getElementById('reminderSearchInput');
+    const clearBtn = document.getElementById('btnClearReminderSearch');
+    if (searchInput) searchInput.value = '';
+    if (clearBtn) clearBtn.classList.add('hidden');
+    renderRemindersTable();
+}
+window.clearReminderSearch = clearReminderSearch;
+
+function postponeReminder(id, days = 1) {
+    if (!db.reminders) return;
+    const r = db.reminders.find(x => x.id === id);
+    if (!r) return;
+
+    let baseDate = new Date();
+    if (r.date) {
+        let dStr = r.date;
+        if (dStr.includes('/')) {
+            const p = dStr.split('/');
+            if (p.length === 3) dStr = `${p[2]}-${p[1]}-${p[0]}`;
+        }
+        const parsed = new Date(dStr);
+        if (!isNaN(parsed.getTime())) {
+            baseDate = parsed > new Date() ? parsed : new Date();
+        }
+    }
+
+    baseDate.setDate(baseDate.getDate() + days);
+    const newDDMMYYYY = baseDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    r.date = newDDMMYYYY;
+    r.notifiedDue = false;
+    
+    saveDatabase();
+    renderRemindersTable();
+    showToast(`Postponed by ${days === 1 ? '1 day' : days + ' days'} to ${newDDMMYYYY}`);
+}
+window.postponeReminder = postponeReminder;
+
 function renderRemindersTable() {
     const body = document.getElementById('remindersTableBody');
-    if (!body) return;
-    body.innerHTML = '';
+    const cardsContainer = document.getElementById('remindersCardsContainer');
     if (!db.reminders) db.reminders = [];
 
-    // Update stats
-    const activeStat = document.getElementById('remindersActiveStat');
-    const highStat = document.getElementById('remindersHighStat');
-    const overdueStat = document.getElementById('remindersOverdueStat');
-    const completedStat = document.getElementById('remindersCompletedStat');
+    // Ensure View Mode toggle is synchronized
+    setReminderViewMode(currentReminderViewMode);
 
+    // Calculate stats
+    const totalAll = db.reminders.length;
     const totalActive = db.reminders.filter(r => !r.completed && r.status !== 'completed').length;
     const totalHigh = db.reminders.filter(r => (!r.completed && r.status !== 'completed') && (r.priority || '').toLowerCase() === 'high').length;
     const totalOverdue = db.reminders.filter(r => isReminderOverdue(r)).length;
     const totalCompleted = db.reminders.filter(r => r.completed || r.status === 'completed').length;
+    const completionRate = totalAll > 0 ? Math.round((totalCompleted / totalAll) * 100) : 0;
+
+    // Update KPI Elements
+    const activeStat = document.getElementById('remindersActiveStat');
+    const highStat = document.getElementById('remindersHighStat');
+    const overdueStat = document.getElementById('remindersOverdueStat');
+    const completedStat = document.getElementById('remindersCompletedStat');
+    const completionRateEl = document.getElementById('remindersCompletionRate');
 
     if (activeStat) activeStat.innerText = totalActive.toString();
     if (highStat) highStat.innerText = totalHigh.toString();
     if (overdueStat) overdueStat.innerText = totalOverdue.toString();
     if (completedStat) completedStat.innerText = totalCompleted.toString();
+    if (completionRateEl) completionRateEl.innerText = `${completionRate}% Done`;
 
-    // Search query
+    // Update Count Badges on Filters
+    const cntAll = document.getElementById('cntFilterAll');
+    const cntAct = document.getElementById('cntFilterActive');
+    const cntHigh = document.getElementById('cntFilterHigh');
+    const cntOverdue = document.getElementById('cntFilterOverdue');
+    const cntComp = document.getElementById('cntFilterCompleted');
+
+    if (cntAll) cntAll.innerText = totalAll.toString();
+    if (cntAct) cntAct.innerText = totalActive.toString();
+    if (cntHigh) cntHigh.innerText = totalHigh.toString();
+    if (cntOverdue) cntOverdue.innerText = totalOverdue.toString();
+    if (cntComp) cntComp.innerText = totalCompleted.toString();
+
+    // Search query & clear button visibility
     const searchInput = document.getElementById('reminderSearchInput');
+    const clearBtn = document.getElementById('btnClearReminderSearch');
     const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+    if (clearBtn) {
+        if (q) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
 
-    // Sort by date/time
+    // Sort by Date & Priority
     let list = [...db.reminders].sort((a, b) => {
+        const isCompA = a.completed || a.status === 'completed';
+        const isCompB = b.completed || b.status === 'completed';
+        if (isCompA !== isCompB) return isCompA ? 1 : -1;
+
         const dateA = a.date ? (a.date.includes('/') ? a.date.split('/').reverse().join('-') : a.date) : '';
         const dateB = b.date ? (b.date.includes('/') ? b.date.split('/').reverse().join('-') : b.date) : '';
         return (dateA + (a.time || '')) > (dateB + (b.time || '')) ? 1 : -1;
@@ -3179,6 +3640,8 @@ function renderRemindersTable() {
         list = list.filter(r => !r.completed && r.status !== 'completed');
     } else if (currentReminderFilter === 'high') {
         list = list.filter(r => (r.priority || '').toLowerCase() === 'high');
+    } else if (currentReminderFilter === 'overdue') {
+        list = list.filter(r => isReminderOverdue(r));
     } else if (currentReminderFilter === 'completed') {
         list = list.filter(r => r.completed || r.status === 'completed');
     }
@@ -3193,69 +3656,202 @@ function renderRemindersTable() {
         );
     }
 
-    list.forEach((r, idx) => {
-        const isComp = r.completed || r.status === 'completed';
-        const isOverdue = isReminderOverdue(r);
-
-        let prioBadgeClass = 'border-slate-700 bg-surface-900 text-slate-400';
-        const prio = r.priority || r.category || 'Medium';
-        if (prio.toLowerCase() === 'high') prioBadgeClass = 'border-rose-500/30 bg-rose-500/10 text-rose-400';
-        else if (prio.toLowerCase() === 'medium') prioBadgeClass = 'border-amber-500/30 bg-amber-500/10 text-amber-400';
-        else if (prio.toLowerCase() === 'low') prioBadgeClass = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
-
-        const tr = document.createElement('tr');
-        tr.className = `group hover:bg-surface-800/20 transition-colors border-b border-surface-800/40 last:border-0 ${isComp ? 'opacity-60 hover:opacity-100' : ''}`;
-        
-        tr.innerHTML = `
-            <td class="py-3 px-4">
-                <div class="flex items-start gap-3">
-                    <button onclick="toggleReminderStatus('${r.id}')" class="mt-0.5 w-5 h-5 rounded-md border ${isComp ? 'bg-emerald-500 border-emerald-500 text-surface-950' : 'border-surface-700 bg-surface-900/60 hover:border-indigo-400 text-transparent'} flex items-center justify-center transition-colors shrink-0" title="${isComp ? 'Reactivate' : 'Mark Completed'}">
-                        <i class="fa-solid fa-check text-[10px] ${isComp ? 'text-surface-950' : 'opacity-0'}"></i>
-                    </button>
-                    <div>
-                        <div class="font-semibold text-slate-100 ${isComp ? 'line-through text-slate-500' : ''}">${r.title}</div>
-                        ${r.notes ? `<div class="text-xs text-slate-400 font-light mt-0.5 leading-relaxed whitespace-pre-wrap">${r.notes}</div>` : ''}
+    // 1. RENDER CARDS VIEW
+    if (cardsContainer) {
+        cardsContainer.innerHTML = '';
+        if (list.length === 0) {
+            cardsContainer.innerHTML = `
+                <div class="p-12 text-center text-slate-500 font-light text-xs rounded-2xl bg-surface-900/40 border border-surface-800/60">
+                    <div class="w-12 h-12 rounded-2xl bg-surface-800/80 border border-surface-700/60 text-slate-400 flex items-center justify-center mx-auto mb-3 text-lg shadow-inner">
+                        <i class="fa-regular fa-calendar-check text-brand-400/60"></i>
                     </div>
-                </div>
-            </td>
-            <td class="py-3 px-4 font-mono text-xs">
-                <div class="flex items-center gap-1.5 text-slate-300">
-                    <i class="fa-regular fa-calendar text-[10px] text-indigo-400"></i>
-                    <span>${formatToDDMMYYYY(r.date)}</span>
-                </div>
-                ${r.time ? `<div class="flex items-center gap-1.5 text-slate-400 text-[11px] mt-0.5"><i class="fa-regular fa-clock text-[9px] text-indigo-400"></i><span>${r.time}</span></div>` : ''}
-                ${isOverdue && !isComp ? `<span class="inline-block mt-1 px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[9px] font-bold font-mono uppercase tracking-wider">Overdue</span>` : ''}
-            </td>
-            <td class="py-3 px-4">
-                <span class="px-2.5 py-1 rounded-md text-[10px] font-mono uppercase tracking-wider font-bold border ${prioBadgeClass}">
-                    ${prio}
-                </span>
-            </td>
-            <td class="py-3 px-4 font-mono text-xs text-slate-400">
-                <span class="flex items-center gap-1.5">
-                    <i class="fa-solid ${r.repeat && r.repeat !== 'None' ? 'fa-arrows-rotate text-indigo-400' : 'fa-minus text-slate-600'} text-[10px]"></i>
-                    ${r.repeat || 'None'}
-                </span>
-            </td>
-            <td class="py-3 px-4 text-center">
-                <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="toggleReminderStatus('${r.id}')" class="p-1.5 rounded-lg bg-surface-800 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 transition-colors" title="${isComp ? 'Reactivate' : 'Mark Complete'}">
-                        <i class="fa-solid ${isComp ? 'fa-rotate-left text-amber-400' : 'fa-check text-emerald-400'} text-xs"></i>
-                    </button>
-                    <button onclick="openReminderModal('${r.id}')" class="p-1.5 rounded-lg bg-surface-800 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-400 transition-colors" title="Edit">
-                        <i class="fa-solid fa-pen text-xs"></i>
-                    </button>
-                    <button onclick="deleteReminder('${r.id}')" class="p-1.5 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors" title="Delete">
-                        <i class="fa-solid fa-trash text-xs"></i>
+                    <div class="text-white font-medium text-sm mb-1">No Reminders Found</div>
+                    <p class="text-slate-400 max-w-sm mx-auto mb-4">There are no reminders matching the selected filter or search query.</p>
+                    <button onclick="openReminderModal()" class="px-4 py-2 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 border border-brand-500/30 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-plus text-[10px]"></i> Create New Reminder
                     </button>
                 </div>
-            </td>
-        `;
-        body.appendChild(tr);
-    });
+            `;
+        } else {
+            list.forEach(r => {
+                const isComp = r.completed || r.status === 'completed';
+                const isOverdue = isReminderOverdue(r);
+                const isToday = isReminderToday(r);
 
-    if (list.length === 0) {
-        body.innerHTML = `<tr><td colspan="5" class="p-12 text-center text-slate-500 font-light text-xs"><i class="fa-regular fa-bell-slash text-3xl mb-3 block opacity-40"></i> No reminders found matching the current filter. Click "Add Reminder" to schedule one.</td></tr>`;
+                // Date Parsing for Date Box
+                let dayNum = '--';
+                let monthStr = 'DATE';
+                let dayOfWeek = '';
+                if (r.date) {
+                    let dStr = r.date;
+                    if (dStr.includes('/')) {
+                        const p = dStr.split('/');
+                        if (p.length === 3) dStr = `${p[2]}-${p[1]}-${p[0]}`;
+                    }
+                    const parsedDate = new Date(dStr);
+                    if (!isNaN(parsedDate.getTime())) {
+                        dayNum = parsedDate.getDate().toString().padStart(2, '0');
+                        monthStr = parsedDate.toLocaleString('default', { month: 'short' }).toUpperCase();
+                        dayOfWeek = parsedDate.toLocaleString('default', { weekday: 'short' });
+                    }
+                }
+
+                // Priority Indicator
+                const prio = (r.priority || r.category || 'Medium').toLowerCase();
+                let prioBadge = '';
+                if (prio === 'high') {
+                    prioBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium text-rose-400 bg-rose-500/10 border border-rose-500/25 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>High</span>`;
+                } else if (prio === 'low') {
+                    prioBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium text-slate-400 bg-surface-800 border border-surface-700 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>Low</span>`;
+                } else {
+                    prioBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium text-brand-300 bg-brand-500/10 border border-brand-500/25 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-brand-400"></span>Medium</span>`;
+                }
+
+                // Status Pill
+                let statusPill = '';
+                if (isComp) {
+                    statusPill = `<span class="px-2 py-0.5 rounded-md text-[9px] font-mono font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-1"><i class="fa-solid fa-check text-[8px]"></i> Completed</span>`;
+                } else if (isOverdue) {
+                    statusPill = `<span class="px-2 py-0.5 rounded-md text-[9px] font-mono font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/25 flex items-center gap-1 animate-pulse"><i class="fa-solid fa-triangle-exclamation text-[8px]"></i> Overdue</span>`;
+                } else if (isToday) {
+                    statusPill = `<span class="px-2 py-0.5 rounded-md text-[9px] font-mono font-semibold text-brand-300 bg-brand-500/15 border border-brand-500/30 flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-brand-400"></span> Due Today</span>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = `p-4 sm:p-5 rounded-2xl border transition-all duration-200 group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                    isComp 
+                        ? 'bg-surface-900/30 border-surface-800/40 opacity-60 hover:opacity-100' 
+                        : isOverdue
+                            ? 'bg-gradient-to-r from-amber-500/[0.04] to-surface-900/80 border-amber-500/30 hover:border-amber-500/50 shadow-sm'
+                            : 'bg-surface-900/70 border-surface-800/80 hover:border-brand-500/30 hover:bg-surface-900/90 shadow-sm'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-start gap-3.5 flex-1 min-w-0">
+                        <!-- Custom Interactive Check Circle -->
+                        <button onclick="toggleReminderStatus('${r.id}')" class="mt-1 w-6 h-6 rounded-full border ${
+                            isComp 
+                                ? 'bg-emerald-500 border-emerald-500 text-surface-950 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                                : 'border-surface-700 bg-surface-950/60 hover:border-brand-400 text-transparent hover:text-brand-400/40'
+                        } flex items-center justify-center transition-all shrink-0 cursor-pointer active:scale-90" title="${isComp ? 'Mark as Pending' : 'Mark Completed'}">
+                            <i class="fa-solid fa-check text-xs ${isComp ? 'text-surface-950' : 'opacity-0 hover:opacity-100'}"></i>
+                        </button>
+
+                        <!-- Date Badge Block -->
+                        <div class="hidden sm:flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-surface-950/60 border border-surface-800 text-center shrink-0 p-1">
+                            <span class="text-[9px] font-mono font-bold tracking-wider ${isOverdue ? 'text-amber-400' : 'text-brand-400'} leading-none">${monthStr}</span>
+                            <span class="text-base font-bold font-mono text-white leading-tight">${dayNum}</span>
+                        </div>
+
+                        <!-- Content Details -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap items-center gap-2 mb-1">
+                                <span class="font-display font-semibold text-sm sm:text-base text-white ${isComp ? 'line-through text-slate-400' : ''} truncate">${r.title}</span>
+                                ${statusPill}
+                                ${prioBadge}
+                            </div>
+                            
+                            ${r.notes ? `<p class="text-xs text-slate-400 font-light line-clamp-2 leading-relaxed mb-1.5">${r.notes}</p>` : ''}
+                            
+                            <!-- Date, Time & Repeat Meta -->
+                            <div class="flex flex-wrap items-center gap-3 text-[11px] font-mono text-slate-400 mt-1">
+                                <span class="flex items-center gap-1.5 text-slate-300">
+                                    <i class="fa-regular fa-calendar text-[10px] text-brand-400"></i>
+                                    <span>${dayOfWeek ? dayOfWeek + ', ' : ''}${formatToDDMMYYYY(r.date)}</span>
+                                </span>
+                                ${r.time ? `<span class="flex items-center gap-1 text-slate-400"><i class="fa-regular fa-clock text-[9px] text-brand-400"></i>${r.time}</span>` : ''}
+                                ${r.repeat && r.repeat !== 'None' ? `<span class="flex items-center gap-1 text-brand-400/80 bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20 text-[10px]"><i class="fa-solid fa-arrows-rotate text-[9px]"></i>${r.repeat}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Strip -->
+                    <div class="flex items-center gap-1.5 self-end sm:self-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-surface-800/40 w-full sm:w-auto justify-end">
+                        ${!isComp ? `
+                            <button onclick="postponeReminder('${r.id}', 1)" class="px-2.5 py-1.5 rounded-lg bg-surface-950/60 hover:bg-surface-800 text-slate-400 hover:text-brand-300 border border-surface-800 text-xs transition-all flex items-center gap-1 cursor-pointer" title="Postpone by +1 Day">
+                                <i class="fa-regular fa-clock text-[10px]"></i> <span class="text-[10px] font-mono">+1d</span>
+                            </button>
+                        ` : ''}
+                        <button onclick="openReminderModal('${r.id}')" class="p-2 rounded-lg bg-surface-950/60 hover:bg-brand-500/15 text-slate-400 hover:text-brand-300 border border-surface-800 text-xs transition-all cursor-pointer" title="Edit Reminder">
+                            <i class="fa-solid fa-pen text-[11px]"></i>
+                        </button>
+                        <button onclick="deleteReminder('${r.id}')" class="p-2 rounded-lg bg-surface-950/60 hover:bg-rose-500/15 text-slate-400 hover:text-rose-400 border border-surface-800 text-xs transition-all cursor-pointer" title="Delete Reminder">
+                            <i class="fa-solid fa-trash text-[11px]"></i>
+                        </button>
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
+            });
+        }
+    }
+
+    // 2. RENDER TABLE VIEW
+    if (body) {
+        body.innerHTML = '';
+        if (list.length === 0) {
+            body.innerHTML = `<tr><td colspan="5" class="p-12 text-center text-slate-500 font-light text-xs"><i class="fa-regular fa-calendar-check text-3xl mb-3 block opacity-40"></i> No reminders found matching the current filter.</td></tr>`;
+        } else {
+            list.forEach(r => {
+                const isComp = r.completed || r.status === 'completed';
+                const isOverdue = isReminderOverdue(r);
+
+                let prioBadgeClass = 'border-slate-700 bg-surface-900 text-slate-400';
+                const prio = (r.priority || r.category || 'Medium').toLowerCase();
+                if (prio === 'high') prioBadgeClass = 'border-rose-500/30 bg-rose-500/10 text-rose-400';
+                else if (prio === 'low') prioBadgeClass = 'border-slate-700 bg-surface-900 text-slate-400';
+                else prioBadgeClass = 'border-brand-500/30 bg-brand-500/10 text-brand-300';
+
+                const tr = document.createElement('tr');
+                tr.className = `group hover:bg-surface-800/20 transition-colors border-b border-surface-800/40 last:border-0 ${isComp ? 'opacity-60 hover:opacity-100' : ''}`;
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-5">
+                        <div class="flex items-start gap-3">
+                            <button onclick="toggleReminderStatus('${r.id}')" class="mt-0.5 w-5 h-5 rounded-full border ${isComp ? 'bg-emerald-500 border-emerald-500 text-surface-950' : 'border-surface-700 bg-surface-900/60 hover:border-brand-400 text-transparent'} flex items-center justify-center transition-colors shrink-0 cursor-pointer" title="${isComp ? 'Reactivate' : 'Mark Completed'}">
+                                <i class="fa-solid fa-check text-[10px] ${isComp ? 'text-surface-950' : 'opacity-0'}"></i>
+                            </button>
+                            <div>
+                                <div class="font-semibold text-slate-100 ${isComp ? 'line-through text-slate-500' : ''}">${r.title}</div>
+                                ${r.notes ? `<div class="text-xs text-slate-400 font-light mt-0.5 leading-relaxed whitespace-pre-wrap">${r.notes}</div>` : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-xs">
+                        <div class="flex items-center gap-1.5 text-slate-300">
+                            <i class="fa-regular fa-calendar text-[10px] text-brand-400"></i>
+                            <span>${formatToDDMMYYYY(r.date)}</span>
+                        </div>
+                        ${r.time ? `<div class="flex items-center gap-1.5 text-slate-400 text-[11px] mt-0.5"><i class="fa-regular fa-clock text-[9px] text-brand-400"></i><span>${r.time}</span></div>` : ''}
+                        ${isOverdue && !isComp ? `<span class="inline-block mt-1 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold font-mono uppercase tracking-wider">Overdue</span>` : ''}
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-mono uppercase tracking-wider font-bold border ${prioBadgeClass}">
+                            ${r.priority || 'Medium'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-xs text-slate-400">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid ${r.repeat && r.repeat !== 'None' ? 'fa-arrows-rotate text-brand-400' : 'fa-minus text-slate-600'} text-[10px]"></i>
+                            ${r.repeat || 'None'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex items-center justify-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <button onclick="toggleReminderStatus('${r.id}')" class="p-1.5 rounded-lg bg-surface-800 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer" title="${isComp ? 'Reactivate' : 'Mark Complete'}">
+                                <i class="fa-solid ${isComp ? 'fa-rotate-left text-amber-400' : 'fa-check text-emerald-400'} text-xs"></i>
+                            </button>
+                            <button onclick="openReminderModal('${r.id}')" class="p-1.5 rounded-lg bg-surface-800 hover:bg-brand-500/20 text-slate-400 hover:text-brand-300 transition-colors cursor-pointer" title="Edit">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteReminder('${r.id}')" class="p-1.5 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer" title="Delete">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
     }
 }
 window.renderRemindersTable = renderRemindersTable;
@@ -3309,6 +3905,144 @@ function openReminderModal(id = null) {
 }
 window.openReminderModal = openReminderModal;
 
+// ==========================================
+// NOTIFICATION AUDIO & SOUND CHIME ENGINE
+// ==========================================
+let notifAudioContext = null;
+
+function getAudioContext() {
+    try {
+        if (!notifAudioContext) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) {
+                notifAudioContext = new AudioContextClass();
+            }
+        }
+        if (notifAudioContext && notifAudioContext.state === 'suspended') {
+            notifAudioContext.resume().catch(() => {});
+        }
+        return notifAudioContext;
+    } catch (e) {
+        return null;
+    }
+}
+window.getAudioContext = getAudioContext;
+
+function isNotificationSoundMuted() {
+    return localStorage.getItem('executive_notif_sound_muted') === 'true';
+}
+
+function updateNotificationSoundUI() {
+    const isMuted = isNotificationSoundMuted();
+    const btn = document.getElementById('btnNotificationSound');
+    const icon = document.getElementById('notifSoundIcon');
+    const text = document.getElementById('notifSoundText');
+
+    if (icon) {
+        icon.className = isMuted 
+            ? 'fa-solid fa-volume-xmark text-[10px] text-slate-500' 
+            : 'fa-solid fa-volume-high text-[10px] text-amber-400';
+    }
+    if (text) {
+        text.innerText = isMuted ? 'Muted' : 'Chime ON';
+    }
+    if (btn) {
+        btn.className = isMuted
+            ? 'text-[10px] font-mono text-slate-500 hover:text-slate-300 transition-colors bg-surface-900 px-2.5 py-1 rounded-lg border border-surface-800 flex items-center gap-1.5 cursor-pointer shadow-sm'
+            : 'text-[10px] font-mono text-slate-300 hover:text-amber-400 transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700 flex items-center gap-1.5 cursor-pointer shadow-sm';
+    }
+}
+window.updateNotificationSoundUI = updateNotificationSoundUI;
+
+function toggleNotificationSound() {
+    const currentlyMuted = isNotificationSoundMuted();
+    const newMutedState = !currentlyMuted;
+    localStorage.setItem('executive_notif_sound_muted', newMutedState ? 'true' : 'false');
+    updateNotificationSoundUI();
+    
+    if (!newMutedState) {
+        playNotificationSound(true);
+        showToast('Notification chime enabled');
+    } else {
+        showToast('Notification chime muted');
+    }
+}
+window.toggleNotificationSound = toggleNotificationSound;
+
+function testNotificationSound() {
+    playNotificationSound(true);
+    showToast('Playing notification chime test');
+}
+window.testNotificationSound = testNotificationSound;
+
+function playNotificationSound(force = false) {
+    if (isNotificationSoundMuted() && !force) return;
+
+    try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        const now = ctx.currentTime;
+
+        const playTone = (freq, startTime, duration, gainLevel, type = 'sine') => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, startTime);
+
+            gain.gain.setValueAtTime(0.0001, startTime);
+            gain.gain.exponentialRampToValueAtTime(gainLevel, startTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        };
+
+        // Modern harmonic 2-tone executive bell chime (E5 -> A5 with sparkling overtones)
+        playTone(659.25, now, 0.35, 0.22, 'sine');
+        playTone(987.77, now + 0.015, 0.22, 0.06, 'triangle');
+        playTone(880.00, now + 0.12, 0.55, 0.26, 'sine');
+        playTone(1318.51, now + 0.135, 0.38, 0.07, 'triangle');
+    } catch (err) {
+        console.warn('Audio playback not permitted or unavailable:', err);
+    }
+}
+window.playNotificationSound = playNotificationSound;
+
+function pushNotification({ title, desc = '', type = 'reminder', category = 'reminder', linkPage = '', playSound = true }) {
+    if (!db.notifications) db.notifications = [];
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' • ' + new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    
+    const notifItem = {
+        id: 'notif-' + Date.now().toString() + '-' + Math.random().toString(36).substring(2, 6),
+        type,
+        category,
+        title,
+        desc,
+        date: nowStr,
+        read: false,
+        linkPage
+    };
+
+    db.notifications.unshift(notifItem);
+    if (db.notifications.length > 50) {
+        db.notifications = db.notifications.slice(0, 50);
+    }
+
+    if (playSound) {
+        playNotificationSound();
+    }
+
+    saveDatabase();
+    renderNotifications();
+    return notifItem;
+}
+window.pushNotification = pushNotification;
+
 function saveReminder() {
     const idEl = document.getElementById('reminderId');
     const id = idEl ? idEl.value : '';
@@ -3361,27 +4095,17 @@ function saveReminder() {
         });
     }
 
-    // Reflect directly in Notification Hub
-    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' • ' + new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-    const notifItem = {
-        id: 'notif-' + Date.now().toString() + '-' + Math.random().toString(36).substring(2, 6),
-        type: 'reminder',
-        category: 'reminder',
+    // Reflect directly in Notification Hub with chime
+    pushNotification({
         title: isNew ? `New Reminder: ${title}` : `Updated Reminder: ${title}`,
         desc: `${date}${time ? ' at ' + time : ''} • Priority: ${priority}${repeat !== 'None' ? ' • Repeat: ' + repeat : ''}`,
-        date: nowStr,
-        read: false,
-        linkPage: 'reminders'
-    };
-    db.notifications.unshift(notifItem);
+        type: 'reminder',
+        category: 'reminder',
+        linkPage: 'reminders',
+        playSound: isNew
+    });
 
-    if (db.notifications.length > 50) {
-        db.notifications = db.notifications.slice(0, 50);
-    }
-
-    saveDatabase();
     renderRemindersTable();
-    renderNotifications();
     closeModal('reminderModal');
     showToast(isNew ? 'Reminder created & added to Notification Hub' : 'Reminder updated');
 }
@@ -3394,21 +4118,14 @@ function toggleReminderStatus(id) {
     r.status = r.completed ? 'completed' : 'active';
     
     if (r.completed) {
-        if (!db.notifications) db.notifications = [];
-        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' • ' + new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-        db.notifications.unshift({
-            id: 'notif-' + Date.now().toString() + '-' + Math.random().toString(36).substring(2, 6),
-            type: 'reminder',
-            category: 'reminder',
+        pushNotification({
             title: `Reminder Completed: ${r.title}`,
             desc: `Scheduled for ${r.date} marked as completed`,
-            date: nowStr,
-            read: false,
-            linkPage: 'reminders'
+            type: 'reminder',
+            category: 'reminder',
+            linkPage: 'reminders',
+            playSound: true
         });
-        if (db.notifications.length > 50) {
-            db.notifications = db.notifications.slice(0, 50);
-        }
     }
 
     saveDatabase();
@@ -3448,17 +4165,13 @@ function checkReminders() {
 
             if (!isNaN(d.getTime()) && d <= now && !r.notifiedDue) {
                 r.notifiedDue = true;
-                if (!db.notifications) db.notifications = [];
-                const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' • ' + new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-                db.notifications.unshift({
-                    id: 'notif-due-' + Date.now().toString() + '-' + Math.random().toString(36).substring(2, 6),
-                    type: 'reminder',
-                    category: 'reminder',
+                pushNotification({
                     title: `Reminder Due: ${r.title}`,
                     desc: `${r.date}${r.time ? ' at ' + r.time : ''} • Priority: ${r.priority || 'Medium'}`,
-                    date: nowStr,
-                    read: false,
-                    linkPage: 'reminders'
+                    type: 'reminder',
+                    category: 'reminder',
+                    linkPage: 'reminders',
+                    playSound: false
                 });
                 triggerCount++;
             }
@@ -3466,7 +4179,7 @@ function checkReminders() {
     });
 
     if (triggerCount > 0) {
-        if (db.notifications.length > 50) db.notifications = db.notifications.slice(0, 50);
+        playNotificationSound();
         saveDatabase();
         renderRemindersTable();
         renderNotifications();

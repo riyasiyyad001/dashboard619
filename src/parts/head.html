@@ -43,13 +43,45 @@
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=JetBrains+Mono:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
         
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #040906; /* Deep forest void */
             color: #E6FFF2; /* Soft mint text */
             -webkit-font-smoothing: antialiased;
+        }
+
+        /* Note Font Families */
+        .note-font-inter { font-family: 'Inter', sans-serif !important; }
+        .note-font-playfair { font-family: 'Playfair Display', serif !important; }
+        .note-font-outfit { font-family: 'Outfit', sans-serif !important; }
+        .note-font-merriweather { font-family: 'Merriweather', serif !important; }
+        .note-font-lora { font-family: 'Lora', serif !important; }
+        .note-font-mono { font-family: 'JetBrains Mono', monospace !important; }
+        .note-font-caveat { font-family: 'Caveat', cursive !important; }
+        .note-font-cinzel { font-family: 'Cinzel', serif !important; }
+
+        /* Rich Note Content Typography */
+        .note-rich-content h1 { font-size: 1.6rem; font-weight: 700; color: #FFFFFF; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .note-rich-content h2 { font-size: 1.35rem; font-weight: 600; color: #F1F5F9; margin-top: 0.75rem; margin-bottom: 0.4rem; }
+        .note-rich-content h3 { font-size: 1.15rem; font-weight: 600; color: #E2E8F0; margin-top: 0.5rem; margin-bottom: 0.3rem; }
+        .note-rich-content p { margin-bottom: 0.6rem; line-height: 1.7; }
+        .note-rich-content blockquote { border-left: 3px solid #C9A46B; padding-left: 0.85rem; margin: 0.75rem 0; color: #94A3B8; font-style: italic; background: rgba(201, 164, 107, 0.05); border-radius: 0 0.5rem 0.5rem 0; padding-top: 0.3rem; padding-bottom: 0.3rem; }
+        .note-rich-content ul { list-style-type: disc; padding-left: 1.4rem; margin: 0.5rem 0; }
+        .note-rich-content ol { list-style-type: decimal; padding-left: 1.4rem; margin: 0.5rem 0; }
+        .note-rich-content li { margin-bottom: 0.25rem; }
+        .note-rich-content code { background: rgba(0, 0, 0, 0.4); color: #00FF9D; padding: 0.15rem 0.4rem; border-radius: 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; border: 1px solid rgba(0, 255, 157, 0.2); }
+        .note-rich-content pre { background: rgba(0, 0, 0, 0.6); padding: 0.85rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.6rem 0; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .note-rich-content hr { border: 0; height: 1px; background: rgba(255, 255, 255, 0.12); margin: 1rem 0; }
+        .note-rich-content mark { background: rgba(245, 158, 11, 0.25); color: #FDE68A; padding: 0.1rem 0.35rem; border-radius: 0.25rem; }
+        
+        /* Note Editor Placeholder */
+        #noteEditor:empty:before {
+            content: attr(data-placeholder);
+            color: #64748b;
+            pointer-events: none;
+            display: block;
         }
         
         /* Glassmorphism refined */

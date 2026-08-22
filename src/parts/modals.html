@@ -1,11 +1,20 @@
     <!-- BUDGET MODAL -->
     <div id="budgetModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="budgetModalTitle" class="font-display text-lg text-white">Add Budget Allocation</h3>
-                <button onclick="closeModal('budgetModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <div>
+                        <h3 id="budgetModalTitle" class="font-display text-lg text-white font-bold">Add Budget Allocation</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Specify monthly spending thresholds and remarks</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('budgetModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="budgetModalCurrency">
                 <input type="hidden" id="budgetId">
                 <div class="grid grid-cols-2 gap-4">
@@ -48,10 +57,10 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Remarks</label>
-                    <input type="text" id="budgetNotesInput" placeholder="Additional remarks..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <textarea id="budgetNotesInput" rows="3" placeholder="Additional remarks, allocation details, or financial notes..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
-                    <button onclick="saveBudgetEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Budget Entry</button>
+                    <button onclick="saveBudgetEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Budget Entry</button>
                 </div>
             </div>
         </div>
@@ -59,17 +68,32 @@
 
     <!-- DAILY EXPENSE MODAL -->
     <div id="dailyExpenseModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="dailyExpenseModalTitle" class="font-display text-lg text-white">Add Daily Expense</h3>
-                <button onclick="closeModal('dailyExpenseModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <div>
+                        <h3 id="dailyExpenseModalTitle" class="font-display text-lg text-white font-bold">Add Daily Expense</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Log routine and immediate expenditures</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('dailyExpenseModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="dailyExpenseCurrency">
                 <input type="hidden" id="dailyExpenseId">
-                <div>
-                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date</label>
-                    <input type="text" id="dailyExpDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date</label>
+                        <input type="text" id="dailyExpDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Amount</label>
+                        <input type="number" step="0.01" id="dailyExpAmountInput" placeholder="Expense amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category</label>
@@ -84,26 +108,31 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Particulars / Description</label>
-                    <input type="text" id="dailyExpDescInput" placeholder="e.g. Supermarket shopping" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Amount</label>
-                    <input type="number" step="0.01" id="dailyExpAmountInput" placeholder="Expense amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <textarea id="dailyExpDescInput" rows="2" placeholder="e.g. Supermarket shopping, utility bills, maintenance notes..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
-                    <button onclick="saveDailyExpense()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Daily Expense</button>
+                    <button onclick="saveDailyExpense()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Daily Expense</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="assetLogModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="assetLogModalTitle" class="font-display text-lg text-white">Add Asset Activity Log</h3>
-                <button onclick="closeModal('assetLogModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <h3 id="assetLogModalTitle" class="font-display text-lg text-white font-bold">Add Asset Activity Log</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Record asset changes, purchases, or revaluations</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('assetLogModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="assetLogId">
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date</label>
@@ -112,7 +141,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Asset Name</label>
-                        <input type="text" id="assetLogName" placeholder="e.g. Gold" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="text" id="assetLogName" placeholder="e.g. Gold, Real Estate" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category</label>
@@ -144,23 +173,32 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes</label>
-                    <input type="text" id="assetLogNotes" placeholder="Additional details..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Description</label>
+                    <textarea id="assetLogNotes" rows="3" placeholder="Additional asset details, physical location, valuation notes, or transaction particulars..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
-                    <button onclick="saveAssetLog()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save & Sync</button>
+                    <button onclick="saveAssetLog()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save & Sync</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="bankModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="bankModalTitle" class="font-display text-lg text-white">Add Bank Account</h3>
-                <button onclick="closeModal('bankModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div>
+                        <h3 id="bankModalTitle" class="font-display text-lg text-white font-bold">Add Bank Account</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Manage liquidity repositories and institutional accounts</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('bankModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="bankId">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -189,7 +227,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Routing / IFSC / SWIFT</label>
-                    <input type="text" id="bankIfscInput" placeholder="Routing code" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase">
+                    <input type="text" id="bankIfscInput" placeholder="Routing code" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase font-mono">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -206,19 +244,28 @@
                     </div>
                 </div>
                 <div class="pt-4">
-                    <button onclick="saveBankDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Account</button>
+                    <button onclick="saveBankDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Account</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="loanModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="loanModalTitle" class="font-display text-lg text-white">Add Credit Facility</h3>
-                <button onclick="closeModal('loanModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-rose-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <div>
+                        <h3 id="loanModalTitle" class="font-display text-lg text-white font-bold">Add Credit Facility</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Track principal, amortization, and maturity terms</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('loanModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="loanId">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -232,7 +279,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Creditor / Source</label>
-                    <input type="text" id="loanSourceInput" placeholder="e.g. QIB Business Loan" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="text" id="loanSourceInput" placeholder="e.g. QIB Business Loan, HDFC Mortgage" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Facility Type</label>
@@ -255,19 +302,28 @@
                     </div>
                 </div>
                 <div class="pt-4">
-                    <button onclick="saveLoanDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Facility</button>
+                    <button onclick="saveLoanDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Facility</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="assetMutualFundModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="assetMutualFundModalTitle" class="font-display text-lg text-white">Add New Mutual Fund</h3>
-                <button onclick="closeModal('assetMutualFundModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-accent-blue/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-accent-blue/10 border border-accent-blue/30 text-accent-blue flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h3 id="assetMutualFundModalTitle" class="font-display text-lg text-white font-bold">Add New Mutual Fund</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Track units, NAV, and average cost allocations</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('assetMutualFundModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="assetMfId">
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Purchase Date</label>
@@ -275,8 +331,8 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Symbol</label>
-                        <input type="text" id="assetMfSymbolInput" placeholder="e.g. NIPPON_SMALL" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase">
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Symbol / Scheme Name</label>
+                        <input type="text" id="assetMfSymbolInput" placeholder="e.g. NIPPON_SMALL" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase font-mono">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Fund Type</label>
@@ -300,23 +356,32 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">LTP (₹)</label>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">LTP / Current NAV (₹)</label>
                     <input type="number" step="0.01" id="assetMfLtpInput" placeholder="Current LTP" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div class="pt-4">
-                    <button onclick="saveAssetMutualFund()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Fund</button>
+                    <button onclick="saveAssetMutualFund()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Fund</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="shareTradeModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="shareTradeModalTitle" class="font-display text-lg text-white">Log Equities Trade</h3>
-                <button onclick="closeModal('shareTradeModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </div>
+                    <div>
+                        <h3 id="shareTradeModalTitle" class="font-display text-lg text-white font-bold">Log Equities Trade</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Record capital deployment, realized P&L, and trade thesis</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('shareTradeModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="shareTradeId">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -356,23 +421,32 @@
                     <input type="text" id="shareParticularsInput" placeholder="e.g. Reliance Ind, BankNifty" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Strategy</label>
-                    <input type="text" id="shareDescInput" placeholder="e.g. Swing Trading, Options" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Strategy</label>
+                    <textarea id="shareDescInput" rows="3" placeholder="e.g. Swing Trading setup, risk-reward ratio, entry/exit reasons, or options hedging details..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
-                    <button onclick="saveShareTrade()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Commit Trade Record</button>
+                    <button onclick="saveShareTrade()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Commit Trade Record</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="othersEntryModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="othersModalTitle" class="font-display text-lg text-white">Add Others Entry</h3>
-                <button onclick="closeModal('othersEntryModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-list-ol"></i>
+                    </div>
+                    <div>
+                        <h3 id="othersModalTitle" class="font-display text-lg text-white font-bold">Add Others Entry</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Record miscellaneous income and expense ledgers</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('othersEntryModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="othersEntryId">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -399,7 +473,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Description</label>
-                    <input type="text" id="othersDescInput" placeholder="e.g. Consulting Project" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="text" id="othersDescInput" placeholder="e.g. Consulting Project, Freelance Revenue" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -412,27 +486,36 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes</label>
-                    <input type="text" id="othersNotesInput" placeholder="Additional remarks..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Breakdown</label>
+                    <textarea id="othersNotesInput" rows="3" placeholder="Additional remarks, invoice links, or calculation details..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
-                    <button onclick="saveOthersEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Entry</button>
+                    <button onclick="saveOthersEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Entry</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="goalModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="goalModalTitle" class="font-display text-lg text-white">Add New Goal</h3>
-                <button onclick="closeModal('goalModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div>
+                        <h3 id="goalModalTitle" class="font-display text-lg text-white font-bold">Add New Goal</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Set executive milestone targets and progress metrics</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('goalModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="goalId">
                 <div>
                     <label id="goalTitleLabel" class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Goal Objective</label>
-                    <input type="text" id="goalTitleInput" placeholder="e.g. Run a half marathon" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="text" id="goalTitleInput" placeholder="e.g. Run a half marathon, Complete Quran study, Buy Land" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div>
                     <label id="goalCategoryLabel" class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category</label>
@@ -489,82 +572,217 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Milestones</label>
-                    <input type="text" id="goalNotesInput" placeholder="Key details..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Action Milestones</label>
+                    <textarea id="goalNotesInput" rows="3" placeholder="Key milestones, detailed action items, motivation notes, or references..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
-                    <button onclick="saveGoal()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Goal</button>
+                    <button onclick="saveGoal()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Goal</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- NOTE MODAL -->
-    <div id="noteModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-2xl w-full p-8 shadow-2xl flex flex-col h-[80vh]">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-4 shrink-0">
-                <h3 id="noteModalTitle" class="font-display text-lg text-white">Compose Note</h3>
-                <button onclick="closeModal('noteModal')" class="text-slate-500 hover:text-amber-400 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <!-- NOTE MODAL (RICH EXECUTIVE COMPOSER) -->
+    <div id="noteModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-3 md:p-6">
+        <div class="premium-card max-w-3xl w-full p-6 md:p-8 shadow-2xl flex flex-col h-[90vh] max-h-[850px] relative">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-surface-800 pb-3 mb-4 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                        <i class="fa-solid fa-feather-pointed text-sm"></i>
+                    </div>
+                    <h3 id="noteModalTitle" class="font-display text-lg text-white font-bold">Executive Note Composer</h3>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Pin Toggle Button -->
+                    <button type="button" id="btnToggleNotePin" onclick="toggleCurrentNotePin()" class="px-3 py-1.5 rounded-xl border border-surface-700 bg-surface-900 text-slate-400 hover:text-amber-400 hover:border-amber-500/50 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm" title="Pin Note to Top">
+                        <i id="notePinIcon" class="fa-solid fa-thumbtack text-xs"></i>
+                        <span id="notePinLabel">Pin</span>
+                    </button>
+                    <button type="button" onclick="closeModal('noteModal')" class="w-8 h-8 rounded-xl bg-surface-900 border border-surface-800 text-slate-400 hover:text-white hover:bg-rose-500/20 hover:border-rose-500/40 transition-all flex items-center justify-center cursor-pointer">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
             </div>
-            <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-5 flex flex-col">
+
+            <!-- Form Content -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 flex flex-col min-h-0">
                 <input type="hidden" id="noteId">
                 <input type="hidden" id="notePinned" value="false">
+                <input type="hidden" id="noteAccentColor" value="gold">
+
+                <!-- Title Input -->
                 <div>
-                    <input type="text" id="noteTitleInput" placeholder="Note Title / Subject" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white font-display text-lg focus:border-amber-400 focus:outline-none">
+                    <input type="text" id="noteTitleInput" placeholder="Note Title / Subject Header..." class="w-full px-4 py-3 rounded-xl border border-surface-700/80 bg-surface-900/90 text-white font-display text-lg md:text-xl font-bold focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none placeholder-slate-500 transition-all">
                 </div>
-                <div class="flex items-center gap-4">
-                    <label class="font-mono text-[10px] uppercase tracking-widest text-slate-400">Category Tag:</label>
-                    <select id="noteCategoryInput" class="p-2.5 rounded-lg border border-surface-700 bg-surface-900 text-white focus:border-amber-400 focus:outline-none text-xs font-medium cursor-pointer">
-                        <option value="general">General</option>
-                        <option value="work">Business / Work</option>
-                        <option value="finance">Finance</option>
-                        <option value="personal">Personal</option>
-                        <option value="ideas">Ideas & Strategies</option>
-                    </select>
+
+                <!-- Metadata Row: Category, Accent Color Theme, Font Family, Font Size -->
+                <div class="p-3 rounded-xl bg-surface-900/60 border border-surface-800/80 space-y-3 shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <!-- Category Tag -->
+                        <div class="flex items-center gap-2">
+                            <label class="font-mono text-[10px] uppercase tracking-wider text-slate-400">Category:</label>
+                            <select id="noteCategoryInput" class="p-2 rounded-lg border border-surface-700 bg-surface-950 text-slate-200 focus:border-amber-400 focus:outline-none text-xs font-medium cursor-pointer">
+                                <option value="general">📝 General</option>
+                                <option value="work">💼 Business / Work</option>
+                                <option value="finance">💰 Finance & Wealth</option>
+                                <option value="personal">🌟 Personal & Life</option>
+                                <option value="ideas">💡 Ideas & Strategies</option>
+                            </select>
+                        </div>
+
+                        <!-- Accent Card Color Swatches -->
+                        <div class="flex items-center gap-1.5">
+                            <label class="font-mono text-[10px] uppercase tracking-wider text-slate-400 mr-1">Theme:</label>
+                            <button type="button" onclick="setNoteAccentColor('gold')" id="colorSwatch-gold" class="w-6 h-6 rounded-full bg-amber-500 border-2 border-white transition-all transform hover:scale-110 shadow-sm" title="Executive Gold"></button>
+                            <button type="button" onclick="setNoteAccentColor('emerald')" id="colorSwatch-emerald" class="w-6 h-6 rounded-full bg-emerald-500 border-2 border-transparent transition-all transform hover:scale-110 shadow-sm" title="Mint Emerald"></button>
+                            <button type="button" onclick="setNoteAccentColor('cyan')" id="colorSwatch-cyan" class="w-6 h-6 rounded-full bg-cyan-500 border-2 border-transparent transition-all transform hover:scale-110 shadow-sm" title="Cyber Cyan"></button>
+                            <button type="button" onclick="setNoteAccentColor('violet')" id="colorSwatch-violet" class="w-6 h-6 rounded-full bg-purple-500 border-2 border-transparent transition-all transform hover:scale-110 shadow-sm" title="Royal Violet"></button>
+                            <button type="button" onclick="setNoteAccentColor('rose')" id="colorSwatch-rose" class="w-6 h-6 rounded-full bg-rose-500 border-2 border-transparent transition-all transform hover:scale-110 shadow-sm" title="Crimson Rose"></button>
+                            <button type="button" onclick="setNoteAccentColor('slate')" id="colorSwatch-slate" class="w-6 h-6 rounded-full bg-slate-500 border-2 border-transparent transition-all transform hover:scale-110 shadow-sm" title="Minimal Slate"></button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-surface-800/60 text-xs">
+                        <!-- Font Family Selection -->
+                        <div class="flex items-center gap-2">
+                            <label class="font-mono text-[10px] uppercase tracking-wider text-slate-400"><i class="fa-solid fa-font mr-1"></i> Font:</label>
+                            <select id="noteFontFamilySelect" onchange="applyNoteFontFamily(this.value)" class="p-1.5 px-2.5 rounded-lg border border-surface-700 bg-surface-950 text-slate-200 focus:border-amber-400 focus:outline-none text-xs cursor-pointer">
+                                <option value="inter">Inter (Clean Sans)</option>
+                                <option value="playfair">Playfair Display (Luxury Serif)</option>
+                                <option value="outfit">Outfit (Modern Display)</option>
+                                <option value="merriweather">Merriweather (Editorial)</option>
+                                <option value="lora">Lora (Classic Book)</option>
+                                <option value="mono">JetBrains Mono (Code)</option>
+                                <option value="caveat">Caveat (Handwriting)</option>
+                                <option value="cinzel">Cinzel (Royal Roman)</option>
+                            </select>
+                        </div>
+
+                        <!-- Font Size Selector -->
+                        <div class="flex items-center gap-2">
+                            <label class="font-mono text-[10px] uppercase tracking-wider text-slate-400"><i class="fa-solid fa-text-height mr-1"></i> Size:</label>
+                            <select id="noteFontSizeSelect" onchange="applyNoteFontSize(this.value)" class="p-1.5 px-2.5 rounded-lg border border-surface-700 bg-surface-950 text-slate-200 focus:border-amber-400 focus:outline-none text-xs cursor-pointer">
+                                <option value="15px">Small (15px)</option>
+                                <option value="17px" selected>Normal (17px)</option>
+                                <option value="19px">Medium (19px)</option>
+                                <option value="22px">Large (22px)</option>
+                                <option value="26px">Heading (26px)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex-1 min-h-[250px] relative">
-                    <textarea id="noteContentInput" placeholder="Write your thoughts here..." class="w-full h-full p-5 rounded-xl border border-surface-700 bg-surface-900/50 text-slate-300 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none resize-none font-light leading-relaxed"></textarea>
+
+                <!-- Rich Text Formatting Toolbar -->
+                <div class="p-2.5 rounded-xl bg-surface-900 border border-surface-700/70 flex flex-wrap items-center gap-1.5 shrink-0 shadow-inner">
+                    <!-- Headings -->
+                    <button type="button" onclick="formatNoteText('formatBlock', '<h1>')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white font-bold text-xs" title="Heading 1">H1</button>
+                    <button type="button" onclick="formatNoteText('formatBlock', '<h2>')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white font-bold text-xs" title="Heading 2">H2</button>
+                    <button type="button" onclick="formatNoteText('formatBlock', '<p>')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white text-xs" title="Normal Paragraph">P</button>
+
+                    <div class="w-[1px] h-5 bg-surface-700 mx-0.5"></div>
+
+                    <!-- Inline styles -->
+                    <button type="button" onclick="formatNoteText('bold')" class="p-1.5 px-2.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white font-bold text-xs" title="Bold (Ctrl+B)"><i class="fa-solid fa-bold"></i></button>
+                    <button type="button" onclick="formatNoteText('italic')" class="p-1.5 px-2.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white italic text-xs" title="Italic (Ctrl+I)"><i class="fa-solid fa-italic"></i></button>
+                    <button type="button" onclick="formatNoteText('underline')" class="p-1.5 px-2.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white underline text-xs" title="Underline (Ctrl+U)"><i class="fa-solid fa-underline"></i></button>
+                    <button type="button" onclick="formatNoteText('strikeThrough')" class="p-1.5 px-2.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white line-through text-xs" title="Strikethrough"><i class="fa-solid fa-strikethrough"></i></button>
+                    <button type="button" onclick="formatNoteHighlight()" class="p-1.5 px-2.5 rounded-lg bg-surface-800 hover:bg-amber-500/20 text-amber-400 text-xs" title="Highlight Text"><i class="fa-solid fa-highlighter"></i></button>
+
+                    <div class="w-[1px] h-5 bg-surface-700 mx-0.5"></div>
+
+                    <!-- Alignment -->
+                    <button type="button" onclick="formatNoteText('justifyLeft')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white text-xs" title="Align Left"><i class="fa-solid fa-align-left"></i></button>
+                    <button type="button" onclick="formatNoteText('justifyCenter')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white text-xs" title="Align Center"><i class="fa-solid fa-align-center"></i></button>
+                    <button type="button" onclick="formatNoteText('justifyRight')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white text-xs" title="Align Right"><i class="fa-solid fa-align-right"></i></button>
+
+                    <div class="w-[1px] h-5 bg-surface-700 mx-0.5"></div>
+
+                    <!-- Lists -->
+                    <button type="button" onclick="formatNoteText('insertUnorderedList')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white text-xs" title="Bullet List"><i class="fa-solid fa-list-ul"></i></button>
+                    <button type="button" onclick="formatNoteText('insertOrderedList')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white text-xs" title="Numbered List"><i class="fa-solid fa-list-ol"></i></button>
+                    <button type="button" onclick="insertNoteChecklist()" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white text-xs" title="Task Checkbox"><i class="fa-regular fa-square-check"></i></button>
+
+                    <div class="w-[1px] h-5 bg-surface-700 mx-0.5"></div>
+
+                    <!-- Quote, Code, Divider, Timestamp -->
+                    <button type="button" onclick="formatNoteText('formatBlock', '<blockquote>')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white text-xs" title="Quote Block"><i class="fa-solid fa-quote-left"></i></button>
+                    <button type="button" onclick="formatNoteCodeBlock()" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-brand-400 text-xs" title="Code Block"><i class="fa-solid fa-code"></i></button>
+                    <button type="button" onclick="formatNoteText('insertHorizontalRule')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white text-xs" title="Horizontal Line"><i class="fa-solid fa-minus"></i></button>
+                    <button type="button" onclick="insertNoteTimestamp()" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-amber-400 text-xs font-mono" title="Insert Timestamp"><i class="fa-regular fa-clock"></i></button>
+
+                    <div class="w-[1px] h-5 bg-surface-700 mx-0.5"></div>
+
+                    <!-- Text Colors Palette Buttons -->
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="formatNoteTextColor('#FFFFFF')" class="w-4 h-4 rounded-full bg-white border border-slate-600 hover:scale-125 transition-transform" title="White Text"></button>
+                        <button type="button" onclick="formatNoteTextColor('#F59E0B')" class="w-4 h-4 rounded-full bg-amber-500 border border-slate-600 hover:scale-125 transition-transform" title="Gold Text"></button>
+                        <button type="button" onclick="formatNoteTextColor('#10B981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-slate-600 hover:scale-125 transition-transform" title="Emerald Text"></button>
+                        <button type="button" onclick="formatNoteTextColor('#06B6D4')" class="w-4 h-4 rounded-full bg-cyan-500 border border-slate-600 hover:scale-125 transition-transform" title="Cyan Text"></button>
+                        <button type="button" onclick="formatNoteTextColor('#A855F7')" class="w-4 h-4 rounded-full bg-purple-500 border border-slate-600 hover:scale-125 transition-transform" title="Purple Text"></button>
+                        <button type="button" onclick="formatNoteTextColor('#F43F5E')" class="w-4 h-4 rounded-full bg-rose-500 border border-slate-600 hover:scale-125 transition-transform" title="Rose Text"></button>
+                    </div>
+
+                    <div class="w-[1px] h-5 bg-surface-700 mx-0.5"></div>
+
+                    <!-- Clear formatting -->
+                    <button type="button" onclick="formatNoteText('removeFormat')" class="p-1.5 px-2 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 text-xs ml-auto" title="Clear Formatting"><i class="fa-solid fa-eraser"></i></button>
+                </div>
+
+                <!-- The Rich Content Editable Area -->
+                <div class="flex-1 min-h-[260px] relative rounded-xl border border-surface-700/80 bg-surface-950/70 p-4 md:p-6 overflow-y-auto custom-scrollbar focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400 transition-all">
+                    <div id="noteEditor" contenteditable="true" data-placeholder="Capture your thoughts, plans, meeting takeaways, or reflections here..." class="w-full h-full min-h-[220px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter" oninput="updateNoteStats()"></div>
+                    <textarea id="noteContentInput" class="hidden"></textarea>
                 </div>
             </div>
-            <div class="pt-6 border-t border-surface-800 mt-4 shrink-0 flex justify-end gap-3">
-                <button onclick="closeModal('noteModal')" class="px-6 py-3 bg-surface-800 text-slate-300 font-medium rounded-xl hover:bg-surface-700 transition-all border border-surface-700">Cancel</button>
-                <button onclick="saveNote()" class="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-surface-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)]">Save Note</button>
+
+            <!-- Modal Footer: Stats & Actions -->
+            <div class="pt-4 border-t border-surface-800 mt-3 shrink-0 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-4 text-xs font-mono text-slate-400">
+                    <span><span id="noteWordCount" class="text-amber-400 font-bold">0</span> words</span>
+                    <span>•</span>
+                    <span><span id="noteCharCount" class="text-slate-300 font-bold">0</span> chars</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="closeModal('noteModal')" class="px-5 py-2.5 bg-surface-800 text-slate-300 font-medium rounded-xl hover:bg-surface-700 transition-all border border-surface-700 cursor-pointer text-xs uppercase tracking-wider">Cancel</button>
+                    <button type="button" onclick="saveNote()" class="px-7 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] cursor-pointer text-xs uppercase tracking-wider flex items-center gap-2 hover:-translate-y-0.5">
+                        <i class="fa-solid fa-floppy-disk text-xs"></i> Save Note
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- NOTE FULL VIEW MODAL (READING MODE) -->
-    <div id="noteViewModal" class="fixed inset-0 z-[60] bg-surface-950/95 backdrop-blur-xl hidden flex items-center justify-center p-4 md:p-8 transition-all">
-        <!-- Premium Gradient Border Wrapper -->
-        <div class="max-w-4xl w-full h-full max-h-[85vh] rounded-[2rem] p-[2px] bg-gradient-to-br from-amber-400 via-brand-600 to-accent-plum shadow-[0_0_60px_rgba(201,164,107,0.25)] relative group">
+    <!-- NOTE FULL VIEW MODAL (READING & PRESENTATION MODE) -->
+    <div id="noteViewModal" class="fixed inset-0 z-[60] bg-surface-950/95 backdrop-blur-xl hidden flex items-center justify-center p-3 md:p-8 transition-all">
+        <!-- Dynamic Gradient Border Wrapper -->
+        <div id="viewNoteWrapper" class="max-w-4xl w-full h-full max-h-[88vh] rounded-[2rem] p-[2px] bg-gradient-to-br from-amber-400 via-brand-600 to-accent-plum shadow-[0_0_60px_rgba(201,164,107,0.25)] relative group">
             
             <!-- Subtle animated glow behind the modal -->
-            <div class="absolute inset-0 bg-gradient-to-br from-amber-400 to-accent-plum rounded-[2rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-700 -z-10"></div>
+            <div id="viewNoteGlow" class="absolute inset-0 bg-gradient-to-br from-amber-400 to-accent-plum rounded-[2rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-700 -z-10"></div>
             
             <!-- Inner Content Container -->
             <div class="w-full h-full bg-[#070A0F] rounded-[30px] flex flex-col relative overflow-hidden">
-                <!-- Decorative background blurs inside -->
-                <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none"></div>
-                <div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent-blue/5 rounded-full blur-[100px] pointer-events-none"></div>
-                
                 <!-- Header -->
-                <div class="p-8 md:p-12 border-b border-surface-800/50 flex items-start justify-between shrink-0 relative z-10 bg-gradient-to-b from-surface-900/80 to-transparent">
+                <div class="p-6 md:p-10 border-b border-surface-800/50 flex items-start justify-between shrink-0 relative z-10 bg-gradient-to-b from-surface-900/80 to-transparent">
                     <div class="flex-1 pr-6">
-                        <div class="flex items-center gap-4 mb-5">
+                        <div class="flex flex-wrap items-center gap-3 mb-4">
+                            <span id="viewNotePinBadge" class="hidden px-3 py-1 rounded-lg text-[10px] uppercase font-mono tracking-widest bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5"><i class="fa-solid fa-thumbtack"></i> Pinned</span>
                             <span id="viewNoteCategory" class="px-4 py-1.5 rounded-lg text-[10px] uppercase font-mono tracking-widest border font-bold shadow-lg"></span>
                             <span id="viewNoteDate" class="text-xs text-slate-400 font-mono flex items-center gap-2"></span>
+                            <span id="viewNoteWordCount" class="text-xs text-slate-500 font-mono"></span>
                         </div>
-                        <h2 id="viewNoteTitle" class="font-display text-4xl md:text-5xl text-white font-bold leading-tight tracking-wide drop-shadow-md"></h2>
+                        <h2 id="viewNoteTitle" class="font-display text-3xl md:text-5xl text-white font-bold leading-tight tracking-wide drop-shadow-md"></h2>
                     </div>
-                    <div class="flex items-center gap-4 shrink-0 mt-2">
-                        <button onclick="editNoteFromView()" class="w-14 h-14 rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1" title="Edit Note"><i class="fa-solid fa-pen text-lg"></i></button>
-                        <button onclick="closeModal('noteViewModal')" class="w-14 h-14 rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-rose-900/60 hover:border-rose-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] hover:-translate-y-1" title="Close Reader"><i class="fa-solid fa-xmark text-2xl"></i></button>
+                    <div class="flex items-center gap-3 shrink-0 mt-2">
+                        <button onclick="editNoteFromView()" class="w-12 h-12 rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1 cursor-pointer" title="Edit Note"><i class="fa-solid fa-pen text-base"></i></button>
+                        <button onclick="closeModal('noteViewModal')" class="w-12 h-12 rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-rose-900/60 hover:border-rose-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] hover:-translate-y-1 cursor-pointer" title="Close Reader"><i class="fa-solid fa-xmark text-xl"></i></button>
                     </div>
                 </div>
                 
                 <!-- Body Content -->
-                <div class="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar relative z-10">
-                    <p id="viewNoteContent" class="text-slate-300 font-light text-lg md:text-xl leading-[2.2] whitespace-pre-wrap"></p>
+                <div class="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar relative z-10">
+                    <div id="viewNoteContent" class="note-rich-content text-slate-200 font-light text-base md:text-lg leading-[2.2]"></div>
                 </div>
                 <input type="hidden" id="currentViewNoteId">
             </div>
@@ -573,39 +791,48 @@
 
     <!-- REMINDER MODAL -->
     <div id="reminderModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
-                <h3 id="reminderModalTitle" class="font-display text-lg text-white">Add Reminder</h3>
-                <button onclick="closeModal('reminderModal')" class="text-slate-500 hover:text-indigo-400 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800/80 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-bell"></i>
+                    </div>
+                    <div>
+                        <h3 id="reminderModalTitle" class="font-display text-lg text-white font-bold">Add Reminder</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Set alarms, calendar alerts, and recurring schedule tasks</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('reminderModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-4 text-sm font-light">
+            <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="reminderId">
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Title / Subject</label>
-                    <input type="text" id="reminderTitleInput" placeholder="e.g. Call Bank Manager" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none">
+                    <input type="text" id="reminderTitleInput" placeholder="e.g. Executive Board Meeting, Tax Filing, Visa Renewal" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none transition-all">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date</label>
-                        <input type="text" id="reminderDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none custom-datepicker">
+                        <input type="text" id="reminderDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Time</label>
-                        <input type="time" id="reminderTimeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none">
+                        <input type="time" id="reminderTimeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Priority</label>
-                        <select id="reminderPriorityInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none font-medium">
-                            <option value="High">High</option>
-                            <option value="Medium" selected>Medium</option>
-                            <option value="Low">Low</option>
+                        <select id="reminderPriorityInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none font-medium cursor-pointer">
+                            <option value="High">🔥 High Priority</option>
+                            <option value="Medium" selected>⚡ Medium Priority</option>
+                            <option value="Low">🌱 Low Priority</option>
                         </select>
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Repeat</label>
-                        <select id="reminderRepeatInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none font-medium">
+                        <select id="reminderRepeatInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none font-medium cursor-pointer">
                             <option value="None">None (Once)</option>
                             <option value="Daily">Daily</option>
                             <option value="Weekly">Weekly</option>
@@ -614,11 +841,11 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Additional Notes</label>
-                    <input type="text" id="reminderNotesInput" placeholder="Optional details..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none">
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Additional Notes & Context</label>
+                    <textarea id="reminderNotesInput" rows="3" placeholder="Add detailed notes, meeting agenda links, location details, or follow-up instructions..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
-                <div class="pt-4">
-                    <button onclick="saveReminder()" class="w-full py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.2)]">Save Reminder</button>
+                <div class="pt-3">
+                    <button onclick="saveReminder()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)] cursor-pointer active:scale-[0.98]">Save Reminder</button>
                 </div>
             </div>
         </div>

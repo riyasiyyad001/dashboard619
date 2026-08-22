@@ -135,13 +135,23 @@
                 <!-- Column 2: Notification Hub (Replaced Residences) -->
                 <div class="premium-card p-6 flex flex-col group h-full min-h-[500px]">
                     <div class="flex flex-wrap items-center justify-between border-b border-surface-800 pb-4 mb-4 gap-3">
-                        <h3 class="font-display text-lg text-white flex items-center gap-3">
-                            <i class="fa-solid fa-inbox text-amber-400 text-sm"></i> Notification Hub
-                            <span id="notificationBadge" class="hidden px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono text-[10px] border border-amber-500/30">0</span>
-                        </h3>
-                        <div class="flex items-center gap-2">
-                            <button onclick="markAllNotificationsRead()" class="opacity-0 group-hover:opacity-100 text-[10px] font-mono text-slate-400 hover:text-amber-400 transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700">Mark Read</button>
-                            <button onclick="clearAllNotifications()" class="opacity-0 group-hover:opacity-100 text-[10px] font-mono text-slate-400 hover:text-rose-400 transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700">Clear</button>
+                        <div class="flex items-center gap-2.5">
+                            <h3 class="font-display text-lg text-white flex items-center gap-2">
+                                <i class="fa-solid fa-inbox text-amber-400 text-sm"></i> Notification Hub
+                                <span id="notificationBadge" class="hidden px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono text-[10px] border border-amber-500/30">0</span>
+                            </h3>
+                        </div>
+                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <!-- Sound Chime Toggle & Test -->
+                            <button onclick="toggleNotificationSound()" id="btnNotificationSound" class="text-[10px] font-mono text-slate-400 hover:text-amber-400 transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700 flex items-center gap-1.5 cursor-pointer shadow-sm" title="Toggle notification sound chime">
+                                <i id="notifSoundIcon" class="fa-solid fa-volume-high text-[10px] text-amber-400"></i>
+                                <span id="notifSoundText">Chime ON</span>
+                            </button>
+                            <button onclick="testNotificationSound()" class="text-[10px] font-mono text-slate-400 hover:text-brand-400 transition-colors bg-surface-800/80 px-2 py-1 rounded-lg border border-surface-700 flex items-center gap-1 cursor-pointer shadow-sm" title="Play test chime">
+                                <i class="fa-solid fa-play text-[9px]"></i> Test
+                            </button>
+                            <button onclick="markAllNotificationsRead()" class="text-[10px] font-mono text-slate-400 hover:text-amber-400 transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700 cursor-pointer">Mark Read</button>
+                            <button onclick="clearAllNotifications()" class="text-[10px] font-mono text-slate-400 hover:text-rose-400 transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700 cursor-pointer">Clear</button>
                         </div>
                     </div>
                     <div id="notificationsList" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2 max-h-[600px]">
