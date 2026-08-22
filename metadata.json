@@ -1,0 +1,8 @@
+{
+  "name": "Financial Executive OS",
+  "description": "Executive financial dashboard and personal management OS with asset valuation, portfolio tracking, budgets, milestones, and smart analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

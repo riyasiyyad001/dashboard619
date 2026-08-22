@@ -1,0 +1,880 @@
+    <!-- BUDGET MODAL -->
+    <div id="budgetModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="budgetModalTitle" class="font-display text-lg text-white">Add Budget Allocation</h3>
+                <button onclick="closeModal('budgetModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="budgetModalCurrency">
+                <input type="hidden" id="budgetId">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Year</label>
+                        <input type="text" id="budgetYearInput" value="2026" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Month</label>
+                        <select id="budgetMonthInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none cursor-pointer">
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category</label>
+                    <select id="budgetCategoryInput" onchange="toggleBudgetCategoryInput()" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium cursor-pointer">
+                        <option value="Family Maintenance">Family Maintenance</option>
+                        <option value="Personal Expenses">Personal Expenses</option>
+                        <option value="Charity">Charity</option>
+                        <option value="Investment">Investment</option>
+                        <option value="Others">Others</option>
+                    </select>
+                    <input type="text" id="budgetCustomCategoryInput" placeholder="Enter custom category..." class="hidden w-full p-3 mt-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Monthly Budget Amount</label>
+                    <input type="number" step="0.01" id="budgetAmountInput" placeholder="Allocated" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Remarks</label>
+                    <input type="text" id="budgetNotesInput" placeholder="Additional remarks..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveBudgetEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Budget Entry</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DAILY EXPENSE MODAL -->
+    <div id="dailyExpenseModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="dailyExpenseModalTitle" class="font-display text-lg text-white">Add Daily Expense</h3>
+                <button onclick="closeModal('dailyExpenseModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="dailyExpenseCurrency">
+                <input type="hidden" id="dailyExpenseId">
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date</label>
+                    <input type="text" id="dailyExpDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category</label>
+                    <select id="dailyExpCategoryInput" onchange="toggleDailyExpCategoryInput()" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium cursor-pointer">
+                        <option value="Family Maintenance">Family Maintenance</option>
+                        <option value="Personal Expenses">Personal Expenses</option>
+                        <option value="Charity">Charity</option>
+                        <option value="Investment">Investment</option>
+                        <option value="Others">Others</option>
+                    </select>
+                    <input type="text" id="dailyExpCustomCategoryInput" placeholder="Enter custom category..." class="hidden w-full p-3 mt-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Particulars / Description</label>
+                    <input type="text" id="dailyExpDescInput" placeholder="e.g. Supermarket shopping" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Amount</label>
+                    <input type="number" step="0.01" id="dailyExpAmountInput" placeholder="Expense amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveDailyExpense()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Daily Expense</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="assetLogModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="assetLogModalTitle" class="font-display text-lg text-white">Add Asset Activity Log</h3>
+                <button onclick="closeModal('assetLogModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="assetLogId">
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date</label>
+                    <input type="text" id="assetLogDate" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Asset Name</label>
+                        <input type="text" id="assetLogName" placeholder="e.g. Gold" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category</label>
+                        <select id="assetLogCategory" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                            <option value="Real Estate">Real Estate</option>
+                            <option value="Gold & Jewelry">Gold & Jewelry</option>
+                            <option value="Vehicles">Vehicles</option>
+                            <option value="Business Assets">Business Assets</option>
+                            <option value="Stocks & Equities">Stocks & Equities</option>
+                            <option value="Mutual Funds">Mutual Funds</option>
+                            <option value="Cash & Liquid">Cash & Liquid</option>
+                            <option value="Other Assets">Other Assets</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Activity Type</label>
+                        <select id="assetLogActivity" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                            <option value="Acquisition">Acquisition</option>
+                            <option value="Disposal">Disposal</option>
+                            <option value="Revaluation">Revaluation</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Value Impact (₹)</label>
+                        <input type="number" step="0.01" id="assetLogValue" placeholder="Amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes</label>
+                    <input type="text" id="assetLogNotes" placeholder="Additional details..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveAssetLog()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save & Sync</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bankModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="bankModalTitle" class="font-display text-lg text-white">Add Bank Account</h3>
+                <button onclick="closeModal('bankModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="bankId">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Institution</label>
+                        <input type="text" id="bankNameInput" placeholder="e.g. Commercial Bank" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Beneficiary</label>
+                        <input type="text" id="bankAccountNameInput" placeholder="Holder Name" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Branch</label>
+                        <input type="text" id="bankBranchInput" placeholder="Branch location" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Account Type</label>
+                        <select id="bankTypeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                            <option value="Checking">Checking / Current</option>
+                            <option value="Savings">Savings</option>
+                            <option value="NRE">NRE / NRO</option>
+                            <option value="Deposit">Fixed Deposit</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Routing / IFSC / SWIFT</label>
+                    <input type="text" id="bankIfscInput" placeholder="Routing code" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Currency</label>
+                        <select id="bankCurrencyInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                            <option value="INR">INR (₹)</option>
+                            <option value="QAR">QAR (QR)</option>
+                            <option value="USD">USD ($)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Balance</label>
+                        <input type="number" step="0.01" id="bankBalanceInput" placeholder="Amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveBankDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loanModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="loanModalTitle" class="font-display text-lg text-white">Add Credit Facility</h3>
+                <button onclick="closeModal('loanModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="loanId">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Inception Date</label>
+                        <input type="text" id="loanStartDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Maturity Date</label>
+                        <input type="text" id="loanEndDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Creditor / Source</label>
+                    <input type="text" id="loanSourceInput" placeholder="e.g. QIB Business Loan" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Facility Type</label>
+                    <select id="loanTypeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                        <option value="Commercial">Commercial Loan</option>
+                        <option value="Personal">Personal Loan</option>
+                        <option value="Mortgage">Mortgage</option>
+                        <option value="Auto">Auto Loan</option>
+                        <option value="Credit Card">Credit Card</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Principal (₹)</label>
+                        <input type="number" step="0.01" id="loanAmountInput" placeholder="Total" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Amortized (₹)</label>
+                        <input type="number" step="0.01" id="loanRepaidInput" placeholder="Repaid" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveLoanDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Facility</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="assetMutualFundModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="assetMutualFundModalTitle" class="font-display text-lg text-white">Add New Mutual Fund</h3>
+                <button onclick="closeModal('assetMutualFundModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="assetMfId">
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Purchase Date</label>
+                    <input type="text" id="assetMfDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Symbol</label>
+                        <input type="text" id="assetMfSymbolInput" placeholder="e.g. NIPPON_SMALL" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Fund Type</label>
+                        <select id="assetMfTypeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                            <option value="Small Cap">Small Cap</option>
+                            <option value="Large Cap">Large Cap</option>
+                            <option value="Mid Cap">Mid Cap</option>
+                            <option value="Flexi Cap">Flexi Cap</option>
+                            <option value="ELSS">ELSS / Tax Saver</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Units</label>
+                        <input type="number" step="any" id="assetMfQtyInput" placeholder="Quantity" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Avg Buy (₹)</label>
+                        <input type="number" step="0.01" id="assetMfAvgBuyInput" placeholder="Avg Buy" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">LTP (₹)</label>
+                    <input type="number" step="0.01" id="assetMfLtpInput" placeholder="Current LTP" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveAssetMutualFund()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Fund</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="shareTradeModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="shareTradeModalTitle" class="font-display text-lg text-white">Log Equities Trade</h3>
+                <button onclick="closeModal('shareTradeModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="shareTradeId">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Year</label>
+                        <input type="text" id="shareYearInput" value="2026" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Month</label>
+                        <select id="shareMonthInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none cursor-pointer">
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Deployed Capital (₹)</label>
+                        <input type="number" step="0.01" id="shareCapitalInput" placeholder="Amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Realized P&L (₹)</label>
+                        <input type="number" step="0.01" id="sharePnlInput" placeholder="Profit / Loss" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Particulars</label>
+                    <input type="text" id="shareParticularsInput" placeholder="e.g. Reliance Ind, BankNifty" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Strategy</label>
+                    <input type="text" id="shareDescInput" placeholder="e.g. Swing Trading, Options" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveShareTrade()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Commit Trade Record</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="othersEntryModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="othersModalTitle" class="font-display text-lg text-white">Add Others Entry</h3>
+                <button onclick="closeModal('othersEntryModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="othersEntryId">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Year</label>
+                        <input type="text" id="othersYearInput" value="2026" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Month</label>
+                        <select id="othersMonthInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none cursor-pointer">
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Description</label>
+                    <input type="text" id="othersDescInput" placeholder="e.g. Consulting Project" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-1 font-mono text-[9px] uppercase tracking-widest text-slate-400">Income (₹)</label>
+                        <input type="number" step="0.01" id="othersIncomeInput" value="0" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-mono text-[9px] uppercase tracking-widest text-slate-400">Expenses (₹)</label>
+                        <input type="number" step="0.01" id="othersExpenseInput" value="0" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes</label>
+                    <input type="text" id="othersNotesInput" placeholder="Additional remarks..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveOthersEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Entry</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="goalModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="goalModalTitle" class="font-display text-lg text-white">Add New Goal</h3>
+                <button onclick="closeModal('goalModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="goalId">
+                <div>
+                    <label id="goalTitleLabel" class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Goal Objective</label>
+                    <input type="text" id="goalTitleInput" placeholder="e.g. Run a half marathon" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div>
+                    <label id="goalCategoryLabel" class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category</label>
+                    <select id="goalCategoryInput" onchange="toggleGoalModalFields()" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                        <option value="Financial">Financial</option>
+                        <option value="Business">Business</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Health">Health</option>
+                        <option value="Reading">Reading</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Ziyara">Ziyara</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <!-- Input for specific genres when Reading or Travel is selected -->
+                    <input type="text" id="goalGenreInput" placeholder="e.g. Non-Fiction, Biography or Itinerary Focus" class="hidden w-full p-3 mt-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Start Date</label>
+                        <input type="text" id="goalStartDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Target Date</label>
+                        <input type="text" id="goalTargetDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                    </div>
+                </div>
+                
+                <!-- Financial Fields Only -->
+                <div id="goalFinancialFields" class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Estimate (₹)</label>
+                        <input type="number" step="0.01" id="goalEstimateInput" placeholder="Total required" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Paid / Saved (₹)</label>
+                        <input type="number" step="0.01" id="goalPaidInput" placeholder="Amount paid" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div id="goalProgressField" class="hidden">
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Progress (%)</label>
+                        <input type="number" min="0" max="100" id="goalProgressInput" value="0" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
+                    <div id="goalStatusContainer" class="col-span-2">
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Status</label>
+                        <select id="goalStatusInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                            <option value="Not Started">Not Started</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="On Hold">On Hold</option>
+                            <option value="Abandoned">Abandoned</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Milestones</label>
+                    <input type="text" id="goalNotesInput" placeholder="Key details..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveGoal()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Save Goal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTE MODAL -->
+    <div id="noteModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-2xl w-full p-8 shadow-2xl flex flex-col h-[80vh]">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-4 shrink-0">
+                <h3 id="noteModalTitle" class="font-display text-lg text-white">Compose Note</h3>
+                <button onclick="closeModal('noteModal')" class="text-slate-500 hover:text-amber-400 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-5 flex flex-col">
+                <input type="hidden" id="noteId">
+                <input type="hidden" id="notePinned" value="false">
+                <div>
+                    <input type="text" id="noteTitleInput" placeholder="Note Title / Subject" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white font-display text-lg focus:border-amber-400 focus:outline-none">
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="font-mono text-[10px] uppercase tracking-widest text-slate-400">Category Tag:</label>
+                    <select id="noteCategoryInput" class="p-2.5 rounded-lg border border-surface-700 bg-surface-900 text-white focus:border-amber-400 focus:outline-none text-xs font-medium cursor-pointer">
+                        <option value="general">General</option>
+                        <option value="work">Business / Work</option>
+                        <option value="finance">Finance</option>
+                        <option value="personal">Personal</option>
+                        <option value="ideas">Ideas & Strategies</option>
+                    </select>
+                </div>
+                <div class="flex-1 min-h-[250px] relative">
+                    <textarea id="noteContentInput" placeholder="Write your thoughts here..." class="w-full h-full p-5 rounded-xl border border-surface-700 bg-surface-900/50 text-slate-300 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none resize-none font-light leading-relaxed"></textarea>
+                </div>
+            </div>
+            <div class="pt-6 border-t border-surface-800 mt-4 shrink-0 flex justify-end gap-3">
+                <button onclick="closeModal('noteModal')" class="px-6 py-3 bg-surface-800 text-slate-300 font-medium rounded-xl hover:bg-surface-700 transition-all border border-surface-700">Cancel</button>
+                <button onclick="saveNote()" class="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-surface-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)]">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTE FULL VIEW MODAL (READING MODE) -->
+    <div id="noteViewModal" class="fixed inset-0 z-[60] bg-surface-950/95 backdrop-blur-xl hidden flex items-center justify-center p-4 md:p-8 transition-all">
+        <!-- Premium Gradient Border Wrapper -->
+        <div class="max-w-4xl w-full h-full max-h-[85vh] rounded-[2rem] p-[2px] bg-gradient-to-br from-amber-400 via-brand-600 to-accent-plum shadow-[0_0_60px_rgba(201,164,107,0.25)] relative group">
+            
+            <!-- Subtle animated glow behind the modal -->
+            <div class="absolute inset-0 bg-gradient-to-br from-amber-400 to-accent-plum rounded-[2rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-700 -z-10"></div>
+            
+            <!-- Inner Content Container -->
+            <div class="w-full h-full bg-[#070A0F] rounded-[30px] flex flex-col relative overflow-hidden">
+                <!-- Decorative background blurs inside -->
+                <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent-blue/5 rounded-full blur-[100px] pointer-events-none"></div>
+                
+                <!-- Header -->
+                <div class="p-8 md:p-12 border-b border-surface-800/50 flex items-start justify-between shrink-0 relative z-10 bg-gradient-to-b from-surface-900/80 to-transparent">
+                    <div class="flex-1 pr-6">
+                        <div class="flex items-center gap-4 mb-5">
+                            <span id="viewNoteCategory" class="px-4 py-1.5 rounded-lg text-[10px] uppercase font-mono tracking-widest border font-bold shadow-lg"></span>
+                            <span id="viewNoteDate" class="text-xs text-slate-400 font-mono flex items-center gap-2"></span>
+                        </div>
+                        <h2 id="viewNoteTitle" class="font-display text-4xl md:text-5xl text-white font-bold leading-tight tracking-wide drop-shadow-md"></h2>
+                    </div>
+                    <div class="flex items-center gap-4 shrink-0 mt-2">
+                        <button onclick="editNoteFromView()" class="w-14 h-14 rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1" title="Edit Note"><i class="fa-solid fa-pen text-lg"></i></button>
+                        <button onclick="closeModal('noteViewModal')" class="w-14 h-14 rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-rose-900/60 hover:border-rose-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] hover:-translate-y-1" title="Close Reader"><i class="fa-solid fa-xmark text-2xl"></i></button>
+                    </div>
+                </div>
+                
+                <!-- Body Content -->
+                <div class="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar relative z-10">
+                    <p id="viewNoteContent" class="text-slate-300 font-light text-lg md:text-xl leading-[2.2] whitespace-pre-wrap"></p>
+                </div>
+                <input type="hidden" id="currentViewNoteId">
+            </div>
+        </div>
+    </div>
+
+    <!-- REMINDER MODAL -->
+    <div id="reminderModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 id="reminderModalTitle" class="font-display text-lg text-white">Add Reminder</h3>
+                <button onclick="closeModal('reminderModal')" class="text-slate-500 hover:text-indigo-400 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <input type="hidden" id="reminderId">
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Title / Subject</label>
+                    <input type="text" id="reminderTitleInput" placeholder="e.g. Call Bank Manager" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date</label>
+                        <input type="text" id="reminderDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none custom-datepicker">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Time</label>
+                        <input type="time" id="reminderTimeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Priority</label>
+                        <select id="reminderPriorityInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none font-medium">
+                            <option value="High">High</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Repeat</label>
+                        <select id="reminderRepeatInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none font-medium">
+                            <option value="None">None (Once)</option>
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Additional Notes</label>
+                    <input type="text" id="reminderNotesInput" placeholder="Optional details..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-indigo-400 focus:outline-none">
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveReminder()" class="w-full py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.2)]">Save Reminder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmDeleteModal" class="fixed inset-0 z-[100] bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-sm w-full p-8 text-center shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-[50px] pointer-events-none"></div>
+            <div class="w-16 h-16 bg-surface-900 border border-rose-500/30 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl shadow-[0_0_20px_rgba(244,63,94,0.15)] relative z-10">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="font-display text-xl text-white mb-2 relative z-10">Confirm Deletion</h3>
+            <p id="confirmDeleteMessage" class="text-sm text-slate-400 font-light mb-8 relative z-10">Are you sure you want to delete this? This action cannot be undone.</p>
+            <div class="grid grid-cols-2 gap-4 relative z-10">
+                <button onclick="closeConfirmDelete()" class="py-3 bg-surface-800 text-slate-300 font-medium rounded-xl hover:bg-surface-700 hover:text-white transition-all border border-surface-700">Cancel</button>
+                <button onclick="executeConfirmDelete()" class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-all">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UNIVERSAL SEARCH MODAL -->
+    <div id="universalSearchModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-2xl w-full p-8 shadow-2xl flex flex-col h-[60vh]">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-4 shrink-0">
+                <h3 class="font-display text-lg text-white"><i class="fa-solid fa-magnifying-glass text-brand-500 mr-2"></i> Universal Search</h3>
+                <button onclick="closeModal('universalSearchModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="mb-4 shrink-0">
+                <input type="text" id="universalSearchInput" oninput="executeUniversalSearch()" placeholder="Search assets, banks, notes, reminders..." class="w-full p-4 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-mono text-sm shadow-inner transition-all">
+            </div>
+            <div id="searchResultsContainer" class="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+                <!-- Results injected here -->
+                <div class="h-full flex flex-col items-center justify-center text-slate-500 opacity-50">
+                    <i class="fa-solid fa-keyboard text-4xl mb-3"></i>
+                    <p class="font-light text-sm">Start typing to search your workspace...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASSCODE SETTINGS MODAL -->
+    <div id="passcodeSettingsModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6">
+                <h3 class="font-display text-lg text-white"><i class="fa-solid fa-fingerprint text-brand-500 mr-2"></i> Passcode Settings</h3>
+                <button onclick="closeModal('passcodeSettingsModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light">
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">New 4-Digit PIN</label>
+                    <input type="password" maxlength="4" id="newPasscodePin" placeholder="••••" class="w-full p-3 text-center tracking-[0.5em] text-2xl rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none shadow-inner">
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Passcode Hint</label>
+                    <input type="text" id="newPasscodeHint" placeholder="e.g. Last 4 digits of phone" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                </div>
+                <div class="pt-4 grid grid-cols-2 gap-4">
+                    <button onclick="removePasscode()" class="w-full py-3 bg-surface-800 hover:bg-rose-900/50 text-rose-500 font-bold rounded-xl transition-all border border-rose-500/30">Remove PIN</button>
+                    <button onclick="savePasscodeSettings()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(0,255,157,0.2)]">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DAILY EXPENSES LOG MODAL -->
+    <div id="dailyExpenseLogModal" class="fixed inset-0 z-[80] bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 md:p-8">
+        <div class="premium-card max-w-5xl w-full h-[85vh] p-0 shadow-2xl flex flex-col overflow-hidden border border-brand-500/20">
+            <div class="flex flex-wrap items-center justify-between p-6 border-b border-surface-800 bg-surface-900/50 shrink-0 gap-4">
+                <h3 id="dailyExpenseLogModalTitle" class="font-display text-xl text-white flex items-center gap-3">
+                    <i class="fa-solid fa-list-check text-brand-500"></i> Daily Expenses Log
+                </h3>
+
+                <!-- FILTER CONTROLS FOR EXPENSES LOG POPUP (MATCHING BUDGET & EQUITIES STYLE) -->
+                <div class="group relative h-10 flex items-center justify-end z-20">
+                    <!-- Filter Placeholder/Icon (Visible by default, hidden on hover) -->
+                    <div class="absolute right-0 flex items-center gap-2 text-slate-500 cursor-pointer group-hover:opacity-0 transition-opacity duration-300">
+                        <span class="text-[10px] font-mono uppercase tracking-widest">Filters</span>
+                        <i class="fa-solid fa-sliders text-xs"></i>
+                    </div>
+                    
+                    <!-- Hover Filter Panel (Hidden by default, visible on hover) -->
+                    <div class="absolute right-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto bg-surface-950/90 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-xl border border-surface-800 whitespace-nowrap">
+                        <div class="flex items-center shrink-0 gap-0.5 bg-surface-900/50 p-0.5 rounded-lg">
+                            <button id="btnLogMonthly" onclick="setLogViewFilter('monthly')" class="px-2.5 py-1 rounded-md bg-transparent text-slate-400 hover:text-white hover:bg-surface-800 transition-all text-[10px] uppercase tracking-wider">Monthly</button>
+                            <button id="btnLogYearly" onclick="setLogViewFilter('yearly')" class="px-2.5 py-1 rounded-md bg-transparent text-slate-400 hover:text-white hover:bg-surface-800 transition-all text-[10px] uppercase tracking-wider">Yearly</button>
+                            <button id="btnLogAll" onclick="setLogViewFilter('all')" class="px-2.5 py-1 rounded-md bg-brand-600 text-surface-950 font-bold transition-all shadow-[0_0_10px_rgba(0,255,157,0.3)] text-[10px] uppercase tracking-wider">All Time</button>
+                        </div>
+                        <div id="logSelectors" class="flex items-center gap-1 hidden">
+                            <select id="logMonthSelect" onchange="updateLogFilters()" class="py-1 px-2 rounded-md border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-[10px] font-medium cursor-pointer">
+                                <option value="January">January</option>
+                                <option value="February" selected>February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+                            <select id="logYearSelect" onchange="updateLogFilters()" class="py-1 px-2 rounded-md border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-[10px] font-medium cursor-pointer">
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026" selected>2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="closeModal('dailyExpenseLogModal')" class="w-10 h-10 rounded-xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-rose-900/60 hover:border-rose-500/50 transition-all flex items-center justify-center shadow-lg"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-auto bg-surface-950 p-6 custom-scrollbar">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-surface-900/90 border-b border-surface-800 sticky top-0 z-10">
+                        <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
+                            <th class="py-3 px-4">Date</th>
+                            <th class="py-3 px-4">Currency</th>
+                            <th class="py-3 px-4">Category</th>
+                            <th class="py-3 px-4">Particulars</th>
+                            <th class="py-3 px-4 text-right">Amount</th>
+                            <th class="py-3 px-4 text-center">Manage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyExpensesTableBody" class="divide-y divide-surface-800/50 font-light text-slate-300">
+                        <!-- Expenses injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLOUD SYNC & ACCOUNT MODAL -->
+    <div id="cloudSyncModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-lg w-full p-8 shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-surface-900 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-cloud"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-xl text-white font-bold">Firebase Cloud Sync</h3>
+                        <p class="font-mono text-[10px] text-slate-400 tracking-wider">Project: <span class="text-brand-500 font-bold">my-dashboard-520e7</span></p>
+                    </div>
+                </div>
+                <button onclick="closeModal('cloudSyncModal')" class="text-slate-500 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Worldwide Sync Info Card -->
+            <div class="p-4 rounded-2xl bg-surface-900/60 border border-emerald-500/20 space-y-2">
+                <div class="flex items-center gap-2 text-emerald-400 font-medium text-xs">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>Worldwide Multi-Device Live Sync Active</span>
+                </div>
+                <p class="text-xs text-slate-300 font-light leading-relaxed">
+                    All your portfolio assets, bank balances, mutual funds, budgets, notes, and milestones are saved directly to Google Firebase Cloud. You can open and edit this dashboard from any mobile phone, tablet, or laptop worldwide.
+                </p>
+            </div>
+
+            <!-- User Auth Status -->
+            <div class="p-4 rounded-2xl bg-surface-900/40 border border-surface-800 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-slate-400">Account / Sign-In Status</label>
+                        <p id="cloudUserEmailDisplay" class="text-sm font-semibold text-white mt-0.5">Connecting to Firebase...</p>
+                    </div>
+                    <button id="cloudAuthBtn" onclick="handleCloudAuthClick()" class="px-4 py-2 bg-surface-800 hover:bg-surface-700 text-white rounded-xl text-xs font-semibold border border-surface-700 transition-all flex items-center gap-2">
+                        <i class="fa-brands fa-google text-brand-500"></i>
+                        <span>Sign in with Google</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manual Push / Pull Controls -->
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="triggerManualPushToCloud()" class="p-4 rounded-2xl bg-surface-900/50 hover:bg-surface-900 border border-surface-800 hover:border-brand-500/50 transition-all text-left group">
+                    <div class="flex items-center gap-2 mb-1.5 text-brand-500 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span class="font-bold text-xs">Push to Cloud</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-light">Upload all local entries immediately to Firebase Firestore</p>
+                </button>
+
+                <button onclick="triggerManualPullFromCloud()" class="p-4 rounded-2xl bg-surface-900/50 hover:bg-surface-900 border border-surface-800 hover:border-accent-blue/50 transition-all text-left group">
+                    <div class="flex items-center gap-2 mb-1.5 text-accent-blue group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <span class="font-bold text-xs">Pull from Cloud</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-light">Download & refresh master state from Firebase Firestore</p>
+                </button>
+            </div>
+
+            <div class="pt-2 flex justify-between items-center text-[10px] font-mono text-slate-500 border-t border-surface-800/80">
+                <span id="lastCloudSyncTime">Last sync: Real-time</span>
+                <button onclick="closeModal('cloudSyncModal')" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STORAGE / VAULT MODAL -->
+    <div id="storageModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-lg w-full p-8 shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-500">
+                        <i class="fa-solid fa-vault"></i>
+                    </div>
+                    <h3 id="storageModalTitle" class="font-display text-lg text-white">Documents Vault</h3>
+                </div>
+                <button onclick="closeModal('storageModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <!-- Upload Box -->
+            <div class="p-4 rounded-2xl bg-surface-900/60 border border-surface-800 space-y-3">
+                <label class="block font-mono text-[10px] uppercase tracking-widest text-slate-400">Add New Item</label>
+                <div class="space-y-3">
+                    <input type="text" id="storageDocName" placeholder="Document Name / Title" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-xs font-mono">
+                    <input type="file" id="storageFileInput" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-500/10 file:text-brand-500 hover:file:bg-brand-500/20 cursor-pointer">
+                    <button onclick="saveStorageFile()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload to Vault
+                    </button>
+                </div>
+            </div>
+
+            <!-- List of stored files -->
+            <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs font-mono text-slate-400 px-1">
+                    <span>Stored Items</span>
+                    <span class="text-[10px] text-slate-500">Encrypted Local & Cloud Storage</span>
+                </div>
+                <div id="storageFilesList" class="max-h-60 overflow-y-auto custom-scrollbar space-y-2">
+                    <!-- Files injected by JS -->
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-surface-800 text-right">
+                <button onclick="closeModal('storageModal')" class="px-5 py-2 bg-surface-800 hover:bg-surface-700 text-white text-xs font-semibold rounded-xl transition-all">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILE PREVIEW MODAL -->
+    <div id="filePreviewModal" class="fixed inset-0 z-[60] bg-surface-950/95 backdrop-blur-xl hidden flex items-center justify-center p-4 md:p-8">
+        <div class="premium-card max-w-4xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-3">
+                <h3 id="previewFileTitle" class="font-display text-base text-white truncate max-w-md">File Preview</h3>
+                <button onclick="closeModal('filePreviewModal')" class="text-slate-500 hover:text-white transition-colors p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="previewModalBody" class="flex-1 flex items-center justify-center overflow-auto p-2">
+                <!-- Injected preview content -->
+            </div>
+        </div>
+    </div>

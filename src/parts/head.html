@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" class="dark theme-green">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial & Personal Assistant Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Flatpickr Datepicker -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/themes/dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // Cyber Nature Palette
+                        brand: { 50: '#E6FFF2', 100: '#CCFFE6', 500: '#00FF9D', 600: '#00CC7E', 700: '#00995E', 900: '#003320' }, // Bioluminescent Mint/Green
+                        surface: { 50: '#F0F5F2', 800: '#12241A', 900: '#0A140F', 950: '#040906' }, // Deep forest obsidian
+                        qatar: '#8A1538',
+                        india: '#00E676', // Cyber leaf green
+                        accent: { blue: '#00F0FF', plum: '#B829FF', cyan: '#00E5E5' } // Cyberpunk neon accents
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Playfair Display', 'serif'], // Adding a serif for premium headers
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'premium': '0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 0 3px rgba(255,255,255,0.05)',
+                        'premium-hover': '0 10px 30px -5px rgba(0, 255, 157, 0.15), 0 0 5px rgba(0, 255, 157, 0.2)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #040906; /* Deep forest void */
+            color: #E6FFF2; /* Soft mint text */
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Glassmorphism refined */
+        .glass { 
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(16px) saturate(180%); 
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+        .dark .glass { 
+            background: rgba(7, 13, 10, 0.85); 
+            backdrop-filter: blur(20px) saturate(180%); 
+            border-right: 1px solid rgba(0, 255, 157, 0.05);
+            box-shadow: 4px 0 30px rgba(0,0,0,0.5);
+        }
+        
+        .hover-lift { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 10px 30px -5px rgba(0, 255, 157, 0.15), 0 0 5px rgba(0, 255, 157, 0.2); border-color: rgba(0, 255, 157, 0.4); }
+        
+        /* Premium custom scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #12241A; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #12241A; }
+        ::-webkit-scrollbar-thumb:hover { background: #00FF9D; }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Card styling overrides for luxury feel with slight spread light effect */
+        .premium-card {
+            background: linear-gradient(145deg, rgba(13, 26, 19, 0.9) 0%, rgba(7, 13, 10, 0.9) 100%);
+            border: 1px solid rgba(0, 255, 157, 0.08);
+            box-shadow: 0 4px 25px -2px rgba(0, 255, 157, 0.04), 0 0 15px -4px rgba(0, 255, 157, 0.03);
+            border-radius: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .premium-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 157, 0.3), transparent);
+        }
+
+        h1, h2, h3, .display-font { font-family: 'Playfair Display', serif; }
+        
+        /* Subtle grid background pattern */
+        .bg-pattern {
+            background-image: linear-gradient(to right, rgba(0, 255, 157, 0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0, 255, 157, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* OLED BLACK THEME OVERRIDES */
+        html.dark.theme-black body { background-color: #000000; }
+        html.dark.theme-black .bg-surface-950,
+        html.dark.theme-black .bg-surface-900\/50,
+        html.dark.theme-black .bg-surface-900\/40,
+        html.dark.theme-black .bg-surface-900\/80,
+        html.dark.theme-black .bg-surface-900\/90 { background-color: #030303 !important; }
+        html.dark.theme-black .bg-surface-900 { background-color: #050505 !important; }
+        html.dark.theme-black .bg-surface-800 { background-color: #111111 !important; }
+        html.dark.theme-black .border-surface-800, 
+        html.dark.theme-black .border-surface-700 { border-color: #1a1a1a !important; }
+        html.dark.theme-black .premium-card {
+            background: linear-gradient(145deg, #0a0a0a 0%, #000000 100%);
+            border: 1px solid rgba(0, 255, 157, 0.1);
+            box-shadow: 0 4px 30px -2px rgba(0, 255, 157, 0.05), 0 0 20px -5px rgba(0, 255, 157, 0.03);
+        }
+        
+        /* LIGHT THEME OVERRIDES */
+        html.theme-light body { background-color: #F8FAFC; color: #0F172A; }
+        html.theme-light .text-white { color: #0F172A !important; }
+        html.theme-light .text-slate-300 { color: #334155 !important; }
+        html.theme-light .text-slate-400 { color: #475569 !important; }
+        html.theme-light .text-slate-500 { color: #64748B !important; }
+        html.theme-light .bg-surface-950 { background-color: #F1F5F9 !important; }
+        html.theme-light .bg-surface-900 { background-color: #FFFFFF !important; }
+        html.theme-light .bg-surface-900\/50,
+        html.theme-light .bg-surface-900\/40,
+        html.theme-light .bg-surface-900\/80,
+        html.theme-light .bg-surface-900\/90 { background-color: rgba(255, 255, 255, 0.8) !important; }
+        html.theme-light .bg-surface-800 { background-color: #E2E8F0 !important; }
+        html.theme-light .bg-surface-800\/50,
+        html.theme-light .bg-surface-800\/40 { background-color: rgba(226, 232, 240, 0.5) !important; }
+        html.theme-light .border-surface-800,
+        html.theme-light .border-surface-800\/50,
+        html.theme-light .border-surface-800\/80 { border-color: #E2E8F0 !important; }
+        html.theme-light .border-surface-700 { border-color: #CBD5E1 !important; }
+        html.theme-light .premium-card {
+            background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%);
+            border: 1px solid rgba(0, 204, 126, 0.15);
+            box-shadow: 0 4px 25px -2px rgba(0, 204, 126, 0.06), 0 0 15px -4px rgba(0, 204, 126, 0.03);
+        }
+        html.theme-light .premium-card::before { background: linear-gradient(90deg, transparent, rgba(0, 204, 126, 0.3), transparent); }
+        html.theme-light .bg-pattern {
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+        }
+    </style>
+
+    <!-- FIREBASE CLOUD STORAGE INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            projectId: "my-dashboard-520e7",
+            appId: "1:994052346312:web:3739f06787d1e397cfb0fd",
+            apiKey: "AIzaSyBs9IjimsJqaRlvFJbxga6QlmN7ZW0T3mQ",
+            authDomain: "my-dashboard-520e7.firebaseapp.com",
+            firestoreDatabaseId: "ai-studio-financialpersona-04f91bf6-bbd6-4d70-b5b0-5402303991cb",
+            storageBucket: "my-dashboard-520e7.firebasestorage.app",
+            messagingSenderId: "994052346312"
+        };
+        
+        window.isFirebaseReady = false;
+        window.firebaseUser = null;
+        window.authInstance = null;
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            window.authInstance = auth;
+            const dbStore = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+            window.dbStore = dbStore;
+
+            window.signInWithGoogle = async function() {
+                try {
+                    const provider = new GoogleAuthProvider();
+                    const result = await signInWithPopup(auth, provider);
+                    window.firebaseUser = result.user;
+                    if (window.showToast) window.showToast("Signed in as " + (result.user.email || result.user.displayName), "success");
+                    return result.user;
+                } catch (e) {
+                    console.error("Google Sign-In Error:", e);
+                    if (window.showToast) window.showToast("Google Sign-In failed: " + e.message, "error");
+                    throw e;
+                }
+            };
+
+            window.signOutGoogle = async function() {
+                try {
+                    await signOut(auth);
+                    await signInAnonymously(auth);
+                    if (window.showToast) window.showToast("Signed out", "info");
+                } catch (e) {
+                    console.error("Sign-out error:", e);
+                }
+            };
+
+            window.initCloudStorage = function() {
+                return new Promise((resolve) => {
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            window.firebaseUser = user;
+                            window.isFirebaseReady = true;
+                            updateCloudSyncStatusUI('synced');
+                            setupMasterRealtimeSync();
+                            resolve(true);
+                        } else {
+                            try {
+                                const cred = await signInAnonymously(auth);
+                                window.firebaseUser = cred.user;
+                                window.isFirebaseReady = true;
+                                updateCloudSyncStatusUI('synced');
+                                setupMasterRealtimeSync();
+                                resolve(true);
+                            } catch (err) {
+                                console.warn("Firebase Anonymous Auth fallback:", err);
+                                updateCloudSyncStatusUI('offline');
+                                resolve(false);
+                            }
+                        }
+                    });
+                });
+            };
+
+            let unsubscribeSnapshot = null;
+            function setupMasterRealtimeSync() {
+                try {
+                    if (unsubscribeSnapshot) unsubscribeSnapshot();
+                    const masterDocRef = doc(dbStore, 'app_data', 'executive_master');
+                    unsubscribeSnapshot = onSnapshot(masterDocRef, (snap) => {
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            if (data && data.payload) {
+                                try {
+                                    const parsed = JSON.parse(data.payload);
+                                    if (window.onRemoteStateUpdate) {
+                                        window.onRemoteStateUpdate(parsed);
+                                    }
+                                } catch (e) {
+                                    console.error("Payload parse error:", e);
+                                }
+                            }
+                        }
+                    }, (err) => {
+                        console.warn("Firestore snapshot listener:", err);
+                    });
+                } catch (e) {
+                    console.error("Realtime sync setup error:", e);
+                }
+            }
+
+            window.cloudSave = async function(data) {
+                if (!window.isFirebaseReady || !window.firebaseUser) return;
+                try {
+                    updateCloudSyncStatusUI('saving');
+                    const payloadStr = JSON.stringify(data);
+                    const nowIso = new Date().toISOString();
+                    const userEmail = window.firebaseUser.email || (window.firebaseUser.isAnonymous ? 'Anonymous Device' : window.firebaseUser.uid);
+                    
+                    // 1. Save to Global Master Document for Worldwide Cross-Device Instant Sync
+                    const masterDocRef = doc(window.dbStore, 'app_data', 'executive_master');
+                    await setDoc(masterDocRef, {
+                        userId: window.firebaseUser.uid,
+                        updatedBy: userEmail,
+                        payload: payloadStr,
+                        updatedAt: nowIso
+                    });
+
+                    // 2. Also save to user specific doc
+                    if (!window.firebaseUser.isAnonymous) {
+                        const userDocRef = doc(window.dbStore, 'users', window.firebaseUser.uid, 'dashboard', 'state');
+                        await setDoc(userDocRef, {
+                            userId: window.firebaseUser.uid,
+                            updatedBy: userEmail,
+                            payload: payloadStr,
+                            updatedAt: nowIso
+                        });
+                    }
+
+                    updateCloudSyncStatusUI('synced');
+                } catch (e) {
+                    console.error("Cloud Save Error:", e);
+                    updateCloudSyncStatusUI('error');
+                }
+            };
+
+            window.cloudLoad = async function() {
+                if (!window.isFirebaseReady || !window.firebaseUser) return null;
+                try {
+                    // Try master document first
+                    const masterDocRef = doc(window.dbStore, 'app_data', 'executive_master');
+                    const snap = await getDoc(masterDocRef);
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        return JSON.parse(data.payload);
+                    }
+                    
+                    // Fallback to user doc if available
+                    if (!window.firebaseUser.isAnonymous) {
+                        const userDocRef = doc(window.dbStore, 'users', window.firebaseUser.uid, 'dashboard', 'state');
+                        const uSnap = await getDoc(userDocRef);
+                        if (uSnap.exists()) {
+                            return JSON.parse(uSnap.data().payload);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Cloud Load Error:", e);
+                }
+                return null;
+            };
+
+            function updateCloudSyncStatusUI(status) {
+                const el = document.getElementById('cloudSyncStatusBadge');
+                if (!el) return;
+                const email = window.firebaseUser && window.firebaseUser.email ? window.firebaseUser.email : 'Worldwide Cloud';
+                if (status === 'synced') {
+                    el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span class="text-slate-200 font-mono text-[9px] truncate max-w-[170px]" title="Cloud Live: ${email}">Cloud Synced (${email})</span>`;
+                    el.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-emerald-500/40 cursor-pointer hover:border-emerald-500 transition-colors';
+                } else if (status === 'saving') {
+                    el.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-brand-500 text-[9px]"></i> <span class="text-brand-500 font-mono text-[9px]">Syncing to Firebase...</span>';
+                    el.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-brand-500/40';
+                } else if (status === 'error') {
+                    el.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400"></span> <span class="text-rose-400 font-mono text-[9px]">Cloud Reconnecting...</span>';
+                    el.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-rose-500/40';
+                } else {
+                    el.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span> <span class="text-slate-400 font-mono text-[9px]">Local Cache</span>';
+                    el.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-surface-800';
+                }
+            }
+        } catch (err) {
+            console.error("Firebase init failed:", err);
+        }
+    </script>
+</head>

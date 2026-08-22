@@ -1,0 +1,38 @@
+{
+  "entities": {
+    "DashboardState": {
+      "title": "DashboardState",
+      "description": "Consolidated state of the executive financial & personal assistant dashboard",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID or identifier of the user/session updating this state"
+        },
+        "payload": {
+          "type": "string",
+          "description": "Serialized JSON string representing all dashboard records, settings, and tables"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of the last update"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "Email or display name of the user who made the last change"
+        }
+      },
+      "required": ["payload"]
+    }
+  },
+  "firestore": {
+    "/app_data/{docId}": {
+      "schema": "DashboardState",
+      "description": "Shared executive dashboard data for multi-device sync"
+    },
+    "/users/{userId}/dashboard/state": {
+      "schema": "DashboardState",
+      "description": "User specific executive dashboard data"
+    }
+  }
+}
