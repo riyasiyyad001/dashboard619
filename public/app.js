@@ -2763,12 +2763,26 @@ function renderGoalsTable() {
             }
             if (isComp) progressPct = 100;
 
+            const trackGradients = {
+                financial: 'from-amber-500 via-brand-500 to-amber-300 shadow-[0_0_14px_rgba(201,164,107,0.4)]',
+                business: 'from-blue-600 via-indigo-500 to-cyan-400 shadow-[0_0_14px_rgba(99,102,241,0.4)]',
+                personal: 'from-cyan-500 via-teal-400 to-emerald-300 shadow-[0_0_14px_rgba(6,182,212,0.4)]',
+                books: 'from-amber-500 via-orange-400 to-yellow-300 shadow-[0_0_14px_rgba(245,158,11,0.4)]',
+                travel: 'from-sky-500 via-blue-500 to-teal-300 shadow-[0_0_14px_rgba(14,165,233,0.4)]',
+                ziyara: 'from-emerald-600 via-teal-400 to-brand-400 shadow-[0_0_14px_rgba(16,185,129,0.4)]'
+            };
+            const barGradient = isComp 
+                ? 'from-emerald-500 via-teal-400 to-emerald-300 shadow-[0_0_14px_rgba(16,185,129,0.5)]' 
+                : (trackGradients[cat] || 'from-brand-600 via-brand-500 to-amber-300 shadow-[0_0_14px_rgba(201,164,107,0.4)]');
+
             const progressBarHtml = `
-                <div class="flex items-center gap-2 w-full justify-center">
-                    <div class="w-24 bg-surface-950 rounded-full h-2 overflow-hidden border border-surface-700/60">
-                        <div class="h-full bg-brand-500 rounded-full transition-all" style="width: ${progressPct}%"></div>
+                <div class="flex items-center gap-3 w-full justify-center px-1">
+                    <div class="flex-1 min-w-[140px] max-w-[220px] bg-surface-950/90 rounded-full h-3.5 sm:h-4 overflow-hidden border border-surface-700/80 p-0.5 shadow-inner">
+                        <div class="h-full bg-gradient-to-r ${barGradient} rounded-full transition-all duration-500 flex items-center justify-end" style="width: ${progressPct}%">
+                            ${progressPct >= 20 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/80 mr-1 shadow-sm"></span>' : ''}
+                        </div>
                     </div>
-                    <span class="text-[10px] font-mono text-slate-400 shrink-0 w-8 text-right">${progressPct}%</span>
+                    <span class="text-xs font-mono font-bold ${progressPct >= 100 ? 'text-emerald-400' : 'text-slate-200'} shrink-0 w-10 text-right">${progressPct}%</span>
                 </div>
             `;
 
@@ -2876,12 +2890,12 @@ function renderGoalAnalytics() {
 
     // Category breakdown definitions
     const trackDefs = [
-        { key: 'financial', label: 'Financial Milestones', icon: 'fa-coins', color: 'text-brand-500', barColor: 'bg-brand-500', match: c => c === 'financial' },
-        { key: 'business', label: 'Business Plans', icon: 'fa-briefcase', color: 'text-accent-blue', barColor: 'bg-accent-blue', match: c => c === 'business' },
-        { key: 'personal', label: 'Personal Goals', icon: 'fa-user-astronaut', color: 'text-accent-cyan', barColor: 'bg-accent-cyan', match: c => c === 'personal' || c === 'health' },
-        { key: 'books', label: 'Reading Goals', icon: 'fa-book', color: 'text-amber-400', barColor: 'bg-amber-400', match: c => c === 'reading' || c === 'books' },
-        { key: 'travel', label: 'Travel Goals', icon: 'fa-plane', color: 'text-emerald-400', barColor: 'bg-emerald-400', match: c => c === 'travel' },
-        { key: 'ziyara', label: 'Ziyara Milestones', icon: 'fa-kaaba', color: 'text-brand-400', barColor: 'bg-brand-400', match: c => c === 'ziyara' }
+        { key: 'financial', label: 'Financial Milestones', icon: 'fa-coins', color: 'text-brand-500', barColor: 'bg-gradient-to-r from-amber-500 via-brand-500 to-amber-300 shadow-[0_0_12px_rgba(201,164,107,0.4)]', match: c => c === 'financial' },
+        { key: 'business', label: 'Business Plans', icon: 'fa-briefcase', color: 'text-accent-blue', barColor: 'bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-400 shadow-[0_0_12px_rgba(99,102,241,0.4)]', match: c => c === 'business' },
+        { key: 'personal', label: 'Personal Goals', icon: 'fa-user-astronaut', color: 'text-accent-cyan', barColor: 'bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-300 shadow-[0_0_12px_rgba(6,182,212,0.4)]', match: c => c === 'personal' || c === 'health' },
+        { key: 'books', label: 'Reading Goals', icon: 'fa-book', color: 'text-amber-400', barColor: 'bg-gradient-to-r from-amber-500 via-orange-400 to-yellow-300 shadow-[0_0_12px_rgba(245,158,11,0.4)]', match: c => c === 'reading' || c === 'books' },
+        { key: 'travel', label: 'Travel Goals', icon: 'fa-plane', color: 'text-emerald-400', barColor: 'bg-gradient-to-r from-sky-500 via-blue-500 to-teal-300 shadow-[0_0_12px_rgba(14,165,233,0.4)]', match: c => c === 'travel' },
+        { key: 'ziyara', label: 'Ziyara Milestones', icon: 'fa-kaaba', color: 'text-brand-400', barColor: 'bg-gradient-to-r from-emerald-600 via-teal-400 to-brand-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]', match: c => c === 'ziyara' }
     ];
 
     const trackCounts = [];
@@ -2923,8 +2937,10 @@ function renderGoalAnalytics() {
                         <span>Completed: <span class="text-emerald-400 font-bold">${comp}</span></span>
                         <span>Pending: <span class="text-brand-400 font-bold">${act}</span></span>
                     </div>
-                    <div class="w-full bg-surface-950 rounded-full h-2 overflow-hidden border border-surface-800">
-                        <div class="h-full ${track.barColor} transition-all duration-500 rounded-full" style="width: ${pct}%"></div>
+                    <div class="w-full bg-surface-950 rounded-full h-3.5 sm:h-4 overflow-hidden border border-surface-700/80 p-0.5 shadow-inner">
+                        <div class="h-full ${track.barColor} transition-all duration-500 rounded-full flex items-center justify-end" style="width: ${pct}%">
+                            ${pct >= 20 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/80 mr-1 shadow-sm"></span>' : ''}
+                        </div>
                     </div>
                 </div>
 
@@ -3092,11 +3108,13 @@ function renderGoalAnalytics() {
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${g.targetDate || '-'}</td>
                     <td class="py-3 px-3 text-center">
-                        <div class="flex items-center gap-2 justify-center">
-                            <div class="w-20 bg-surface-950 rounded-full h-1.5 overflow-hidden border border-surface-700/60">
-                                <div class="h-full bg-brand-500 rounded-full" style="width: ${progressPct}%"></div>
+                        <div class="flex items-center gap-2.5 justify-center w-full min-w-[150px]">
+                            <div class="flex-1 max-w-[180px] bg-surface-950/90 rounded-full h-3.5 sm:h-4 overflow-hidden border border-surface-700/80 p-0.5 shadow-inner">
+                                <div class="h-full bg-gradient-to-r from-brand-600 via-brand-500 to-amber-300 rounded-full shadow-sm flex items-center justify-end" style="width: ${progressPct}%">
+                                    ${progressPct >= 20 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/80 mr-1 shadow-sm"></span>' : ''}
+                                </div>
                             </div>
-                            <span class="text-[10px] font-mono text-slate-400 shrink-0 w-8 text-right">${progressPct}%</span>
+                            <span class="text-xs font-mono font-bold text-slate-200 shrink-0 w-9 text-right">${progressPct}%</span>
                         </div>
                     </td>
                     <td class="py-3 px-3 text-center">
