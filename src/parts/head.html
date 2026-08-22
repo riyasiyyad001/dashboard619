@@ -357,19 +357,22 @@
             function updateCloudSyncStatusUI(status) {
                 const el = document.getElementById('cloudSyncStatusBadge');
                 if (!el) return;
-                const email = window.firebaseUser && window.firebaseUser.email ? window.firebaseUser.email : 'Worldwide Cloud';
+                let email = 'riyasiyyad';
+                if (window.firebaseUser && window.firebaseUser.email) {
+                    email = window.firebaseUser.email.split('@')[0];
+                }
                 if (status === 'synced') {
-                    el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span class="text-slate-200 font-mono text-[9px] truncate max-w-[170px]" title="Cloud Live: ${email}">Cloud Synced (${email})</span>`;
-                    el.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-emerald-500/40 cursor-pointer hover:border-emerald-500 transition-colors';
+                    el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span> <span class="text-slate-200 font-mono text-[10px] truncate max-w-[170px]" title="Cloud Synced (${email})">Cloud Synced (${email})</span> <i class="fa-solid fa-cloud text-xs text-emerald-400 ml-auto shrink-0 opacity-75"></i>`;
+                    el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-emerald-500/40 cursor-pointer hover:border-emerald-500 transition-all duration-300 shadow-sm';
                 } else if (status === 'saving') {
-                    el.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-brand-500 text-[9px]"></i> <span class="text-brand-500 font-mono text-[9px]">Syncing to Firebase...</span>';
-                    el.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-brand-500/40';
+                    el.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-brand-500 text-xs shrink-0"></i> <span class="text-brand-400 font-mono text-[10px] truncate">Syncing to Cloud...</span>';
+                    el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-brand-500/40 transition-all duration-300 shadow-sm';
                 } else if (status === 'error') {
-                    el.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400"></span> <span class="text-rose-400 font-mono text-[9px]">Cloud Reconnecting...</span>';
-                    el.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-rose-500/40';
+                    el.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400 shrink-0"></span> <span class="text-rose-400 font-mono text-[10px] truncate">Cloud Reconnecting...</span>';
+                    el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-rose-500/40 transition-all duration-300 shadow-sm';
                 } else {
-                    el.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span> <span class="text-slate-400 font-mono text-[9px]">Local Cache</span>';
-                    el.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-surface-800';
+                    el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span> <span class="text-slate-300 font-mono text-[10px] truncate">Cloud Synced (${email})</span> <i class="fa-solid fa-cloud text-xs text-slate-400 ml-auto shrink-0 opacity-60"></i>`;
+                    el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-surface-800 cursor-pointer hover:border-surface-700 transition-all duration-300 shadow-sm';
                 }
             }
         } catch (err) {

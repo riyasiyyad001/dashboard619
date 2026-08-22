@@ -3314,102 +3314,566 @@ function deleteGoal(id) {
 }
 window.deleteGoal = deleteGoal;
 
+let notesViewMode = 'grid';
+let notesSearchQuery = '';
+
+const noteThemeMap = {
+    'gold': {
+        border: 'border-amber-500/40 hover:border-amber-400/80',
+        glow: 'rgba(245, 158, 11, 0.15)',
+        badge: 'bg-amber-500/15 text-amber-400 border-amber-500/40',
+        gradient: 'from-amber-400 via-brand-600 to-accent-plum',
+        dot: 'bg-amber-400'
+    },
+    'emerald': {
+        border: 'border-emerald-500/40 hover:border-emerald-400/80',
+        glow: 'rgba(16, 185, 129, 0.15)',
+        badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40',
+        gradient: 'from-emerald-400 via-teal-600 to-cyan-500',
+        dot: 'bg-emerald-400'
+    },
+    'cyan': {
+        border: 'border-cyan-500/40 hover:border-cyan-400/80',
+        glow: 'rgba(6, 182, 212, 0.15)',
+        badge: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/40',
+        gradient: 'from-cyan-400 via-blue-600 to-indigo-500',
+        dot: 'bg-cyan-400'
+    },
+    'violet': {
+        border: 'border-purple-500/40 hover:border-purple-400/80',
+        glow: 'rgba(168, 85, 247, 0.15)',
+        badge: 'bg-purple-500/15 text-purple-400 border-purple-500/40',
+        gradient: 'from-purple-400 via-fuchsia-600 to-pink-500',
+        dot: 'bg-purple-400'
+    },
+    'rose': {
+        border: 'border-rose-500/40 hover:border-rose-400/80',
+        glow: 'rgba(244, 63, 94, 0.15)',
+        badge: 'bg-rose-500/15 text-rose-400 border-rose-500/40',
+        gradient: 'from-rose-400 via-pink-600 to-amber-500',
+        dot: 'bg-rose-400'
+    },
+    'slate': {
+        border: 'border-surface-700 hover:border-slate-500',
+        glow: 'rgba(148, 163, 184, 0.08)',
+        badge: 'bg-surface-800 text-slate-300 border-surface-700',
+        gradient: 'from-slate-400 via-slate-600 to-zinc-700',
+        dot: 'bg-slate-400'
+    }
+};
+
+const noteFontMap = {
+    'inter': 'note-font-inter',
+    'playfair': 'note-font-playfair',
+    'outfit': 'note-font-outfit',
+    'merriweather': 'note-font-merriweather',
+    'lora': 'note-font-lora',
+    'mono': 'note-font-mono',
+    'caveat': 'note-font-caveat',
+    'cinzel': 'note-font-cinzel'
+};
+
+function setNotesViewMode(mode) {
+    notesViewMode = mode;
+    const btnGrid = document.getElementById('btnNoteViewGrid');
+    const btnList = document.getElementById('btnNoteViewList');
+    const gridContainer = document.getElementById('notesGridContainer');
+    const listContainer = document.getElementById('notesListContainer');
+
+    if (btnGrid && btnList) {
+        if (mode === 'grid') {
+            btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+            btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+            if (gridContainer) gridContainer.classList.remove('hidden');
+            if (listContainer) listContainer.classList.add('hidden');
+        } else {
+            btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+            btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+            if (gridContainer) gridContainer.classList.add('hidden');
+            if (listContainer) listContainer.classList.remove('hidden');
+        }
+    }
+    renderNotesList();
+}
+window.setNotesViewMode = setNotesViewMode;
+
+function handleNotesSearch() {
+    const input = document.getElementById('notesSearchInput');
+    const clearBtn = document.getElementById('btnClearNotesSearch');
+    notesSearchQuery = (input ? input.value : '').toLowerCase().trim();
+    if (clearBtn) {
+        if (notesSearchQuery) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+    renderNotesList();
+}
+window.handleNotesSearch = handleNotesSearch;
+
+function clearNotesSearch() {
+    const input = document.getElementById('notesSearchInput');
+    const clearBtn = document.getElementById('btnClearNotesSearch');
+    if (input) input.value = '';
+    if (clearBtn) clearBtn.classList.add('hidden');
+    notesSearchQuery = '';
+    renderNotesList();
+}
+window.clearNotesSearch = clearNotesSearch;
+
+function filterNotes() {
+    renderNotesList();
+}
+window.filterNotes = filterNotes;
+
 function renderNotesList() {
-    const container = document.getElementById('notesGridContainer') || document.getElementById('notesListContainer');
-    if (!container) return;
-    container.innerHTML = '';
+    const gridContainer = document.getElementById('notesGridContainer');
+    const listTableBody = document.getElementById('notesListTableBody');
+    const countBadge = document.getElementById('notesCountBadge');
+    
     if (!db.notes) db.notes = [];
+    if (countBadge) countBadge.innerText = db.notes.length.toString();
 
-    db.notes.forEach(note => {
-        const card = document.createElement('div');
-        card.className = 'p-6 rounded-2xl bg-surface-900/70 border border-surface-800 hover:border-amber-500/40 shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between gap-4 group cursor-pointer';
-        card.onclick = (e) => {
-            if (e.target.closest('button')) return;
-            openNoteReader(note.id);
-        };
+    // Read filters
+    const catFilter = (document.getElementById('notesCategoryFilter') ? document.getElementById('notesCategoryFilter').value : 'all') || 'all';
+    const colorFilter = (document.getElementById('notesColorFilter') ? document.getElementById('notesColorFilter').value : 'all') || 'all';
+    const sortBy = (document.getElementById('notesSortSelect') ? document.getElementById('notesSortSelect').value : 'pinned') || 'pinned';
 
-        const plainText = note.body || note.content || '';
+    let filtered = [...db.notes];
 
-        card.innerHTML = `
-            <div class="space-y-3">
-                <div class="flex items-start justify-between gap-3">
-                    <h4 class="font-display text-lg font-bold text-slate-100 group-hover:text-amber-400 transition-colors line-clamp-1">${note.title || 'Untitled Note'}</h4>
-                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                        <button onclick="openNoteModal('${note.id}')" class="p-1.5 rounded-lg bg-surface-800 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 transition-colors" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
-                        <button onclick="deleteNote('${note.id}')" class="p-1.5 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
-                    </div>
-                </div>
-                <p class="text-xs text-slate-400 font-light line-clamp-4 leading-relaxed whitespace-pre-wrap">${plainText}</p>
-            </div>
-            <div class="flex items-center justify-between pt-3 border-t border-surface-800/60 text-[10px] font-mono text-slate-500">
-                <span class="px-2 py-0.5 rounded-md border border-surface-700 bg-surface-950 uppercase tracking-wider text-slate-400">${note.category || 'General'}</span>
-                <span class="flex items-center gap-1"><i class="fa-regular fa-clock text-[9px] text-amber-400"></i> ${note.date || 'Recent'}</span>
-            </div>
-        `;
-        container.appendChild(card);
+    // Filter by Category
+    if (catFilter !== 'all') {
+        filtered = filtered.filter(n => (n.category || 'general').toLowerCase() === catFilter.toLowerCase());
+    }
+
+    // Filter by Color Accent
+    if (colorFilter !== 'all') {
+        filtered = filtered.filter(n => (n.accentColor || 'gold').toLowerCase() === colorFilter.toLowerCase());
+    }
+
+    // Filter by Search Query
+    if (notesSearchQuery) {
+        filtered = filtered.filter(n => {
+            const t = (n.title || '').toLowerCase();
+            const b = (n.body || n.content || '').toLowerCase();
+            const c = (n.category || '').toLowerCase();
+            return t.includes(notesSearchQuery) || b.includes(notesSearchQuery) || c.includes(notesSearchQuery);
+        });
+    }
+
+    // Sort Notes
+    filtered.sort((a, b) => {
+        if (sortBy === 'pinned') {
+            const pinA = !!a.pinned;
+            const pinB = !!b.pinned;
+            if (pinA !== pinB) return pinA ? -1 : 1;
+            return (b.id || '').localeCompare(a.id || '');
+        } else if (sortBy === 'newest') {
+            return (b.id || '').localeCompare(a.id || '');
+        } else if (sortBy === 'oldest') {
+            return (a.id || '').localeCompare(b.id || '');
+        } else if (sortBy === 'title') {
+            return (a.title || '').localeCompare(b.title || '');
+        }
+        return 0;
     });
 
-    if (db.notes.length === 0) {
-        container.innerHTML = `<div class="col-span-full p-12 text-center text-slate-500 font-light"><i class="fa-regular fa-file-lines text-3xl mb-3 block opacity-40"></i> No journal records or executive notes yet. Click "New Note" to create one.</div>`;
+    // 1. RENDER GRID VIEW
+    if (gridContainer) {
+        gridContainer.innerHTML = '';
+        if (filtered.length === 0) {
+            gridContainer.innerHTML = `
+                <div class="col-span-full p-12 text-center text-slate-500 font-light rounded-2xl bg-surface-900/40 border border-surface-800/60">
+                    <div class="w-12 h-12 rounded-2xl bg-surface-800/80 border border-surface-700/60 text-slate-400 flex items-center justify-center mx-auto mb-3 text-lg shadow-inner">
+                        <i class="fa-regular fa-file-lines text-amber-400/60"></i>
+                    </div>
+                    <div class="text-white font-medium text-sm mb-1">No Notes Found</div>
+                    <p class="text-slate-400 max-w-sm mx-auto mb-4 text-xs">No executive journal entries match your selected criteria.</p>
+                    <button onclick="openNoteModal()" class="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-plus text-[10px]"></i> Create New Note
+                    </button>
+                </div>
+            `;
+        } else {
+            filtered.forEach(note => {
+                const colorKey = note.accentColor || 'gold';
+                const theme = noteThemeMap[colorKey] || noteThemeMap['gold'];
+                const fontClass = noteFontMap[note.fontFamily] || 'note-font-inter';
+                const isPinned = !!note.pinned;
+                
+                // Excerpt text without HTML tags
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = note.body || note.content || '';
+                const plainExcerpt = tempDiv.innerText.trim() || 'No content written.';
+
+                const card = document.createElement('div');
+                card.className = `p-6 rounded-2xl bg-surface-900/80 border ${theme.border} shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between gap-4 group cursor-pointer relative overflow-hidden`;
+                card.onclick = (e) => {
+                    if (e.target.closest('button')) return;
+                    openNoteReader(note.id);
+                };
+
+                card.innerHTML = `
+                    <!-- Accent top glow bar -->
+                    <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${theme.gradient}"></div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-2 min-w-0">
+                                ${isPinned ? `<span class="w-5 h-5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-[10px] shrink-0" title="Pinned Note"><i class="fa-solid fa-thumbtack"></i></span>` : ''}
+                                <h4 class="font-display text-lg font-bold text-slate-100 group-hover:text-amber-400 transition-colors line-clamp-1 ${fontClass}">${note.title || 'Untitled Note'}</h4>
+                            </div>
+                            <!-- Quick Action Buttons on Hover -->
+                            <div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onclick="event.stopPropagation()">
+                                <button onclick="toggleNotePin('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="${isPinned ? 'Unpin Note' : 'Pin Note'}">
+                                    <i class="fa-solid fa-thumbtack text-xs ${isPinned ? 'text-amber-400' : ''}"></i>
+                                </button>
+                                <button onclick="openNoteModal('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="Edit Note">
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <button onclick="deleteNote('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors flex items-center justify-center cursor-pointer" title="Delete Note">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 font-light line-clamp-4 leading-relaxed whitespace-pre-wrap ${fontClass}">${plainExcerpt}</p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-3 border-t border-surface-800/60 text-[10px] font-mono text-slate-500">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-md border ${theme.badge} uppercase tracking-wider font-semibold">${note.category || 'General'}</span>
+                            <span class="w-2 h-2 rounded-full ${theme.dot}"></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span><i class="fa-regular fa-clock text-[9px] text-amber-400"></i> ${note.date || 'Recent'}</span>
+                        </div>
+                    </div>
+                `;
+                gridContainer.appendChild(card);
+            });
+        }
+    }
+
+    // 2. RENDER LIST VIEW TABLE
+    if (listTableBody) {
+        listTableBody.innerHTML = '';
+        if (filtered.length === 0) {
+            listTableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-light">No notes found matching current filters.</td></tr>`;
+        } else {
+            filtered.forEach(note => {
+                const colorKey = note.accentColor || 'gold';
+                const theme = noteThemeMap[colorKey] || noteThemeMap['gold'];
+                const fontClass = noteFontMap[note.fontFamily] || 'note-font-inter';
+                const isPinned = !!note.pinned;
+
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = note.body || note.content || '';
+                const plainExcerpt = tempDiv.innerText.trim().substring(0, 80) || 'No content';
+
+                const tr = document.createElement('tr');
+                tr.className = 'group hover:bg-surface-800/20 transition-colors cursor-pointer';
+                tr.onclick = (e) => {
+                    if (e.target.closest('button')) return;
+                    openNoteReader(note.id);
+                };
+
+                tr.innerHTML = `
+                    <td class="p-4 text-center" onclick="event.stopPropagation()">
+                        <button onclick="toggleNotePin('${note.id}')" class="p-1 text-slate-500 hover:text-amber-400 transition-colors cursor-pointer">
+                            <i class="fa-solid fa-thumbtack ${isPinned ? 'text-amber-400' : 'opacity-30'}"></i>
+                        </button>
+                    </td>
+                    <td class="p-4">
+                        <div class="font-semibold text-slate-100 group-hover:text-amber-400 transition-colors ${fontClass}">${note.title || 'Untitled Note'}</div>
+                        <div class="text-[11px] text-slate-400 truncate max-w-md ${fontClass}">${plainExcerpt}</div>
+                    </td>
+                    <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-mono border ${theme.badge} uppercase tracking-wider">${note.category || 'General'}</span>
+                    </td>
+                    <td class="p-4 font-mono text-[11px] text-slate-400">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full ${theme.dot}"></span>
+                            <span class="capitalize">${note.fontFamily || 'Inter'}</span>
+                        </div>
+                    </td>
+                    <td class="p-4 font-mono text-[11px] text-slate-400 whitespace-nowrap">${note.date || '-'}</td>
+                    <td class="p-4 text-center" onclick="event.stopPropagation()">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="openNoteModal('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button onclick="deleteNote('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors flex items-center justify-center cursor-pointer" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                    </td>
+                `;
+                listTableBody.appendChild(tr);
+            });
+        }
     }
 }
 window.renderNotesList = renderNotesList;
+
+function setNoteAccentColor(colorKey) {
+    const hidden = document.getElementById('noteAccentColor');
+    if (hidden) hidden.value = colorKey;
+    
+    ['gold', 'emerald', 'cyan', 'violet', 'rose', 'slate'].forEach(c => {
+        const swatch = document.getElementById(`colorSwatch-${c}`);
+        if (swatch) {
+            if (c === colorKey) {
+                swatch.classList.add('border-white', 'ring-2', 'ring-white/40');
+                swatch.classList.remove('border-transparent');
+            } else {
+                swatch.classList.remove('border-white', 'ring-2', 'ring-white/40');
+                swatch.classList.add('border-transparent');
+            }
+        }
+    });
+}
+window.setNoteAccentColor = setNoteAccentColor;
+
+function applyNoteFontFamily(fontKey) {
+    const editor = document.getElementById('noteEditor');
+    if (!editor) return;
+    
+    Object.values(noteFontMap).forEach(cls => editor.classList.remove(cls));
+    const targetCls = noteFontMap[fontKey] || 'note-font-inter';
+    editor.classList.add(targetCls);
+}
+window.applyNoteFontFamily = applyNoteFontFamily;
+
+function applyNoteFontSize(size) {
+    const editor = document.getElementById('noteEditor');
+    if (editor) editor.style.fontSize = size;
+}
+window.applyNoteFontSize = applyNoteFontSize;
+
+function toggleCurrentNotePin() {
+    const pinHidden = document.getElementById('notePinned');
+    const btn = document.getElementById('btnToggleNotePin');
+    const label = document.getElementById('notePinLabel');
+    const icon = document.getElementById('notePinIcon');
+    
+    const isPinned = pinHidden && pinHidden.value === 'true';
+    const nextState = !isPinned;
+    
+    if (pinHidden) pinHidden.value = nextState ? 'true' : 'false';
+    if (btn && label && icon) {
+        if (nextState) {
+            btn.className = 'px-3 py-1.5 rounded-xl border border-amber-500/50 bg-amber-500/20 text-amber-300 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm';
+            label.innerText = 'Pinned';
+        } else {
+            btn.className = 'px-3 py-1.5 rounded-xl border border-surface-700 bg-surface-900 text-slate-400 hover:text-amber-400 hover:border-amber-500/50 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm';
+            label.innerText = 'Pin';
+        }
+    }
+}
+window.toggleCurrentNotePin = toggleCurrentNotePin;
+
+function toggleNotePin(id) {
+    const note = (db.notes || []).find(n => n.id === id);
+    if (note) {
+        note.pinned = !note.pinned;
+        saveDatabase();
+        renderNotesList();
+        showToast(note.pinned ? 'Note pinned to top' : 'Note unpinned');
+    }
+}
+window.toggleNotePin = toggleNotePin;
+
+function formatNoteText(cmd, val = null) {
+    const editor = document.getElementById('noteEditor');
+    if (editor) editor.focus();
+    document.execCommand(cmd, false, val);
+    updateNoteStats();
+}
+window.formatNoteText = formatNoteText;
+
+function formatNoteTextColor(color) {
+    formatNoteText('foreColor', color);
+}
+window.formatNoteTextColor = formatNoteTextColor;
+
+function formatNoteHighlight() {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    
+    const range = sel.getRangeAt(0);
+    const selectedContent = range.extractContents();
+    const mark = document.createElement('mark');
+    mark.appendChild(selectedContent);
+    range.insertNode(mark);
+    updateNoteStats();
+}
+window.formatNoteHighlight = formatNoteHighlight;
+
+function formatNoteCodeBlock() {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+        formatNoteText('insertHTML', '<pre><code>// Insert code or notes here</code></pre><p><br></p>');
+    } else {
+        const range = sel.getRangeAt(0);
+        const selectedText = sel.toString();
+        const pre = document.createElement('pre');
+        const code = document.createElement('code');
+        code.innerText = selectedText;
+        pre.appendChild(code);
+        range.deleteContents();
+        range.insertNode(pre);
+    }
+    updateNoteStats();
+}
+window.formatNoteCodeBlock = formatNoteCodeBlock;
+
+function insertNoteChecklist() {
+    formatNoteText('insertHTML', '<div style="display: flex; align-items: center; gap: 8px; margin: 4px 0;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #F59E0B; cursor: pointer;"> <span>Task item...</span></div>');
+}
+window.insertNoteChecklist = insertNoteChecklist;
+
+function insertNoteTimestamp() {
+    const now = new Date();
+    const ts = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    formatNoteText('insertHTML', `<span class="px-2 py-0.5 rounded bg-surface-800 text-amber-400 font-mono text-[11px] border border-surface-700">[${ts}]</span> `);
+}
+window.insertNoteTimestamp = insertNoteTimestamp;
+
+function updateNoteStats() {
+    const editor = document.getElementById('noteEditor');
+    const wordCountEl = document.getElementById('noteWordCount');
+    const charCountEl = document.getElementById('noteCharCount');
+    if (!editor) return;
+
+    const text = editor.innerText.trim();
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    const chars = text.length;
+
+    if (wordCountEl) wordCountEl.innerText = words.toString();
+    if (charCountEl) charCountEl.innerText = chars.toString();
+}
+window.updateNoteStats = updateNoteStats;
 
 function openNoteModal(id = null) {
     const idEl = document.getElementById('noteId');
     if (idEl) idEl.value = id || '';
     
-    const titleEl = document.getElementById('noteModalTitle');
-    const nameInput = document.getElementById('noteTitleInput');
+    const titleModal = document.getElementById('noteModalTitle');
+    const titleInput = document.getElementById('noteTitleInput');
     const catInput = document.getElementById('noteCategoryInput');
-    const contentInput = document.getElementById('noteContentInput') || document.getElementById('noteEditor');
+    const editor = document.getElementById('noteEditor');
+    const fontSelect = document.getElementById('noteFontFamilySelect');
+    const sizeSelect = document.getElementById('noteFontSizeSelect');
 
     if (id) {
         const n = (db.notes || []).find(x => x.id === id);
         if (n) {
-            if (titleEl) titleEl.innerText = 'Edit Note';
-            if (nameInput) nameInput.value = n.title || '';
+            if (titleModal) titleModal.innerText = 'Edit Executive Note';
+            if (titleInput) titleInput.value = n.title || '';
             if (catInput) catInput.value = n.category || 'general';
-            if (contentInput) {
-                if ('value' in contentInput) contentInput.value = n.body || n.content || '';
-                else contentInput.innerHTML = n.body || n.content || '';
+            setNoteAccentColor(n.accentColor || 'gold');
+            
+            if (fontSelect) fontSelect.value = n.fontFamily || 'inter';
+            applyNoteFontFamily(n.fontFamily || 'inter');
+
+            if (sizeSelect) sizeSelect.value = n.fontSize || '17px';
+            applyNoteFontSize(n.fontSize || '17px');
+
+            const pinHidden = document.getElementById('notePinned');
+            if (pinHidden) pinHidden.value = n.pinned ? 'true' : 'false';
+            
+            const btn = document.getElementById('btnToggleNotePin');
+            const label = document.getElementById('notePinLabel');
+            if (btn && label) {
+                if (n.pinned) {
+                    btn.className = 'px-3 py-1.5 rounded-xl border border-amber-500/50 bg-amber-500/20 text-amber-300 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm';
+                    label.innerText = 'Pinned';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-xl border border-surface-700 bg-surface-900 text-slate-400 hover:text-amber-400 hover:border-amber-500/50 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm';
+                    label.innerText = 'Pin';
+                }
+            }
+
+            if (editor) {
+                editor.innerHTML = n.body || n.content || '';
             }
         }
     } else {
-        if (titleEl) titleEl.innerText = 'Compose Note';
-        if (nameInput) nameInput.value = '';
+        if (titleModal) titleModal.innerText = 'Executive Note Composer';
+        if (titleInput) titleInput.value = '';
         if (catInput) catInput.value = 'general';
-        if (contentInput) {
-            if ('value' in contentInput) contentInput.value = '';
-            else contentInput.innerHTML = '';
+        setNoteAccentColor('gold');
+        
+        if (fontSelect) fontSelect.value = 'inter';
+        applyNoteFontFamily('inter');
+
+        if (sizeSelect) sizeSelect.value = '17px';
+        applyNoteFontSize('17px');
+
+        const pinHidden = document.getElementById('notePinned');
+        if (pinHidden) pinHidden.value = 'false';
+        
+        const btn = document.getElementById('btnToggleNotePin');
+        const label = document.getElementById('notePinLabel');
+        if (btn && label) {
+            btn.className = 'px-3 py-1.5 rounded-xl border border-surface-700 bg-surface-900 text-slate-400 hover:text-amber-400 hover:border-amber-500/50 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm';
+            label.innerText = 'Pin';
+        }
+
+        if (editor) {
+            editor.innerHTML = '';
         }
     }
+    
+    updateNoteStats();
     openModal('noteModal');
+    setTimeout(() => {
+        if (titleInput && !id) titleInput.focus();
+    }, 150);
 }
 window.openNoteModal = openNoteModal;
-
-function runNoteCommand(cmd, val = null) {
-    document.execCommand(cmd, false, val);
-}
-window.runNoteCommand = runNoteCommand;
 
 function saveNote() {
     const idEl = document.getElementById('noteId');
     const id = idEl ? idEl.value : '';
-    const nameInput = document.getElementById('noteTitleInput');
-    const title = nameInput ? (nameInput.value.trim() || 'Untitled Note') : 'Untitled Note';
+    const titleInput = document.getElementById('noteTitleInput');
+    const title = titleInput ? (titleInput.value.trim() || 'Untitled Note') : 'Untitled Note';
     const catInput = document.getElementById('noteCategoryInput');
     const category = catInput ? catInput.value : 'general';
-    const contentInput = document.getElementById('noteContentInput') || document.getElementById('noteEditor');
-    const body = contentInput ? ('value' in contentInput ? contentInput.value : contentInput.innerHTML) : '';
+    const colorInput = document.getElementById('noteAccentColor');
+    const accentColor = colorInput ? colorInput.value : 'gold';
+    const fontSelect = document.getElementById('noteFontFamilySelect');
+    const fontFamily = fontSelect ? fontSelect.value : 'inter';
+    const sizeSelect = document.getElementById('noteFontSizeSelect');
+    const fontSize = sizeSelect ? sizeSelect.value : '17px';
+    const pinHidden = document.getElementById('notePinned');
+    const pinned = pinHidden ? pinHidden.value === 'true' : false;
+    
+    const editor = document.getElementById('noteEditor');
+    const body = editor ? editor.innerHTML : '';
     const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
     if (!db.notes) db.notes = [];
     if (id) {
         const n = db.notes.find(x => x.id === id);
-        if (n) { n.title = title; n.body = body; n.content = body; n.category = category; n.date = date; }
+        if (n) { 
+            n.title = title; 
+            n.body = body; 
+            n.content = body; 
+            n.category = category; 
+            n.accentColor = accentColor;
+            n.fontFamily = fontFamily;
+            n.fontSize = fontSize;
+            n.pinned = pinned;
+            n.date = date; 
+        }
     } else {
-        db.notes.push({ id: Date.now().toString(), title, body, content: body, category, date });
+        db.notes.unshift({ 
+            id: Date.now().toString(), 
+            title, 
+            body, 
+            content: body, 
+            category, 
+            accentColor,
+            fontFamily,
+            fontSize,
+            pinned,
+            date 
+        });
     }
 
     saveDatabase();
@@ -3422,27 +3886,57 @@ window.saveNote = saveNote;
 function openNoteReader(id) {
     const n = (db.notes || []).find(x => x.id === id);
     if (!n) return;
+    
     const catEl = document.getElementById('viewNoteCategory');
     const dateEl = document.getElementById('viewNoteDate');
     const titleEl = document.getElementById('viewNoteTitle');
     const contentEl = document.getElementById('viewNoteContent');
     const curIdEl = document.getElementById('currentViewNoteId');
+    const pinBadge = document.getElementById('viewNotePinBadge');
+    const wordCountEl = document.getElementById('viewNoteWordCount');
+    const wrapper = document.getElementById('viewNoteWrapper');
+    const glow = document.getElementById('viewNoteGlow');
 
-    const catColors = {
-        'work': 'border-blue-500/40 text-blue-400 bg-blue-500/10',
-        'finance': 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10',
-        'personal': 'border-purple-500/40 text-purple-400 bg-purple-500/10',
-        'ideas': 'border-amber-500/40 text-amber-400 bg-amber-500/10',
-        'general': 'border-slate-500/40 text-slate-300 bg-surface-800'
-    };
+    const colorKey = n.accentColor || 'gold';
+    const theme = noteThemeMap[colorKey] || noteThemeMap['gold'];
+    const fontClass = noteFontMap[n.fontFamily] || 'note-font-inter';
+
+    if (wrapper) {
+        wrapper.className = `max-w-4xl w-full h-full max-h-[88vh] rounded-[2rem] p-[2px] bg-gradient-to-br ${theme.gradient} shadow-[0_0_60px_rgba(201,164,107,0.25)] relative group`;
+    }
+    if (glow) {
+        glow.className = `absolute inset-0 bg-gradient-to-br ${theme.gradient} rounded-[2rem] blur-2xl opacity-25 group-hover:opacity-45 transition-opacity duration-700 -z-10`;
+    }
+
+    if (pinBadge) {
+        if (n.pinned) pinBadge.classList.remove('hidden');
+        else pinBadge.classList.add('hidden');
+    }
 
     if (catEl) {
         catEl.innerText = (n.category || 'General').toUpperCase();
-        catEl.className = `px-4 py-1.5 rounded-lg text-[10px] uppercase font-mono tracking-widest border font-bold shadow-lg ${catColors[n.category] || catColors['general']}`;
+        catEl.className = `px-4 py-1.5 rounded-lg text-[10px] uppercase font-mono tracking-widest border font-bold shadow-lg ${theme.badge}`;
     }
     if (dateEl) dateEl.innerHTML = `<i class="fa-regular fa-clock text-amber-400"></i> ${n.date || 'Recent'}`;
-    if (titleEl) titleEl.innerText = n.title || 'Untitled Note';
-    if (contentEl) contentEl.innerText = n.body || n.content || '';
+    if (titleEl) {
+        titleEl.innerText = n.title || 'Untitled Note';
+        Object.values(noteFontMap).forEach(c => titleEl.classList.remove(c));
+        titleEl.classList.add(fontClass);
+    }
+    
+    if (contentEl) {
+        contentEl.innerHTML = n.body || n.content || '';
+        Object.values(noteFontMap).forEach(c => contentEl.classList.remove(c));
+        contentEl.classList.add(fontClass);
+        if (n.fontSize) contentEl.style.fontSize = n.fontSize;
+    }
+
+    if (wordCountEl) {
+        const text = (contentEl ? contentEl.innerText : '').trim();
+        const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+        wordCountEl.innerText = `• ${words} words`;
+    }
+
     if (curIdEl) curIdEl.value = n.id;
 
     openModal('noteViewModal');
@@ -3460,10 +3954,11 @@ function editNoteFromView() {
 window.editNoteFromView = editNoteFromView;
 
 function deleteNote(id) {
-    requireConfirmation('Delete this note?', () => {
+    requireConfirmation('Delete this executive note permanently?', () => {
         db.notes = db.notes.filter(x => x.id !== id);
         saveDatabase();
         renderNotesList();
+        showToast('Note deleted');
     });
 }
 window.deleteNote = deleteNote;

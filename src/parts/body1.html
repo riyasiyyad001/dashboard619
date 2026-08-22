@@ -46,11 +46,6 @@
                         <div class="mt-1.5 text-[10px] font-mono tracking-wider text-slate-400">
                             <span id="liveDateTime">--/--/----</span>
                         </div>
-                        <div class="mt-2" id="cloudSyncStatusBadge" onclick="openCloudSyncModal()">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-surface-900 border border-emerald-500/30 text-emerald-400 font-mono text-[9px] cursor-pointer hover:border-emerald-500">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Firebase Live
-                            </span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -60,6 +55,14 @@
                 <nav id="navPageTabs" class="flex flex-col gap-2">
                     <!-- Tabs rendered vertically via JS -->
                 </nav>
+                <!-- Cloud Synced Status Badge moved below Intelligence Navigation Menu (Hidden by default, visible on hover) -->
+                <div id="cloudSyncContainer" class="pt-2 border-t border-surface-800/40 opacity-0 hover:opacity-100 transition-all duration-300">
+                    <div id="cloudSyncStatusBadge" onclick="openCloudSyncModal()" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-emerald-500/40 cursor-pointer hover:border-emerald-500 transition-all duration-300 shadow-sm" title="Cloud Sync & Account Status">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                        <span class="text-slate-200 font-mono text-[10px] truncate max-w-[190px]">Cloud Synced (riyasiyyad)</span>
+                        <i class="fa-solid fa-cloud text-xs text-emerald-400 ml-auto shrink-0 opacity-75"></i>
+                    </div>
+                </div>
             </div>
         </div>
 
