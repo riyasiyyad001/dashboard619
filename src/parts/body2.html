@@ -21,10 +21,16 @@
                     </button>
                 </div>
                 
-                <!-- Clear Portfolio Data Button -->
-                <button onclick="confirmClearAllData('assets')" class="opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm w-full xl:w-auto cursor-pointer" title="Clear all portfolio records">
-                    <i class="fa-solid fa-trash-can"></i> Clear Portfolio Data
-                </button>
+                <!-- Action Buttons: Undo & Clear -->
+                <div class="flex items-center gap-2 w-full xl:w-auto justify-end">
+                    <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-800 border border-surface-700 text-slate-400 hover:text-brand-400 hover:border-brand-500/40 transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-not-allowed">
+                        <i class="fa-solid fa-rotate-left"></i> Undo
+                    </button>
+                    <!-- Clear Portfolio Data Button -->
+                    <button onclick="confirmClearAllData('assets')" class="opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-pointer" title="Clear all portfolio records">
+                        <i class="fa-solid fa-trash-can"></i> Clear Portfolio Data
+                    </button>
+                </div>
             </div>
 
             <!-- SUB-PAGE 1: ASSET VALUATION LOG -->
@@ -32,9 +38,14 @@
                 <div class="premium-card p-6 group">
                     <div class="flex flex-wrap items-center justify-between border-b border-surface-800 pb-4 mb-4 gap-4">
                         <h3 class="font-display text-lg text-white tracking-wide">Asset Valuation Log</h3>
-                        <button onclick="openAssetLogModal()" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
-                            <i class="fa-solid fa-plus text-[10px]"></i> Add Entry
-                        </button>
+                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-3 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
+                            <button onclick="openAssetLogModal()" class="px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add Entry
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto rounded-xl border border-surface-800/50">
                         <table class="w-full text-left text-sm whitespace-nowrap">
@@ -62,16 +73,22 @@
                 <div class="premium-card p-6 group">
                     <div class="flex flex-wrap items-center justify-between border-b border-surface-800 pb-4 mb-4 gap-4">
                         <h3 class="font-display text-lg text-white tracking-wide">Banking Portfolio</h3>
-                        <button onclick="openBankModal()" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
-                            <i class="fa-solid fa-plus text-[10px]"></i> Add Account
-                        </button>
+                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-3 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
+                            <button onclick="openBankModal()" class="px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add Account
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto rounded-xl border border-surface-800/50">
                         <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
                                     <th class="py-3 px-4 w-12 text-center">S.No.</th>
-                                    <th class="py-3 px-4 min-w-[250px] w-[25%]">Institution</th>
+                                    <th class="py-3 px-4 min-w-[220px]">Institution</th>
+                                    <th class="py-3 px-4 min-w-[150px]">A/c Number</th>
                                     <th class="py-3 px-4">Beneficiary</th>
                                     <th class="py-3 px-4">Branch</th>
                                     <th class="py-3 px-4">Account Type</th>
@@ -94,9 +111,14 @@
                 <div class="premium-card p-6 group">
                     <div class="flex flex-wrap items-center justify-between border-b border-surface-800 pb-4 mb-4 gap-4">
                         <h3 class="font-display text-lg text-white tracking-wide">Credit & Liabilities</h3>
-                        <button onclick="openLoanModal()" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
-                            <i class="fa-solid fa-plus text-[10px]"></i> Add Facility
-                        </button>
+                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-3 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
+                            <button onclick="openLoanModal()" class="px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add Facility
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto rounded-xl border border-surface-800/50">
                         <table class="w-full text-left text-sm whitespace-nowrap">
@@ -127,9 +149,14 @@
                 <div class="premium-card p-6 group">
                     <div class="flex flex-wrap items-center justify-between border-b border-surface-800 pb-4 mb-4 gap-4">
                         <h3 class="font-display text-lg text-white tracking-wide">Mutual Funds Portfolio</h3>
-                        <button onclick="openAssetMutualFundModal()" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
-                            <i class="fa-solid fa-plus text-[10px]"></i> Add New Fund
-                        </button>
+                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-3 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
+                            <button onclick="openAssetMutualFundModal()" class="px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add New Fund
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto rounded-xl border border-surface-800/50">
                         <table class="w-full text-left text-sm whitespace-nowrap">
@@ -311,10 +338,16 @@
                         </div>
                     </div>
                     
-                    <!-- Clear Equities Data Button -->
-                    <button onclick="confirmClearAllData('india-ops')" class="opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-pointer" title="Clear all equities records">
-                        <i class="fa-solid fa-trash-can"></i> Clear Equities Data
-                    </button>
+                    <!-- Action Buttons: Undo & Clear -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-800 border border-surface-700 text-slate-400 hover:text-brand-400 hover:border-brand-500/40 transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-not-allowed">
+                            <i class="fa-solid fa-rotate-left"></i> Undo
+                        </button>
+                        <!-- Clear Equities Data Button -->
+                        <button onclick="confirmClearAllData('india-ops')" class="opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-pointer" title="Clear all equities records">
+                            <i class="fa-solid fa-trash-can"></i> Clear Equities Data
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -330,6 +363,9 @@
                             Equities Trading Log
                         </h4>
                         <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-4 py-2.5 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
                             <button onclick="openShareMarketModal()" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-[0_4px_15px_rgba(0,255,157,0.2)] flex items-center gap-2 hover:-translate-y-0.5 cursor-pointer">
                                 <i class="fa-solid fa-plus text-[10px]"></i> Log Trade
                             </button>
@@ -350,6 +386,7 @@
                                         <th class="py-3 px-4 text-right">Deployed Capital</th>
                                         <th class="py-3 px-4 text-right">Realized P&L</th>
                                         <th class="py-3 px-4 text-right">Profit %</th>
+                                        <th class="py-3 px-4 text-center w-16">Data</th>
                                         <th class="py-3 px-4 text-center w-24">Manage</th>
                                     </tr>
                                 </thead>
@@ -381,9 +418,14 @@
                             </div>
                             Miscellaneous Ledger
                         </h4>
-                        <button onclick="openOthersEntryModal()" class="opacity-0 group-hover:opacity-100 px-5 py-2.5 bg-accent-blue/10 text-accent-blue border border-accent-blue/30 hover:bg-accent-blue hover:text-surface-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-[0_4px_15px_rgba(0,240,255,0.15)] flex items-center gap-2 hover:-translate-y-0.5 cursor-pointer">
-                            <i class="fa-solid fa-plus text-[10px]"></i> Add Entry
-                        </button>
+                        <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-4 py-2.5 bg-surface-800 border border-surface-700 hover:border-accent-blue text-slate-400 hover:text-accent-blue rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
+                            <button onclick="openOthersEntryModal()" class="px-5 py-2.5 bg-accent-blue/10 text-accent-blue border border-accent-blue/30 hover:bg-accent-blue hover:text-surface-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-[0_4px_15px_rgba(0,240,255,0.15)] flex items-center gap-2 hover:-translate-y-0.5 cursor-pointer">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add Entry
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Responsive Data Table -->

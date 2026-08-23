@@ -8,14 +8,34 @@ function renderBankAccountsTable() {
         let bal = parseFloat(b.balance) || 0;
         if (b.currency === 'QAR') totalQAR += bal; else totalINR += bal;
 
+        const accNo = b.accountNumber || b.accountNo || b.accNo || '-';
+        const rawType = b.type || 'Savings';
+        let typeBadge = rawType;
+        if (rawType.toUpperCase() === 'NRE') {
+            typeBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">NRE</span>`;
+        } else if (rawType.toUpperCase() === 'NRO') {
+            typeBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-sky-500/10 text-sky-400 border border-sky-500/30">NRO</span>`;
+        } else if (rawType.toLowerCase().includes('nre') && rawType.toLowerCase().includes('nro')) {
+            typeBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">NRE/NRO</span>`;
+        } else if (rawType === 'Savings') {
+            typeBadge = `<span class="text-slate-300 font-medium">Savings</span>`;
+        } else if (rawType === 'Checking') {
+            typeBadge = `<span class="text-slate-300 font-medium">Checking</span>`;
+        } else if (rawType === 'Deposit') {
+            typeBadge = `<span class="text-slate-300 font-medium">Fixed Deposit</span>`;
+        } else if (rawType === 'Salary') {
+            typeBadge = `<span class="text-slate-300 font-medium">Salary</span>`;
+        }
+
         const tr = document.createElement('tr');
         tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[250px] w-full">${b.bankName}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[220px] w-full">${b.bankName}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[150px]">${accNo}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.accountName}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.branch}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.type}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${typeBadge}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl uppercase font-mono tracking-wider text-slate-400 text-xs flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.ifsc}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-brand-500 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.currency || 'INR'} ${bal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
@@ -33,7 +53,7 @@ function renderBankAccountsTable() {
         foot.className = 'font-mono text-xs bg-surface-900/80 border-none';
         foot.innerHTML = `
             <tr>
-                <td colspan="6" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Balance:</td>
+                <td colspan="7" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Balance:</td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
                     <div class="flex flex-col items-end gap-2">
                         <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border border-brand-500/30 shadow-[0_0_15px_rgba(201,164,107,0.15)] text-lg font-mono tracking-wider font-bold text-brand-500">₹${totalINR.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
@@ -55,22 +75,28 @@ function openBankModal(id = null) {
         if (b) {
             if (titleEl) titleEl.innerText = 'Edit Bank Account';
             if (document.getElementById('bankNameInput')) document.getElementById('bankNameInput').value = b.bankName || '';
+            if (document.getElementById('bankAccountNumberInput')) document.getElementById('bankAccountNumberInput').value = b.accountNumber || b.accountNo || b.accNo || '';
             if (document.getElementById('bankAccountNameInput')) document.getElementById('bankAccountNameInput').value = b.accountName || '';
             if (document.getElementById('bankBranchInput')) document.getElementById('bankBranchInput').value = b.branch || '';
-            if (document.getElementById('bankTypeInput')) document.getElementById('bankTypeInput').value = b.type || 'Checking';
+            let valType = b.type || 'Savings';
+            if (valType === 'NRE / NRO') valType = 'NRE';
+            if (document.getElementById('bankTypeInput')) document.getElementById('bankTypeInput').value = valType;
             if (document.getElementById('bankIfscInput')) document.getElementById('bankIfscInput').value = b.ifsc || '';
             if (document.getElementById('bankCurrencyInput')) document.getElementById('bankCurrencyInput').value = b.currency || 'INR';
             if (document.getElementById('bankBalanceInput')) document.getElementById('bankBalanceInput').value = b.balance || '';
+            if (document.getElementById('bankNotesInput')) document.getElementById('bankNotesInput').value = b.notes || '';
         }
     } else {
         if (titleEl) titleEl.innerText = 'Add Bank Account';
         if (document.getElementById('bankNameInput')) document.getElementById('bankNameInput').value = '';
+        if (document.getElementById('bankAccountNumberInput')) document.getElementById('bankAccountNumberInput').value = '';
         if (document.getElementById('bankAccountNameInput')) document.getElementById('bankAccountNameInput').value = (db.profile && db.profile.name) ? db.profile.name : '';
         if (document.getElementById('bankBranchInput')) document.getElementById('bankBranchInput').value = '';
-        if (document.getElementById('bankTypeInput')) document.getElementById('bankTypeInput').value = 'Checking';
+        if (document.getElementById('bankTypeInput')) document.getElementById('bankTypeInput').value = 'Savings';
         if (document.getElementById('bankIfscInput')) document.getElementById('bankIfscInput').value = '';
         if (document.getElementById('bankCurrencyInput')) document.getElementById('bankCurrencyInput').value = 'INR';
         if (document.getElementById('bankBalanceInput')) document.getElementById('bankBalanceInput').value = '';
+        if (document.getElementById('bankNotesInput')) document.getElementById('bankNotesInput').value = '';
     }
     openModal('bankModal');
 }
@@ -78,18 +104,30 @@ function openBankModal(id = null) {
 function saveBankDetails() {
     const id = document.getElementById('bankId').value;
     const bankName = document.getElementById('bankNameInput').value || 'Bank';
+    const accountNumber = document.getElementById('bankAccountNumberInput') ? document.getElementById('bankAccountNumberInput').value.trim() : '';
     const accountName = document.getElementById('bankAccountNameInput').value || 'Self';
     const branch = document.getElementById('bankBranchInput').value || 'Main';
     const type = document.getElementById('bankTypeInput').value;
     const ifsc = document.getElementById('bankIfscInput').value;
     const currency = document.getElementById('bankCurrencyInput').value;
     const balance = parseFloat(document.getElementById('bankBalanceInput').value) || 0;
+    const notes = document.getElementById('bankNotesInput') ? document.getElementById('bankNotesInput').value.trim() : '';
 
     if (id) {
         const b = db.bankAccounts.find(x => x.id === id);
-        if (b) { b.bankName = bankName; b.accountName = accountName; b.branch = branch; b.type = type; b.ifsc = ifsc; b.currency = currency; b.balance = balance; }
+        if (b) { 
+            b.bankName = bankName; 
+            b.accountNumber = accountNumber;
+            b.accountName = accountName; 
+            b.branch = branch; 
+            b.type = type; 
+            b.ifsc = ifsc; 
+            b.currency = currency; 
+            b.balance = balance; 
+            b.notes = notes;
+        }
     } else {
-        db.bankAccounts.push({ id: Date.now().toString(), bankName, accountName, branch, type, ifsc, currency, balance });
+        db.bankAccounts.push({ id: Date.now().toString(), bankName, accountNumber, accountName, branch, type, ifsc, currency, balance, notes });
     }
 
     saveDatabase();
@@ -102,6 +140,17 @@ function saveBankDetails() {
 
 function deleteBankRow(id) {
     requireConfirmation('Delete this bank account?', () => {
+        if (!db.bankAccounts) return;
+        const item = db.bankAccounts.find(x => x.id === id);
+        const idx = db.bankAccounts.findIndex(x => x.id === id);
+        if (item && typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'bank',
+                label: `Bank Account: ${item.bankName || ''} (${item.accountName || ''})`,
+                data: JSON.parse(JSON.stringify(item)),
+                originalIndex: idx
+            });
+        }
         db.bankAccounts = db.bankAccounts.filter(x => x.id !== id);
         saveDatabase();
         renderBankAccountsTable();
@@ -236,6 +285,17 @@ function saveLoanDetails() {
 
 function deleteLoanRow(id) {
     requireConfirmation('Delete this credit facility?', () => {
+        if (!db.loans) return;
+        const item = db.loans.find(x => x.id === id);
+        const idx = db.loans.findIndex(x => x.id === id);
+        if (item && typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'loan',
+                label: `Credit / Facility: ${item.source || item.bank || ''} - ${item.type || ''}`,
+                data: JSON.parse(JSON.stringify(item)),
+                originalIndex: idx
+            });
+        }
         db.loans = db.loans.filter(x => x.id !== id);
         saveDatabase();
         renderLoansTable();
@@ -380,6 +440,16 @@ function saveAssetMutualFund() {
 function deleteAssetMutualFund(id) {
     requireConfirmation('Remove this mutual fund?', () => {
         if (!db.assetMutualFunds) return;
+        const item = db.assetMutualFunds.find(x => x.id === id);
+        const idx = db.assetMutualFunds.findIndex(x => x.id === id);
+        if (item && typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'mutualFund',
+                label: `Mutual Fund: ${item.fundName || 'Mutual Fund'}`,
+                data: JSON.parse(JSON.stringify(item)),
+                originalIndex: idx
+            });
+        }
         db.assetMutualFunds = db.assetMutualFunds.filter(x => x.id !== id);
         saveDatabase();
         renderAssetMutualFundsTable();

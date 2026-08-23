@@ -77,11 +77,25 @@
         .note-rich-content mark { background: rgba(245, 158, 11, 0.25); color: #FDE68A; padding: 0.1rem 0.35rem; border-radius: 0.25rem; }
         
         /* Note Editor Placeholder */
-        #noteEditor:empty:before {
+        #noteEditor:empty:before,
+        #msNoteEditor:empty:before,
+        #tradeNoteEditor:empty:before {
             content: attr(data-placeholder);
             color: #64748b;
             pointer-events: none;
             display: block;
+        }
+
+        #msNoteEditor,
+        #tradeNoteEditor {
+            direction: ltr !important;
+            text-align: left !important;
+            unicode-bidi: normal !important;
+            writing-mode: horizontal-tb !important;
+        }
+        #msNoteEditor *,
+        #tradeNoteEditor * {
+            text-align: inherit;
         }
         
         /* Glassmorphism refined */

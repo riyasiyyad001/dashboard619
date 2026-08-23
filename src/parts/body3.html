@@ -10,6 +10,9 @@
                     <button onclick="switchBudgetSubTab('india')" id="btnBudgetSubIndia" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white hover:border-brand-500/40 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
                         <i class="fa-solid fa-piggy-bank text-[10px]"></i> India Budget (INR)
                     </button>
+                    <button onclick="switchBudgetSubTab('analysis')" id="btnBudgetSubAnalysis" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white hover:border-brand-500/40 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-chart-pie text-[10px]"></i> Analysis
+                    </button>
                 </div>
                 
                 <div class="flex items-center justify-end w-full xl:w-auto gap-4">
@@ -125,6 +128,172 @@
                     </table>
                 </div>
             </div>
+
+            <!-- SECTION 3: BUDGET & SPEND ANALYSIS -->
+            <div id="budgetSubView-analysis" class="budget-sub-view space-y-6 group hidden">
+                <!-- Header with Analysis Filter Controls -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-surface-800 pb-3 gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm shadow-inner">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                                Budget &amp; Spend Analysis
+                            </h3>
+                            <p class="text-[10px] font-mono text-slate-400">Comprehensive multi-currency budget allocation vs actual spends intelligence</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick View Controls (Combined / QAR / INR) -->
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1 bg-surface-900/80 p-1 rounded-xl border border-surface-800">
+                            <button type="button" onclick="setBudgetAnalysisCurrency('ALL')" id="btnBudgetAnalysisCurrALL" class="px-3 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider bg-brand-600 text-surface-950 font-bold transition-all shadow-sm">
+                                Combined (INR)
+                            </button>
+                            <button type="button" onclick="setBudgetAnalysisCurrency('QAR')" id="btnBudgetAnalysisCurrQAR" class="px-3 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-white hover:bg-surface-800 transition-all">
+                                Qatar (QAR)
+                            </button>
+                            <button type="button" onclick="setBudgetAnalysisCurrency('INR')" id="btnBudgetAnalysisCurrINR" class="px-3 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-white hover:bg-surface-800 transition-all">
+                                India (INR)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Executive Metric Cards (4 Cards) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Total Budget Card -->
+                    <div class="premium-card p-5 relative overflow-hidden flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400">Total Budget</span>
+                            <span class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-wallet"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <div id="baMetricTotalBudget" class="font-mono text-xl font-bold text-white tracking-tight">₹0.00</div>
+                            <div id="baMetricBudgetSub" class="text-[11px] font-mono text-slate-400 mt-1">Planned allocation</div>
+                        </div>
+                    </div>
+
+                    <!-- Total Actual Spend Card -->
+                    <div class="premium-card p-5 relative overflow-hidden flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400">Actual Spend</span>
+                            <span class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-receipt"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <div id="baMetricTotalSpend" class="font-mono text-xl font-bold text-amber-400 tracking-tight">₹0.00</div>
+                            <div id="baMetricSpendSub" class="text-[11px] font-mono text-slate-400 mt-1">Total recorded spends</div>
+                        </div>
+                    </div>
+
+                    <!-- Variance / Savings Card -->
+                    <div class="premium-card p-5 relative overflow-hidden flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400">Net Variance / Savings</span>
+                            <span id="baMetricVarianceIcon" class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-piggy-bank"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <div id="baMetricVariance" class="font-mono text-xl font-bold text-emerald-400 tracking-tight">+₹0.00</div>
+                            <div id="baMetricVarianceSub" class="text-[11px] font-mono text-emerald-400/80 mt-1">Surplus retained</div>
+                        </div>
+                    </div>
+
+                    <!-- Burn Rate & Health Card -->
+                    <div class="premium-card p-5 relative overflow-hidden flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400">Budget Utilization</span>
+                            <span id="baMetricStatusBadge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Healthy</span>
+                        </div>
+                        <div>
+                            <div class="flex items-baseline justify-between mb-1.5">
+                                <span id="baMetricUtilizationPct" class="font-mono text-xl font-bold text-white tracking-tight">0.0%</span>
+                                <span id="baMetricDailyBurn" class="font-mono text-xs text-slate-400">Avg: ₹0/day</span>
+                            </div>
+                            <div class="w-full h-2 bg-surface-900 rounded-full overflow-hidden border border-surface-800">
+                                <div id="baMetricProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section: 2 Visual Interactive Graphs -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Chart 1: Budget vs Actual Spend by Category (Grouped Bar Chart) -->
+                    <div class="premium-card p-5 md:p-6 flex flex-col justify-between relative overflow-hidden">
+                        <div class="flex items-center justify-between border-b border-surface-800 pb-3 mb-4">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-brand-400 animate-pulse"></span>
+                                <h4 class="font-display text-xs md:text-sm text-white font-bold tracking-wide uppercase">Budget vs Actual Spend by Category</h4>
+                            </div>
+                            <span class="text-[10px] font-mono text-slate-400">Planned vs Spent</span>
+                        </div>
+                        <div class="relative h-64 md:h-72 w-full flex items-center justify-center">
+                            <canvas id="budgetCategoryCompareChartCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Category Expense Distribution (Doughnut) -->
+                    <div class="premium-card p-5 md:p-6 flex flex-col justify-between relative overflow-hidden">
+                        <div class="flex items-center justify-between border-b border-surface-800 pb-3 mb-4">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                <h4 class="font-display text-xs md:text-sm text-white font-bold tracking-wide uppercase">Expense Distribution by Category</h4>
+                            </div>
+                            <span class="text-[10px] font-mono text-slate-400">Spend Share %</span>
+                        </div>
+                        <div class="relative h-64 md:h-72 w-full flex items-center justify-center">
+                            <canvas id="budgetCategoryShareChartCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Monthly Spend & Budget Trend (Full Width) -->
+                <div class="premium-card p-5 md:p-6 flex flex-col justify-between relative overflow-hidden">
+                    <div class="flex items-center justify-between border-b border-surface-800 pb-3 mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            <h4 id="budgetMonthlyTrendTitle" class="font-display text-xs md:text-sm text-white font-bold tracking-wide uppercase">Monthly Budget &amp; Spend Trend (2026)</h4>
+                        </div>
+                        <span class="text-[10px] font-mono text-slate-400">12-Month Trajectory</span>
+                    </div>
+                    <div class="relative h-64 md:h-72 w-full flex items-center justify-center">
+                        <canvas id="budgetMonthlyTrendChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Category Health Breakdown Table -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between border-b border-surface-800 pb-2">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-brand-500"></i> Category Health &amp; Variance Breakdown
+                        </h4>
+                        <span id="baTablePeriodLabel" class="text-[10px] font-mono text-slate-500 uppercase">Period: February 2026</span>
+                    </div>
+                    <div class="premium-card p-4 overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-surface-900/90 border-b border-surface-800">
+                                <tr class="text-[10px] font-mono tracking-[0.1em] uppercase text-brand-500 font-bold">
+                                    <th class="py-2.5 px-3">Category</th>
+                                    <th class="py-2.5 px-3 text-right">Planned Budget</th>
+                                    <th class="py-2.5 px-3 text-right">Actual Spend</th>
+                                    <th class="py-2.5 px-3 text-right">Variance</th>
+                                    <th class="py-2.5 px-3 w-48">Utilization</th>
+                                    <th class="py-2.5 px-3 text-center">Health Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="budgetAnalysisTableBody" class="divide-y divide-surface-800/50 font-light text-slate-300">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- PAGE 8: GOALS PAGE -->
@@ -186,10 +355,11 @@
                                     <th class="py-3 px-3">Objective</th>
                                     <th class="py-3 px-3 w-20">Start</th>
                                     <th class="py-3 px-3 w-20">Target</th>
-                                    <th class="py-3 px-3 text-right w-40">Estimate</th>
-                                    <th class="py-3 px-3 text-right w-40">Saved / Paid</th>
-                                    <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                    <th class="py-3 px-3 text-right w-36">Estimate</th>
+                                    <th class="py-3 px-3 text-right w-36">Saved / Paid</th>
+                                    <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                     <th class="py-3 px-3">Status</th>
+                                    <th class="py-3 px-3 text-center w-14">Data</th>
                                     <th class="py-3 px-3 text-center w-12">Manage</th>
                                 </tr>
                             </thead>
@@ -220,10 +390,11 @@
                                         <th class="py-3 px-3">Objective</th>
                                         <th class="py-3 px-3 w-20">Start</th>
                                         <th class="py-3 px-3 w-20">Target</th>
-                                        <th class="py-3 px-3 text-right w-40">Estimate</th>
-                                        <th class="py-3 px-3 text-right w-40">Saved / Paid</th>
-                                        <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                        <th class="py-3 px-3 text-right w-36">Estimate</th>
+                                        <th class="py-3 px-3 text-right w-36">Saved / Paid</th>
+                                        <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                         <th class="py-3 px-3">Status</th>
+                                        <th class="py-3 px-3 text-center w-14">Data</th>
                                         <th class="py-3 px-3 text-center w-12">Manage</th>
                                     </tr>
                                 </thead>
@@ -259,8 +430,9 @@
                                     <th class="py-3 px-3">Objective</th>
                                     <th class="py-3 px-3">Category</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
-                                    <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                    <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                     <th class="py-3 px-3">Status</th>
+                                    <th class="py-3 px-3 text-center w-14">Data</th>
                                     <th class="py-3 px-3 text-center w-12">Manage</th>
                                 </tr>
                             </thead>
@@ -290,8 +462,9 @@
                                         <th class="py-3 px-3">Objective</th>
                                         <th class="py-3 px-3">Category</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
-                                        <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                        <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                         <th class="py-3 px-3">Status</th>
+                                        <th class="py-3 px-3 text-center w-14">Data</th>
                                         <th class="py-3 px-3 text-center w-12">Manage</th>
                                     </tr>
                                 </thead>
@@ -327,8 +500,9 @@
                                     <th class="py-3 px-3">Objective</th>
                                     <th class="py-3 px-3">Category</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
-                                    <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                    <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                     <th class="py-3 px-3">Status</th>
+                                    <th class="py-3 px-3 text-center w-14">Data</th>
                                     <th class="py-3 px-3 text-center w-12">Manage</th>
                                 </tr>
                             </thead>
@@ -358,8 +532,9 @@
                                         <th class="py-3 px-3">Objective</th>
                                         <th class="py-3 px-3">Category</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
-                                        <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                        <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                         <th class="py-3 px-3">Status</th>
+                                        <th class="py-3 px-3 text-center w-14">Data</th>
                                         <th class="py-3 px-3 text-center w-12">Manage</th>
                                     </tr>
                                 </thead>
@@ -395,8 +570,9 @@
                                     <th class="py-3 px-3">Book Title / Goal</th>
                                     <th class="py-3 px-3">Genre / Topic</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
-                                    <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                    <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                     <th class="py-3 px-3">Status</th>
+                                    <th class="py-3 px-3 text-center w-14">Data</th>
                                     <th class="py-3 px-3 text-center w-12">Manage</th>
                                 </tr>
                             </thead>
@@ -426,8 +602,9 @@
                                         <th class="py-3 px-3">Book Title / Goal</th>
                                         <th class="py-3 px-3">Genre / Topic</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
-                                        <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                        <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                         <th class="py-3 px-3">Status</th>
+                                        <th class="py-3 px-3 text-center w-14">Data</th>
                                         <th class="py-3 px-3 text-center w-12">Manage</th>
                                     </tr>
                                 </thead>
@@ -463,8 +640,9 @@
                                     <th class="py-3 px-3">Destination / Trip</th>
                                     <th class="py-3 px-3">Focus / Itinerary</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
-                                    <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                    <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                     <th class="py-3 px-3">Status</th>
+                                    <th class="py-3 px-3 text-center w-14">Data</th>
                                     <th class="py-3 px-3 text-center w-12">Manage</th>
                                 </tr>
                             </thead>
@@ -494,8 +672,9 @@
                                         <th class="py-3 px-3">Destination / Trip</th>
                                         <th class="py-3 px-3">Focus / Itinerary</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
-                                        <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                        <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                         <th class="py-3 px-3">Status</th>
+                                        <th class="py-3 px-3 text-center w-14">Data</th>
                                         <th class="py-3 px-3 text-center w-12">Manage</th>
                                     </tr>
                                 </thead>
@@ -531,8 +710,9 @@
                                     <th class="py-3 px-3">Ziyara / Holy Site</th>
                                     <th class="py-3 px-3">Intent / Notes</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
-                                    <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                    <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                     <th class="py-3 px-3">Status</th>
+                                    <th class="py-3 px-3 text-center w-14">Data</th>
                                     <th class="py-3 px-3 text-center w-12">Manage</th>
                                 </tr>
                             </thead>
@@ -562,8 +742,9 @@
                                         <th class="py-3 px-3">Ziyara / Holy Site</th>
                                         <th class="py-3 px-3">Intent / Notes</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
-                                        <th class="py-3 px-3 text-center w-[30%] min-w-[250px]">Progress</th>
+                                        <th class="py-3 px-3 text-center w-[35%] min-w-[280px]">Progress</th>
                                         <th class="py-3 px-3">Status</th>
+                                        <th class="py-3 px-3 text-center w-14">Data</th>
                                         <th class="py-3 px-3 text-center w-12">Manage</th>
                                     </tr>
                                 </thead>
@@ -695,7 +876,8 @@
                                     <th class="py-3 px-3">Milestone</th>
                                     <th class="py-3 px-3">Track</th>
                                     <th class="py-3 px-3">Target Date</th>
-                                    <th class="py-3 px-3 text-center w-36">Progress</th>
+                                    <th class="py-3 px-3 text-center w-48">Progress</th>
+                                    <th class="py-3 px-3 text-center w-14">Data</th>
                                     <th class="py-3 px-3 text-center w-24">Action</th>
                                 </tr>
                             </thead>

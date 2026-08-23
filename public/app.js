@@ -99,30 +99,34 @@ function formatSentenceCapitalization(str) {
     });
 }
 
-// Global intelligent input listener across all text fields and contenteditable elements
+// Global intelligent input listener across standard form text inputs
 document.addEventListener('input', function(e) {
     const target = e.target;
-    if ((target.tagName === 'INPUT' && target.type === 'text') || target.tagName === 'TEXTAREA' || target.getAttribute('contenteditable') === 'true') {
-        if (target.type === 'password' || target.classList.contains('no-auto-case')) return;
+    // Exclude contenteditable rich editors (e.g. msNoteEditor, noteEditor), password inputs, and elements marked no-auto-case
+    if (!target || target.getAttribute('contenteditable') === 'true' || target.closest('[contenteditable="true"]') || target.classList.contains('no-auto-case') || target.classList.contains('note-rich-content')) {
+        return;
+    }
+
+    if ((target.tagName === 'INPUT' && (target.type === 'text' || !target.type)) || target.tagName === 'TEXTAREA') {
+        if (target.type === 'password') return;
         
         const start = target.selectionStart;
         const end = target.selectionEnd;
         
-        const val = target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' ? target.value : target.innerText;
+        const val = target.value;
+        if (!val) return;
         
         // If user is currently typing in all caps, allow it
-        if (val && val === val.toUpperCase() && /[A-Z]/.test(val) && val.length > 1) {
+        if (val === val.toUpperCase() && /[A-Z]/.test(val) && val.length > 1) {
             return;
         }
 
         // Format with sentence/title capitalization (First letter capital, rest lowercase)
         const formatted = formatSentenceCapitalization(val);
         if (val !== formatted) {
-            if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') {
-                target.value = formatted;
-                if (start !== null) target.setSelectionRange(start, end);
-            } else {
-                target.innerText = formatted;
+            target.value = formatted;
+            if (start !== null && end !== null) {
+                target.setSelectionRange(start, end);
             }
         }
     }
@@ -369,6 +373,7 @@ function refreshAllViews() {
     renderRemindersTable();
     renderNotifications();
     renderGrowthChart();
+    renderHomeProfile();
     applyBgCustomization();
     if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 }
@@ -653,6 +658,125 @@ function saveHomeProfile() {
     saveDatabase();
 }
 
+function saveHomePrinciples() {
+    const titleEl = document.getElementById('homePrinciplesTitle');
+    const items = [];
+    document.querySelectorAll('.home-principle-text').forEach(el => {
+        const txt = el.innerText.trim();
+        if (txt) items.push(txt);
+    });
+
+    if (!db.profile) db.profile = {};
+    if (titleEl) db.profile.principlesTitle = titleEl.innerText.trim() || 'Determine to Overcome';
+    if (items.length > 0) {
+        db.profile.principles = items;
+    }
+    saveDatabase();
+}
+
+function renderHomeProfile() {
+    if (!db.profile) return;
+    const nameEl = document.getElementById('homeProfileName');
+    const phoneEl = document.getElementById('homeProfilePhone');
+    const photoEl = document.getElementById('profilePhotoImg');
+    const titleEl = document.getElementById('homePrinciplesTitle');
+    const listEl = document.getElementById('homePrinciplesList');
+
+    if (nameEl && db.profile.name && document.activeElement !== nameEl) {
+        nameEl.innerText = db.profile.name;
+    }
+    if (phoneEl && db.profile.phone && document.activeElement !== phoneEl) {
+        phoneEl.innerText = db.profile.phone;
+    }
+    if (photoEl && db.profile.photo) {
+        photoEl.src = db.profile.photo;
+    }
+    if (titleEl && db.profile.principlesTitle && document.activeElement !== titleEl) {
+        titleEl.innerText = db.profile.principlesTitle;
+    }
+
+    if (listEl) {
+        if (listEl.contains(document.activeElement)) {
+            return;
+        }
+
+        const principles = Array.isArray(db.profile.principles) && db.profile.principles.length > 0
+            ? db.profile.principles
+            : [
+                'Set a highest goal',
+                'Make a plan',
+                'Work harder & harder for it',
+                'Evaluate the update daily',
+                'Gradually will get the result'
+            ];
+
+        const diamondGradients = [
+            'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.45)]',
+            'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.45)]',
+            'text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.45)]',
+            'text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.45)]',
+            'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.45)]'
+        ];
+
+        listEl.innerHTML = principles.map((item, idx) => {
+            const glow = diamondGradients[idx % diamondGradients.length];
+            const safeText = String(item).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return `
+                <div class="home-principle-row flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl hover:bg-surface-900/60 transition-all duration-200 group/item">
+                    <span class="w-5 h-5 rounded-lg bg-surface-900/90 flex items-center justify-center shrink-0 shadow-sm">
+                        <i class="fa-solid fa-gem ${glow} text-[10px]"></i>
+                    </span>
+                    <div class="home-principle-text flex-1 font-mono text-[12px] text-slate-200 leading-snug outline-none cursor-text hover:text-white transition-colors" contenteditable="true" onblur="saveHomePrinciples()" data-index="${idx}" title="Click to edit">${safeText}</div>
+                    <button type="button" onclick="deleteHomePrinciple(${idx})" class="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 transition-opacity p-1 text-[10px] cursor-pointer" title="Remove">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function addHomePrinciple() {
+    if (!db.profile) db.profile = {};
+    if (!Array.isArray(db.profile.principles)) {
+        db.profile.principles = [
+            'Set a highest goal',
+            'Make a plan',
+            'Work harder & harder for it',
+            'Evaluate the update daily',
+            'Gradually will get the result'
+        ];
+    }
+    db.profile.principles.push('New key milestone goal');
+    saveDatabase();
+    renderHomeProfile();
+
+    setTimeout(() => {
+        const texts = document.querySelectorAll('.home-principle-text');
+        if (texts.length > 0) {
+            const last = texts[texts.length - 1];
+            last.focus();
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(last);
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    }, 50);
+}
+
+function deleteHomePrinciple(index) {
+    if (!db.profile || !Array.isArray(db.profile.principles)) return;
+    db.profile.principles.splice(index, 1);
+    if (db.profile.principles.length === 0) {
+        db.profile.principles = ['Set a highest goal'];
+    }
+    saveDatabase();
+    renderHomeProfile();
+}
+
 function saveHomeAddress() {
     const addrEl = document.getElementById('homeAddressContent');
     if (addrEl) db.profile.address = addrEl.innerText;
@@ -672,6 +796,13 @@ function uploadProfilePhoto(event) {
         reader.readAsDataURL(file);
     }
 }
+
+window.saveHomeProfile = saveHomeProfile;
+window.saveHomeAddress = saveHomeAddress;
+window.saveHomePrinciples = saveHomePrinciples;
+window.addHomePrinciple = addHomePrinciple;
+window.deleteHomePrinciple = deleteHomePrinciple;
+window.renderHomeProfile = renderHomeProfile;
 
 let currentStorageType = 'documents';
 
@@ -937,7 +1068,8 @@ function switchBudgetSubTab(tabKey) {
 
     const tabs = { 
         qatar: { id: 'btnBudgetSubQatar', icon: 'fa-coins', label: 'Qatar Budget (QAR)' }, 
-        india: { id: 'btnBudgetSubIndia', icon: 'fa-piggy-bank', label: 'India Budget (INR)' }
+        india: { id: 'btnBudgetSubIndia', icon: 'fa-piggy-bank', label: 'India Budget (INR)' },
+        analysis: { id: 'btnBudgetSubAnalysis', icon: 'fa-chart-pie', label: 'Analysis' }
     };
 
     Object.keys(tabs).forEach(k => {
@@ -952,6 +1084,12 @@ function switchBudgetSubTab(tabKey) {
             }
         }
     });
+
+    if (tabKey === 'analysis' && typeof renderBudgetAnalysis === 'function') {
+        setTimeout(() => {
+            renderBudgetAnalysis();
+        }, 50);
+    }
 }
 
 function switchAssetSubTab(tabKey) {
@@ -1175,14 +1313,34 @@ function renderBankAccountsTable() {
         let bal = parseFloat(b.balance) || 0;
         if (b.currency === 'QAR') totalQAR += bal; else totalINR += bal;
 
+        const accNo = b.accountNumber || b.accountNo || b.accNo || '-';
+        const rawType = b.type || 'Savings';
+        let typeBadge = rawType;
+        if (rawType.toUpperCase() === 'NRE') {
+            typeBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">NRE</span>`;
+        } else if (rawType.toUpperCase() === 'NRO') {
+            typeBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-sky-500/10 text-sky-400 border border-sky-500/30">NRO</span>`;
+        } else if (rawType.toLowerCase().includes('nre') && rawType.toLowerCase().includes('nro')) {
+            typeBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">NRE/NRO</span>`;
+        } else if (rawType === 'Savings') {
+            typeBadge = `<span class="text-slate-300 font-medium">Savings</span>`;
+        } else if (rawType === 'Checking') {
+            typeBadge = `<span class="text-slate-300 font-medium">Checking</span>`;
+        } else if (rawType === 'Deposit') {
+            typeBadge = `<span class="text-slate-300 font-medium">Fixed Deposit</span>`;
+        } else if (rawType === 'Salary') {
+            typeBadge = `<span class="text-slate-300 font-medium">Salary</span>`;
+        }
+
         const tr = document.createElement('tr');
         tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[250px] w-full">${b.bankName}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[220px] w-full">${b.bankName}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[150px]">${accNo}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.accountName}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.branch}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.type}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${typeBadge}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl uppercase font-mono tracking-wider text-slate-400 text-xs flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.ifsc}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-brand-500 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.currency || 'INR'} ${bal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
@@ -1200,7 +1358,7 @@ function renderBankAccountsTable() {
         foot.className = 'font-mono text-xs bg-surface-900/80 border-none';
         foot.innerHTML = `
             <tr>
-                <td colspan="6" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Balance:</td>
+                <td colspan="7" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Balance:</td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
                     <div class="flex flex-col items-end gap-2">
                         <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border border-brand-500/30 shadow-[0_0_15px_rgba(201,164,107,0.15)] text-lg font-mono tracking-wider font-bold text-brand-500">₹${totalINR.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
@@ -1222,22 +1380,28 @@ function openBankModal(id = null) {
         if (b) {
             if (titleEl) titleEl.innerText = 'Edit Bank Account';
             if (document.getElementById('bankNameInput')) document.getElementById('bankNameInput').value = b.bankName || '';
+            if (document.getElementById('bankAccountNumberInput')) document.getElementById('bankAccountNumberInput').value = b.accountNumber || b.accountNo || b.accNo || '';
             if (document.getElementById('bankAccountNameInput')) document.getElementById('bankAccountNameInput').value = b.accountName || '';
             if (document.getElementById('bankBranchInput')) document.getElementById('bankBranchInput').value = b.branch || '';
-            if (document.getElementById('bankTypeInput')) document.getElementById('bankTypeInput').value = b.type || 'Checking';
+            let valType = b.type || 'Savings';
+            if (valType === 'NRE / NRO') valType = 'NRE';
+            if (document.getElementById('bankTypeInput')) document.getElementById('bankTypeInput').value = valType;
             if (document.getElementById('bankIfscInput')) document.getElementById('bankIfscInput').value = b.ifsc || '';
             if (document.getElementById('bankCurrencyInput')) document.getElementById('bankCurrencyInput').value = b.currency || 'INR';
             if (document.getElementById('bankBalanceInput')) document.getElementById('bankBalanceInput').value = b.balance || '';
+            if (document.getElementById('bankNotesInput')) document.getElementById('bankNotesInput').value = b.notes || '';
         }
     } else {
         if (titleEl) titleEl.innerText = 'Add Bank Account';
         if (document.getElementById('bankNameInput')) document.getElementById('bankNameInput').value = '';
+        if (document.getElementById('bankAccountNumberInput')) document.getElementById('bankAccountNumberInput').value = '';
         if (document.getElementById('bankAccountNameInput')) document.getElementById('bankAccountNameInput').value = (db.profile && db.profile.name) ? db.profile.name : '';
         if (document.getElementById('bankBranchInput')) document.getElementById('bankBranchInput').value = '';
-        if (document.getElementById('bankTypeInput')) document.getElementById('bankTypeInput').value = 'Checking';
+        if (document.getElementById('bankTypeInput')) document.getElementById('bankTypeInput').value = 'Savings';
         if (document.getElementById('bankIfscInput')) document.getElementById('bankIfscInput').value = '';
         if (document.getElementById('bankCurrencyInput')) document.getElementById('bankCurrencyInput').value = 'INR';
         if (document.getElementById('bankBalanceInput')) document.getElementById('bankBalanceInput').value = '';
+        if (document.getElementById('bankNotesInput')) document.getElementById('bankNotesInput').value = '';
     }
     openModal('bankModal');
 }
@@ -1245,18 +1409,30 @@ function openBankModal(id = null) {
 function saveBankDetails() {
     const id = document.getElementById('bankId').value;
     const bankName = document.getElementById('bankNameInput').value || 'Bank';
+    const accountNumber = document.getElementById('bankAccountNumberInput') ? document.getElementById('bankAccountNumberInput').value.trim() : '';
     const accountName = document.getElementById('bankAccountNameInput').value || 'Self';
     const branch = document.getElementById('bankBranchInput').value || 'Main';
     const type = document.getElementById('bankTypeInput').value;
     const ifsc = document.getElementById('bankIfscInput').value;
     const currency = document.getElementById('bankCurrencyInput').value;
     const balance = parseFloat(document.getElementById('bankBalanceInput').value) || 0;
+    const notes = document.getElementById('bankNotesInput') ? document.getElementById('bankNotesInput').value.trim() : '';
 
     if (id) {
         const b = db.bankAccounts.find(x => x.id === id);
-        if (b) { b.bankName = bankName; b.accountName = accountName; b.branch = branch; b.type = type; b.ifsc = ifsc; b.currency = currency; b.balance = balance; }
+        if (b) { 
+            b.bankName = bankName; 
+            b.accountNumber = accountNumber;
+            b.accountName = accountName; 
+            b.branch = branch; 
+            b.type = type; 
+            b.ifsc = ifsc; 
+            b.currency = currency; 
+            b.balance = balance; 
+            b.notes = notes;
+        }
     } else {
-        db.bankAccounts.push({ id: Date.now().toString(), bankName, accountName, branch, type, ifsc, currency, balance });
+        db.bankAccounts.push({ id: Date.now().toString(), bankName, accountNumber, accountName, branch, type, ifsc, currency, balance, notes });
     }
 
     saveDatabase();
@@ -1902,7 +2078,7 @@ function renderShareMarketTable() {
     const body = document.getElementById('shareMarketTableBody');
     if (!body) return;
     body.innerHTML = '';
-    let totalInvested = 0, totalCurrent = 0;
+    let totalInvested = 0, totalPnl = 0;
 
     if (!db.indiaOps) db.indiaOps = {};
     if (!db.indiaOps.shareMarket) db.indiaOps.shareMarket = [];
@@ -1924,7 +2100,7 @@ function renderShareMarketTable() {
 
     if (sortedList.length === 0) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="8" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-chart-pie text-2xl mb-2 block opacity-40"></i> No equity positions found for ${eqFilterMonth} ${eqFilterYear}. Click "+ Log Trade" above to add one.</td>`;
+        tr.innerHTML = `<td colspan="9" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-chart-pie text-2xl mb-2 block opacity-40"></i> No equity positions found for ${eqFilterMonth} ${eqFilterYear}. Click "+ Log Trade" above to add one.</td>`;
         body.appendChild(tr);
     }
 
@@ -1933,20 +2109,27 @@ function renderShareMarketTable() {
         const cur = parseFloat(sm.current) || 0;
         const pnl = cur - inv;
         const pnlPct = inv > 0 ? (pnl / inv) * 100 : 0;
-        totalInvested += inv; totalCurrent += cur;
+        totalInvested += inv;
+        totalPnl += pnl;
+
+        const hasNotes = Boolean(sm.detailedNotes || sm.notes);
 
         const tr = document.createElement('tr');
         tr.className = 'group hover:bg-surface-800/30 transition-colors last:border-0';
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${sm.year}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-mono text-xs">${sm.month}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${sm.year || '2026'}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-mono text-xs">${sm.month || 'February'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]"><span class="uppercase font-bold text-accent-cyan tracking-wide">${sm.script}</span>${sm.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${sm.notes}">(${sm.notes})</span>` : ''}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-bold text-brand-500">₹${cur.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct.toFixed(2)}%</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-medium text-slate-300">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-16">
+                <button onclick="openTradeNotesModal('${sm.id}')" class="w-8 h-8 rounded-xl bg-surface-900/90 hover:bg-brand-500/20 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 transition-all inline-flex items-center justify-center cursor-pointer shadow-sm group/note" title="Open Trade Notes & Documentation">
+                    <i class="fa-regular fa-note-sticky text-xs group-hover/note:scale-110 transition-transform ${hasNotes ? 'text-brand-400 font-bold' : ''}"></i>
+                </button>
+            </div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-24">
                 <div class="flex items-center justify-center gap-2 w-full">
                     <button onclick="openShareMarketModal('${sm.id}')" class="w-7 h-7 rounded-lg bg-surface-800/80 hover:bg-brand-500/20 text-slate-400 hover:text-brand-400 transition-colors flex items-center justify-center cursor-pointer" title="Edit Position"><i class="fa-solid fa-pen text-xs"></i></button>
                     <button onclick="deleteShareMarketRow('${sm.id}')" class="w-7 h-7 rounded-lg bg-surface-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors flex items-center justify-center cursor-pointer" title="Delete Position"><i class="fa-solid fa-trash text-xs"></i></button>
@@ -1969,6 +2152,8 @@ function renderShareMarketTable() {
                 const pnl = cur - inv;
                 const pnlPct = inv > 0 ? (pnl / inv) * 100 : 0;
                 const pnlColor = pnl >= 0 ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' : 'text-rose-400 border-rose-500/30 bg-rose-500/10';
+                const hasNotes = Boolean(sm.detailedNotes || sm.notes);
+                
                 const card = document.createElement('div');
                 card.className = 'p-5 flex flex-col gap-3 hover:bg-surface-800/40 transition-colors';
                 card.innerHTML = `
@@ -1977,24 +2162,21 @@ function renderShareMarketTable() {
                             <h5 class="font-bold text-white text-sm tracking-wide uppercase">${sm.script}</h5>
                             <span class="font-mono text-[10px] uppercase tracking-widest text-slate-500 px-2 py-0.5 rounded border border-surface-700 bg-surface-800">${sm.month || 'February'} ${sm.year || '2026'}</span>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="openShareMarketModal('${sm.id}')" class="p-2 text-slate-400 hover:text-brand-500 transition-colors cursor-pointer" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteShareMarketRow('${sm.id}')" class="p-2 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openTradeNotesModal('${sm.id}')" class="w-7 h-7 rounded-lg bg-surface-800/80 hover:bg-brand-500/20 text-slate-400 hover:text-brand-400 transition-colors flex items-center justify-center cursor-pointer" title="Trade Notes"><i class="fa-regular fa-note-sticky text-xs ${hasNotes ? 'text-brand-400' : ''}"></i></button>
+                            <button onclick="openShareMarketModal('${sm.id}')" class="w-7 h-7 rounded-lg bg-surface-800/80 hover:bg-brand-500/20 text-slate-400 hover:text-brand-400 transition-colors flex items-center justify-center cursor-pointer" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button onclick="deleteShareMarketRow('${sm.id}')" class="w-7 h-7 rounded-lg bg-surface-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors flex items-center justify-center cursor-pointer" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
                         </div>
                     </div>
                     ${sm.notes ? `<p class="text-xs text-slate-400 font-light italic border-l-2 border-surface-700 pl-2 py-0.5">${sm.notes}</p>` : ''}
-                    <div class="grid grid-cols-3 gap-2 pt-3 mt-1 border-t border-surface-800/50">
+                    <div class="grid grid-cols-2 gap-2 pt-3 mt-1 border-t border-surface-800/50">
                         <div class="flex flex-col">
-                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">Invested</span>
-                            <span class="font-mono text-xs text-slate-300">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">Current Val</span>
-                            <span class="font-mono text-xs font-bold text-brand-500">₹${cur.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">Deployed Capital</span>
+                            <span class="font-mono text-xs font-semibold text-slate-300">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                         </div>
                         <div class="flex flex-col items-end text-right">
-                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">P&L (${pnlPct.toFixed(1)}%)</span>
-                            <span class="font-mono text-xs font-bold px-1.5 py-0.5 rounded border ${pnlColor}">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">Realized P&L (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(1)}%)</span>
+                            <span class="font-mono text-xs font-bold px-2 py-0.5 rounded border ${pnlColor}">
                                 ${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}
                             </span>
                         </div>
@@ -2007,7 +2189,6 @@ function renderShareMarketTable() {
 
     const foot = document.getElementById('shareMarketTableFoot');
     if (foot) {
-        const totalPnl = totalCurrent - totalInvested;
         const totalPnlPct = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
         foot.className = 'font-mono text-xs bg-surface-900/80 border-none';
         foot.innerHTML = `
@@ -2017,14 +2198,12 @@ function renderShareMarketTable() {
                     <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border border-slate-500/30 text-base font-mono tracking-wider font-bold text-slate-300">₹${totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                 </td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
-                    <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border border-brand-500/30 shadow-[0_0_15px_rgba(201,164,107,0.15)] text-lg font-mono tracking-wider font-bold text-brand-500">₹${totalCurrent.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                    <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${totalPnl>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-base font-mono tracking-wider font-bold">${totalPnl >= 0 ? '+' : ''}₹${totalPnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                 </td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
-                    <span class="inline-block px-4 py-1.5 rounded-xl bg-surface-950 border ${totalPnl>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-base font-mono tracking-wider font-bold">₹${totalPnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                    <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${totalPnlPct>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-base font-mono tracking-wider font-bold">${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%</span>
                 </td>
-                <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
-                    <span class="inline-block px-4 py-1.5 rounded-xl bg-surface-950 border ${totalPnlPct>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-base font-mono tracking-wider font-bold">${totalPnlPct.toFixed(2)}%</span>
-                </td>
+                <td class="border-none"></td>
                 <td class="border-none"></td>
             </tr>
         `;
@@ -2040,8 +2219,8 @@ function openShareMarketModal(id = null) {
         if (sm) {
             const titleEl = document.getElementById('shareTradeModalTitle');
             if (titleEl) titleEl.innerText = 'Edit Equity Trade';
-            if (document.getElementById('shareYearInput')) document.getElementById('shareYearInput').value = sm.year;
-            if (document.getElementById('shareMonthInput')) document.getElementById('shareMonthInput').value = sm.month;
+            if (document.getElementById('shareYearInput')) document.getElementById('shareYearInput').value = sm.year || '2026';
+            if (document.getElementById('shareMonthInput')) document.getElementById('shareMonthInput').value = sm.month || 'February';
             if (document.getElementById('shareParticularsInput')) document.getElementById('shareParticularsInput').value = sm.script || '';
             const inv = parseFloat(sm.invested) || 0;
             const cur = parseFloat(sm.current) || 0;
@@ -2117,6 +2296,228 @@ function deleteShareMarketRow(id) {
     });
 }
 
+// -------------------------------------------------------------
+// EQUITIES TRADE NOTES & DATA DOCUMENTATION WORKSPACE
+// -------------------------------------------------------------
+function openTradeNotesModal(tradeId) {
+    if (!db.indiaOps || !db.indiaOps.shareMarket) db.indiaOps = { shareMarket: [] };
+    const sm = db.indiaOps.shareMarket.find(x => x.id === tradeId);
+    if (!sm) return;
+
+    // Set Hidden Trade ID
+    const tradeIdEl = document.getElementById('tradeNoteTradeId');
+    if (tradeIdEl) tradeIdEl.value = sm.id;
+
+    // Set Scrip Title
+    const titleEl = document.getElementById('tradeNoteTitle');
+    if (titleEl) titleEl.innerText = `${sm.script || 'EQUITY TRADE'} - Trade Notes`;
+
+    // Metrics & badges
+    const inv = parseFloat(sm.invested) || 0;
+    const cur = parseFloat(sm.current) || 0;
+    const pnl = cur - inv;
+    const pnlPct = inv > 0 ? (pnl / inv) * 100 : 0;
+
+    const periodBadge = document.getElementById('tradeNotePeriodBadge');
+    if (periodBadge) periodBadge.innerText = `${sm.month || 'February'} ${sm.year || '2026'}`;
+
+    const capitalBadge = document.getElementById('tradeNoteCapitalBadge');
+    if (capitalBadge) capitalBadge.innerText = `Cap: ₹${inv.toLocaleString('en-IN')}`;
+
+    const pnlBadge = document.getElementById('tradeNotePnlBadge');
+    if (pnlBadge) {
+        pnlBadge.innerText = `${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN')} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)`;
+        pnlBadge.className = `px-2.5 py-0.5 rounded-md font-bold text-[11px] ${pnl >= 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'}`;
+    }
+
+    // Populate Editor
+    const editor = document.getElementById('tradeNoteEditor');
+    if (editor) {
+        editor.innerHTML = sm.detailedNotes || (sm.notes ? `<p>${sm.notes}</p>` : '');
+    }
+
+    // Set Font Size
+    const fontSizeSelect = document.getElementById('tradeNoteFontSizeSelect');
+    if (fontSizeSelect) {
+        fontSizeSelect.value = sm.notesFontSize || '17px';
+        applyTradeNoteFontSize(fontSizeSelect.value);
+    }
+
+    openModal('tradeNotesModal');
+
+    // Auto-focus editor cleanly at the end
+    setTimeout(() => {
+        if (editor) {
+            editor.focus();
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(editor);
+            range.collapse(false);
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    }, 100);
+}
+window.openTradeNotesModal = openTradeNotesModal;
+
+function saveTradeNotes() {
+    const tradeIdEl = document.getElementById('tradeNoteTradeId');
+    const tradeId = tradeIdEl ? tradeIdEl.value : null;
+    if (!tradeId) return;
+
+    if (!db.indiaOps || !db.indiaOps.shareMarket) return;
+    const sm = db.indiaOps.shareMarket.find(x => x.id === tradeId);
+    if (!sm) return;
+
+    const editor = document.getElementById('tradeNoteEditor');
+    const fontSizeSelect = document.getElementById('tradeNoteFontSizeSelect');
+
+    const htmlContent = editor ? editor.innerHTML : '';
+    const textContent = editor ? (editor.innerText || editor.textContent || '') : '';
+
+    sm.detailedNotes = htmlContent;
+    if (!sm.notes || sm.notes.trim() === '') {
+        sm.notes = textContent.slice(0, 100).trim();
+    }
+    if (fontSizeSelect) sm.notesFontSize = fontSizeSelect.value;
+
+    saveDatabase();
+    renderShareMarketTable();
+    showToast('Trade notes saved successfully');
+    closeModal('tradeNotesModal');
+}
+window.saveTradeNotes = saveTradeNotes;
+
+function formatTradeNoteText(cmd, value = null) {
+    document.execCommand(cmd, false, value);
+    const editor = document.getElementById('tradeNoteEditor');
+    if (editor) editor.focus();
+}
+window.formatTradeNoteText = formatTradeNoteText;
+
+function applyTradeNoteFontSize(sizeVal) {
+    const editor = document.getElementById('tradeNoteEditor');
+    if (!editor) return;
+    editor.style.fontSize = sizeVal;
+}
+window.applyTradeNoteFontSize = applyTradeNoteFontSize;
+
+function formatTradeNoteHighlight() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    document.execCommand('hiliteColor', false, 'rgba(245, 158, 11, 0.35)');
+    const editor = document.getElementById('tradeNoteEditor');
+    if (editor) editor.focus();
+}
+window.formatTradeNoteHighlight = formatTradeNoteHighlight;
+
+function formatTradeNoteTextColor(colorHex) {
+    document.execCommand('foreColor', false, colorHex);
+    const editor = document.getElementById('tradeNoteEditor');
+    if (editor) editor.focus();
+}
+window.formatTradeNoteTextColor = formatTradeNoteTextColor;
+
+function formatTradeNoteCodeBlock() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const selectedText = range.toString() || 'Strategy rule / indicator details here...';
+    
+    const codeElem = document.createElement('pre');
+    codeElem.className = 'p-3 my-2 rounded-xl bg-surface-900 border border-surface-700/80 font-mono text-xs text-brand-400 overflow-x-auto';
+    codeElem.innerText = selectedText;
+    
+    range.deleteContents();
+    range.insertNode(codeElem);
+}
+window.formatTradeNoteCodeBlock = formatTradeNoteCodeBlock;
+
+function insertTradeNoteChecklist() {
+    const checkboxHtml = `<div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 text-brand-500 focus:ring-brand-500 accent-amber-500 cursor-pointer"><span>Trade entry checklist item...</span></div><p></p>`;
+    document.execCommand('insertHTML', false, checkboxHtml);
+}
+window.insertTradeNoteChecklist = insertTradeNoteChecklist;
+
+function insertTradeNoteTimestamp() {
+    const now = new Date();
+    const formatted = `[${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}] `;
+    document.execCommand('insertHTML', false, `<span class="font-mono text-xs text-amber-400 font-semibold">${formatted}</span>`);
+}
+window.insertTradeNoteTimestamp = insertTradeNoteTimestamp;
+
+function copyTradeNotesToClipboard() {
+    const editor = document.getElementById('tradeNoteEditor');
+    const text = editor ? (editor.innerText || editor.textContent || '') : '';
+    if (navigator.clipboard && text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Trade notes copied to clipboard');
+        }).catch(() => {
+            showToast('Could not copy notes');
+        });
+    } else {
+        showToast('No notes content to copy');
+    }
+}
+window.copyTradeNotesToClipboard = copyTradeNotesToClipboard;
+
+function printTradeNotes() {
+    const title = document.getElementById('tradeNoteTitle')?.innerText || 'Trade Notes';
+    const content = document.getElementById('tradeNoteEditor')?.innerHTML || '';
+    const win = window.open('', '_blank');
+    if (!win) {
+        showToast('Popup blocked by browser. Please allow popups.');
+        return;
+    }
+    win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${title}</title>
+            <style>
+                body { font-family: 'Inter', system-ui, sans-serif; padding: 40px; color: #111; line-height: 1.6; }
+                h1 { font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                h2 { font-size: 18px; margin-top: 20px; }
+                pre { background: #f4f4f4; padding: 12px; border-radius: 8px; font-family: monospace; }
+                ul, ol { padding-left: 24px; }
+            </style>
+        </head>
+        <body>
+            <h1>${title}</h1>
+            <div>${content}</div>
+            <script>window.print();<\/script>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
+window.printTradeNotes = printTradeNotes;
+
+function toggleTradeNotesFullscreen() {
+    const card = document.getElementById('tradeNotesCard');
+    const icon = document.getElementById('iconTradeNotesExpand');
+    if (!card) return;
+
+    if (card.classList.contains('max-w-6xl')) {
+        card.classList.remove('max-w-6xl', 'h-[96vh]');
+        card.classList.add('w-full', 'h-full', 'rounded-none', 'max-w-none');
+        if (icon) {
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress');
+        }
+    } else {
+        card.classList.add('max-w-6xl', 'h-[96vh]');
+        card.classList.remove('w-full', 'h-full', 'rounded-none', 'max-w-none');
+        if (icon) {
+            icon.classList.add('fa-expand');
+            icon.classList.remove('fa-compress');
+        }
+    }
+}
+window.toggleTradeNotesFullscreen = toggleTradeNotesFullscreen;
+
 function setBudgetFilter(mode, noRender = false) {
     budgetFilterMode = mode.toLowerCase();
     
@@ -2173,6 +2574,9 @@ window.updateBudgetFilters = function() {
 function renderBudgetsAndGoals() {
     renderBudgetBlock('QAR', 'qatarBudgetTableBody', 'qatarBudgetTableFoot');
     renderBudgetBlock('INR', 'indiaBudgetTableBody', 'indiaBudgetTableFoot');
+    if (typeof renderBudgetAnalysis === 'function') {
+        renderBudgetAnalysis();
+    }
 }
 
 function renderBudgetBlock(curr, tableBodyId, tableFootId) {
@@ -2314,12 +2718,40 @@ function toggleDailyExpCategoryInput() {
     }
 }
 
+function populateCategorySelect(selectId, currency, selectedValue = '') {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    const isQAR = (currency || '').toUpperCase() === 'QAR';
+    
+    // Qatar: Personal Expenses first
+    // India: Family Maintenance first
+    const categories = isQAR
+        ? ['Personal Expenses', 'Family Maintenance', 'Charity', 'Investment', 'Others']
+        : ['Family Maintenance', 'Personal Expenses', 'Charity', 'Investment', 'Others'];
+    
+    sel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    
+    if (selectedValue) {
+        if (categories.includes(selectedValue)) {
+            sel.value = selectedValue;
+        } else {
+            sel.value = 'Others';
+        }
+    } else {
+        sel.value = categories[0];
+    }
+}
+window.populateCategorySelect = populateCategorySelect;
+
 function openBudgetModal(currency, id = null) {
     const currEl = document.getElementById('budgetModalCurrency') || document.getElementById('budgetCurrencyInput');
     if (currEl) currEl.value = currency;
     const idEl = document.getElementById('budgetId');
     if (idEl) idEl.value = id || '';
     
+    const isQAR = (currency || '').toUpperCase() === 'QAR';
+    const defaultCat = isQAR ? 'Personal Expenses' : 'Family Maintenance';
+
     if (id) {
         const list = (db.budget && db.budget[currency]) ? db.budget[currency] : [];
         const b = list.find(x => x.id === id);
@@ -2328,7 +2760,17 @@ function openBudgetModal(currency, id = null) {
             if (titleEl) titleEl.innerText = `Edit ${currency} Planned Budget`;
             if (document.getElementById('budgetYearInput')) document.getElementById('budgetYearInput').value = b.year || '2026';
             if (document.getElementById('budgetMonthInput')) document.getElementById('budgetMonthInput').value = b.month || 'February';
-            if (document.getElementById('budgetCategoryInput')) document.getElementById('budgetCategoryInput').value = b.category || 'Family Maintenance';
+            
+            populateCategorySelect('budgetCategoryInput', currency, b.category || defaultCat);
+            const customCatInput = document.getElementById('budgetCustomCategoryInput');
+            if (customCatInput) {
+                if (b.category && !['Personal Expenses', 'Family Maintenance', 'Charity', 'Investment'].includes(b.category)) {
+                    customCatInput.value = b.category;
+                } else {
+                    customCatInput.value = '';
+                }
+            }
+            
             if (document.getElementById('budgetAmountInput')) document.getElementById('budgetAmountInput').value = b.amount || '';
             if (document.getElementById('budgetNotesInput')) document.getElementById('budgetNotesInput').value = b.notes || '';
         }
@@ -2337,7 +2779,11 @@ function openBudgetModal(currency, id = null) {
         if (titleEl) titleEl.innerText = `Add ${currency} Planned Budget`;
         if (document.getElementById('budgetYearInput')) document.getElementById('budgetYearInput').value = budgetFilterYear || '2026';
         if (document.getElementById('budgetMonthInput')) document.getElementById('budgetMonthInput').value = budgetFilterMonth || 'February';
-        if (document.getElementById('budgetCategoryInput')) document.getElementById('budgetCategoryInput').value = 'Family Maintenance';
+        
+        populateCategorySelect('budgetCategoryInput', currency, defaultCat);
+        const customCatInput = document.getElementById('budgetCustomCategoryInput');
+        if (customCatInput) customCatInput.value = '';
+        
         if (document.getElementById('budgetAmountInput')) document.getElementById('budgetAmountInput').value = '';
         if (document.getElementById('budgetNotesInput')) document.getElementById('budgetNotesInput').value = '';
     }
@@ -2394,6 +2840,8 @@ function openDailyExpenseModal(currency, id = null) {
     if (idEl) idEl.value = id || '';
     
     const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const isQAR = (currency || '').toUpperCase() === 'QAR';
+    const defaultCat = isQAR ? 'Personal Expenses' : 'Family Maintenance';
     
     if (id) {
         const exp = (db.dailyExpenses || []).find(x => x.id === id);
@@ -2408,8 +2856,15 @@ function openDailyExpenseModal(currency, id = null) {
                     dateInput.value = exp.date || todayStr;
                 }
             }
-            const catEl = document.getElementById('dailyExpCategoryInput') || document.getElementById('dailyExpenseCategoryInput');
-            if (catEl) catEl.value = exp.category || 'Family Maintenance';
+            populateCategorySelect('dailyExpCategoryInput', currency, exp.category || defaultCat);
+            const customCatInput = document.getElementById('dailyExpCustomCategoryInput');
+            if (customCatInput) {
+                if (exp.category && !['Personal Expenses', 'Family Maintenance', 'Charity', 'Investment'].includes(exp.category)) {
+                    customCatInput.value = exp.category;
+                } else {
+                    customCatInput.value = '';
+                }
+            }
             const descEl = document.getElementById('dailyExpDescInput') || document.getElementById('dailyExpenseItemInput');
             if (descEl) descEl.value = exp.particulars || exp.item || '';
             const amtEl = document.getElementById('dailyExpAmountInput') || document.getElementById('dailyExpenseAmountInput');
@@ -2426,8 +2881,9 @@ function openDailyExpenseModal(currency, id = null) {
                 dateInput.value = todayStr;
             }
         }
-        const catEl = document.getElementById('dailyExpCategoryInput') || document.getElementById('dailyExpenseCategoryInput');
-        if (catEl) catEl.value = 'Family Maintenance';
+        populateCategorySelect('dailyExpCategoryInput', currency, defaultCat);
+        const customCatInput = document.getElementById('dailyExpCustomCategoryInput');
+        if (customCatInput) customCatInput.value = '';
         const descEl = document.getElementById('dailyExpDescInput') || document.getElementById('dailyExpenseItemInput');
         if (descEl) descEl.value = '';
         const amtEl = document.getElementById('dailyExpAmountInput') || document.getElementById('dailyExpenseAmountInput');
@@ -2672,6 +3128,547 @@ function deleteDailyExpenseFromLog(id) {
 }
 window.deleteDailyExpenseFromLog = deleteDailyExpenseFromLog;
 
+let budgetAnalysisCurrency = 'ALL';
+
+function setBudgetAnalysisCurrency(curr) {
+    budgetAnalysisCurrency = curr;
+    const btnAll = document.getElementById('btnBudgetAnalysisCurrALL');
+    const btnQar = document.getElementById('btnBudgetAnalysisCurrQAR');
+    const btnInr = document.getElementById('btnBudgetAnalysisCurrINR');
+
+    const activeClass = 'px-3 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider bg-brand-600 text-surface-950 font-bold transition-all shadow-sm';
+    const inactiveClass = 'px-3 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-white hover:bg-surface-800 transition-all';
+
+    if (btnAll) btnAll.className = curr === 'ALL' ? activeClass : inactiveClass;
+    if (btnQar) btnQar.className = curr === 'QAR' ? activeClass : inactiveClass;
+    if (btnInr) btnInr.className = curr === 'INR' ? activeClass : inactiveClass;
+
+    renderBudgetAnalysis();
+}
+window.setBudgetAnalysisCurrency = setBudgetAnalysisCurrency;
+
+function renderBudgetAnalysis() {
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const QAR_TO_INR = 22.8;
+    const year = budgetFilterYear || '2026';
+    const month = budgetFilterMonth || 'February';
+    const isYearly = budgetFilterMode === 'yearly';
+
+    // Update table period header label
+    const periodLabel = document.getElementById('baTablePeriodLabel');
+    if (periodLabel) {
+        periodLabel.innerText = `Period: ${isYearly ? year : `${month} ${year}`} (${budgetAnalysisCurrency === 'ALL' ? 'Combined INR' : budgetAnalysisCurrency})`;
+    }
+    const trendTitle = document.getElementById('budgetMonthlyTrendTitle');
+    if (trendTitle) {
+        trendTitle.innerText = `Monthly Budget & Spend Trend (${year} - ${budgetAnalysisCurrency === 'ALL' ? 'Combined INR' : budgetAnalysisCurrency})`;
+    }
+
+    const parseExpenseDate = (dStr) => {
+        if (!dStr) return null;
+        if (dStr.includes('/')) {
+            const p = dStr.split('/');
+            return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+        }
+        return new Date(dStr);
+    };
+
+    const isExpenseInFilter = (e) => {
+        const d = parseExpenseDate(e.date);
+        if (!d || isNaN(d.getTime())) return true;
+        const expYear = d.getFullYear().toString();
+        if (isYearly) {
+            return expYear === year;
+        }
+        const expMonth = d.toLocaleString('default', { month: 'long' }).toLowerCase();
+        return expYear === year && expMonth === month.toLowerCase();
+    };
+
+    // Filter budgets
+    const filterBudgetList = (list) => {
+        if (!list) return [];
+        return list.filter(b => {
+            const bYear = b.year || '2026';
+            if (isYearly) return bYear === year;
+            const bMonth = b.month || 'February';
+            return bYear === year && bMonth.toLowerCase() === month.toLowerCase();
+        });
+    };
+
+    const qarBudgets = filterBudgetList(db.budget?.QAR || []);
+    const inrBudgets = filterBudgetList(db.budget?.INR || []);
+
+    const allExpenses = db.dailyExpenses || [];
+    const qarExpenses = allExpenses.filter(e => (e.currency || 'INR') === 'QAR' && isExpenseInFilter(e));
+    const inrExpenses = allExpenses.filter(e => (e.currency || 'INR') === 'INR' && isExpenseInFilter(e));
+
+    // Category aggregation
+    const catMap = {};
+    const initCat = (c) => {
+        if (!catMap[c]) {
+            catMap[c] = { category: c, budget: 0, spend: 0, qarBudget: 0, inrBudget: 0, qarSpend: 0, inrSpend: 0 };
+        }
+    };
+
+    // Populate from standard categories
+    ['Personal Expenses', 'Family Maintenance', 'Charity', 'Investment', 'Others'].forEach(initCat);
+
+    // Populate planned budgets
+    qarBudgets.forEach(b => {
+        const cat = b.category || 'Others';
+        initCat(cat);
+        const amt = parseFloat(b.amount) || 0;
+        catMap[cat].qarBudget += amt;
+    });
+    inrBudgets.forEach(b => {
+        const cat = b.category || 'Others';
+        initCat(cat);
+        const amt = parseFloat(b.amount) || 0;
+        catMap[cat].inrBudget += amt;
+    });
+
+    // Populate actual spends
+    qarExpenses.forEach(e => {
+        const cat = e.category || 'Others';
+        initCat(cat);
+        const amt = parseFloat(e.amount) || 0;
+        catMap[cat].qarSpend += amt;
+    });
+    inrExpenses.forEach(e => {
+        const cat = e.category || 'Others';
+        initCat(cat);
+        const amt = parseFloat(e.amount) || 0;
+        catMap[cat].inrSpend += amt;
+    });
+
+    // Compute effective values based on currency
+    const currSym = budgetAnalysisCurrency === 'QAR' ? 'QR ' : '₹';
+
+    Object.values(catMap).forEach(c => {
+        if (budgetAnalysisCurrency === 'QAR') {
+            c.budget = c.qarBudget;
+            c.spend = c.qarSpend;
+        } else if (budgetAnalysisCurrency === 'INR') {
+            c.budget = c.inrBudget;
+            c.spend = c.inrSpend;
+        } else {
+            // Combined in INR
+            c.budget = c.inrBudget + (c.qarBudget * QAR_TO_INR);
+            c.spend = c.inrSpend + (c.qarSpend * QAR_TO_INR);
+        }
+    });
+
+    // Total metrics
+    let totalBudget = 0;
+    let totalSpend = 0;
+    let totalQarBudget = 0;
+    let totalInrBudget = 0;
+    let totalQarSpend = 0;
+    let totalInrSpend = 0;
+
+    Object.values(catMap).forEach(c => {
+        totalBudget += c.budget;
+        totalSpend += c.spend;
+        totalQarBudget += c.qarBudget;
+        totalInrBudget += c.inrBudget;
+        totalQarSpend += c.qarSpend;
+        totalInrSpend += c.inrSpend;
+    });
+
+    const variance = totalBudget - totalSpend;
+    const utilizationPct = totalBudget > 0 ? (totalSpend / totalBudget) * 100 : (totalSpend > 0 ? 100 : 0);
+
+    // Update KPI Card 1: Total Budget
+    const elTotBudget = document.getElementById('baMetricTotalBudget');
+    if (elTotBudget) {
+        elTotBudget.innerText = `${currSym}${totalBudget.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    const elBudgetSub = document.getElementById('baMetricBudgetSub');
+    if (elBudgetSub) {
+        if (budgetAnalysisCurrency === 'ALL') {
+            elBudgetSub.innerText = `INR ₹${totalInrBudget.toLocaleString('en-IN', { maximumFractionDigits: 0 })} + QAR QR ${totalQarBudget.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+        } else {
+            elBudgetSub.innerText = `Planned budget for ${isYearly ? year : month}`;
+        }
+    }
+
+    // Update KPI Card 2: Actual Spend
+    const elTotSpend = document.getElementById('baMetricTotalSpend');
+    if (elTotSpend) {
+        elTotSpend.innerText = `${currSym}${totalSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    const elSpendSub = document.getElementById('baMetricSpendSub');
+    if (elSpendSub) {
+        if (budgetAnalysisCurrency === 'ALL') {
+            elSpendSub.innerText = `INR ₹${totalInrSpend.toLocaleString('en-IN', { maximumFractionDigits: 0 })} + QAR QR ${totalQarSpend.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+        } else {
+            elSpendSub.innerText = `Logged expenses for ${isYearly ? year : month}`;
+        }
+    }
+
+    // Update KPI Card 3: Net Variance
+    const elVariance = document.getElementById('baMetricVariance');
+    const elVarianceSub = document.getElementById('baMetricVarianceSub');
+    const elVarianceIcon = document.getElementById('baMetricVarianceIcon');
+    if (elVariance) {
+        const sign = variance >= 0 ? '+' : '-';
+        elVariance.innerText = `${sign}${currSym}${Math.abs(variance).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        if (variance >= 0) {
+            elVariance.className = 'font-mono text-xl font-bold text-emerald-400 tracking-tight';
+            if (elVarianceSub) elVarianceSub.innerHTML = `<span class="text-emerald-400 font-medium">Surplus retained (${(100 - Math.min(100, utilizationPct)).toFixed(1)}% unspent)</span>`;
+            if (elVarianceIcon) elVarianceIcon.className = 'w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xs';
+        } else {
+            elVariance.className = 'font-mono text-xl font-bold text-rose-400 tracking-tight';
+            if (elVarianceSub) elVarianceSub.innerHTML = `<span class="text-rose-400 font-medium">Deficit exceeded by ${(utilizationPct - 100).toFixed(1)}%</span>`;
+            if (elVarianceIcon) elVarianceIcon.className = 'w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center text-xs';
+        }
+    }
+
+    // Update KPI Card 4: Utilization & Burn
+    const elUtilPct = document.getElementById('baMetricUtilizationPct');
+    const elDailyBurn = document.getElementById('baMetricDailyBurn');
+    const elProgress = document.getElementById('baMetricProgressBar');
+    const elStatusBadge = document.getElementById('baMetricStatusBadge');
+
+    const daysCount = isYearly ? 365 : 30;
+    const dailyAvg = totalSpend / (daysCount || 1);
+
+    if (elUtilPct) elUtilPct.innerText = `${utilizationPct.toFixed(1)}%`;
+    if (elDailyBurn) elDailyBurn.innerText = `Avg: ${currSym}${dailyAvg.toLocaleString('en-IN', { maximumFractionDigits: 0 })}/day`;
+    if (elProgress) {
+        elProgress.style.width = `${Math.min(100, Math.max(0, utilizationPct))}%`;
+        if (utilizationPct > 100) {
+            elProgress.className = 'h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-500';
+        } else if (utilizationPct > 85) {
+            elProgress.className = 'h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500';
+        } else {
+            elProgress.className = 'h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500';
+        }
+    }
+    if (elStatusBadge) {
+        if (utilizationPct > 100) {
+            elStatusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30';
+            elStatusBadge.innerText = 'Over Budget';
+        } else if (utilizationPct > 85) {
+            elStatusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30';
+            elStatusBadge.innerText = 'Near Limit';
+        } else {
+            elStatusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
+            elStatusBadge.innerText = 'Optimal';
+        }
+    }
+
+    // Active categories for table & charts
+    const activeCategories = Object.values(catMap).filter(c => c.budget > 0 || c.spend > 0);
+    // If empty, show all standard categories
+    const displayCategories = activeCategories.length > 0 ? activeCategories : Object.values(catMap).slice(0, 5);
+
+    // Render Table
+    const tableBody = document.getElementById('budgetAnalysisTableBody');
+    if (tableBody) {
+        tableBody.innerHTML = '';
+        if (displayCategories.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-chart-pie text-2xl mb-2 block opacity-40"></i> No budget or expense entries found for this period.</td></tr>`;
+        } else {
+            displayCategories.forEach(c => {
+                const catBudget = c.budget;
+                const catSpend = c.spend;
+                const catVar = catBudget - catSpend;
+                const catUtil = catBudget > 0 ? (catSpend / catBudget) * 100 : (catSpend > 0 ? 100 : 0);
+
+                let healthBadge = '';
+                if (catSpend === 0 && catBudget > 0) {
+                    healthBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono border border-slate-700 bg-surface-900 text-slate-400">Unspent</span>`;
+                } else if (catSpend > 0 && catBudget === 0) {
+                    healthBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono border border-amber-500/30 bg-amber-500/10 text-amber-400 font-bold">Unbudgeted</span>`;
+                } else if (catVar >= 0) {
+                    healthBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-bold">Within Budget</span>`;
+                } else {
+                    healthBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono border border-rose-500/30 bg-rose-500/10 text-rose-400 font-bold">Over Budget</span>`;
+                }
+
+                let barColor = 'bg-emerald-400';
+                if (catUtil > 100) barColor = 'bg-rose-400';
+                else if (catUtil > 85) barColor = 'bg-amber-400';
+
+                const varSign = catVar >= 0 ? '+' : '-';
+                const varColor = catVar >= 0 ? 'text-emerald-400' : 'text-rose-400';
+
+                const tr = document.createElement('tr');
+                tr.className = 'group hover:bg-surface-800/20 transition-colors border-b border-surface-800/30 last:border-0';
+                tr.innerHTML = `
+                    <td class="py-3 px-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${catUtil > 100 ? 'bg-rose-400' : (catUtil > 85 ? 'bg-amber-400' : 'bg-brand-400')}"></span>
+                            <span class="font-semibold text-slate-100 text-xs">${c.category}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 text-right font-mono font-bold text-slate-200 text-xs">${currSym}${catBudget.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td class="py-3 px-3 text-right font-mono font-bold text-amber-400 text-xs">${currSym}${catSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td class="py-3 px-3 text-right font-mono font-bold ${varColor} text-xs">${varSign}${currSym}${Math.abs(catVar).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td class="py-3 px-3">
+                        <div class="space-y-1">
+                            <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                                <span>${catUtil.toFixed(1)}%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-surface-900 rounded-full overflow-hidden border border-surface-800">
+                                <div class="h-full ${barColor} rounded-full" style="width: ${Math.min(100, Math.max(0, catUtil))}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 text-center">${healthBadge}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+    }
+
+    // Chart 1: Category Comparison Bar Chart
+    const compareCanvas = document.getElementById('budgetCategoryCompareChartCanvas');
+    if (compareCanvas && typeof Chart !== 'undefined') {
+        const ctx = compareCanvas.getContext('2d');
+        if (window.budgetCategoryCompareChartInst) window.budgetCategoryCompareChartInst.destroy();
+
+        const catLabels = displayCategories.map(c => c.category);
+        const budgetData = displayCategories.map(c => c.budget);
+        const spendData = displayCategories.map(c => c.spend);
+
+        window.budgetCategoryCompareChartInst = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: catLabels,
+                datasets: [
+                    {
+                        label: 'Planned Budget',
+                        data: budgetData,
+                        backgroundColor: 'rgba(201, 164, 107, 0.85)',
+                        borderColor: '#C9A46B',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6
+                    },
+                    {
+                        label: 'Actual Spend',
+                        data: spendData,
+                        backgroundColor: 'rgba(0, 242, 254, 0.85)',
+                        borderColor: '#00f2fe',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#94a3b8',
+                            usePointStyle: true,
+                            font: { family: "'JetBrains Mono', monospace", size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const val = context.raw || 0;
+                                return ` ${context.dataset.label}: ${currSym}${val.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8', font: { family: "'JetBrains Mono', monospace", size: 10 } },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: "'JetBrains Mono', monospace", size: 10 },
+                            callback: function(val) { return currSym + (val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val); }
+                        },
+                        grid: { color: 'rgba(51, 65, 85, 0.25)' }
+                    }
+                }
+            }
+        });
+    }
+
+    // Chart 2: Category Spend Share Doughnut Chart
+    const shareCanvas = document.getElementById('budgetCategoryShareChartCanvas');
+    if (shareCanvas && typeof Chart !== 'undefined') {
+        const ctx2 = shareCanvas.getContext('2d');
+        if (window.budgetCategoryShareChartInst) window.budgetCategoryShareChartInst.destroy();
+
+        const spendCategories = displayCategories.filter(c => c.spend > 0);
+        const shareLabels = spendCategories.length > 0 ? spendCategories.map(c => c.category) : ['No Spends'];
+        const shareData = spendCategories.length > 0 ? spendCategories.map(c => c.spend) : [1];
+        const colorPalette = ['#C9A46B', '#00f2fe', '#34d399', '#f59e0b', '#a855f7', '#ec4899', '#38bdf8', '#fb7185'];
+        const shareColors = spendCategories.length > 0 ? colorPalette.slice(0, spendCategories.length) : ['#334155'];
+
+        window.budgetCategoryShareChartInst = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: shareLabels,
+                datasets: [{
+                    data: shareData,
+                    backgroundColor: shareColors,
+                    borderColor: '#070A0F',
+                    borderWidth: 2,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#94a3b8',
+                            usePointStyle: true,
+                            padding: 10,
+                            font: { family: "'JetBrains Mono', monospace", size: 10 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (spendCategories.length === 0) return ' No expense records';
+                                const val = context.raw || 0;
+                                const pct = totalSpend > 0 ? ((val / totalSpend) * 100).toFixed(1) : '0.0';
+                                return ` ${context.label}: ${currSym}${val.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Chart 3: Monthly Trend Chart across 12 months
+    const trendCanvas = document.getElementById('budgetMonthlyTrendChartCanvas');
+    if (trendCanvas && typeof Chart !== 'undefined') {
+        const ctx3 = trendCanvas.getContext('2d');
+        if (window.budgetMonthlyTrendChartInst) window.budgetMonthlyTrendChartInst.destroy();
+
+        const monthlyBudgets = [];
+        const monthlySpends = [];
+
+        monthNames.forEach(mName => {
+            const mQarBudgets = (db.budget?.QAR || []).filter(b => (b.year || '2026') === year && (b.month || '').toLowerCase() === mName.toLowerCase());
+            const mInrBudgets = (db.budget?.INR || []).filter(b => (b.year || '2026') === year && (b.month || '').toLowerCase() === mName.toLowerCase());
+
+            const mQarExpenses = allExpenses.filter(e => {
+                if ((e.currency || 'INR') !== 'QAR') return false;
+                const d = parseExpenseDate(e.date);
+                if (!d || isNaN(d.getTime())) return false;
+                return d.getFullYear().toString() === year && d.toLocaleString('default', { month: 'long' }).toLowerCase() === mName.toLowerCase();
+            });
+
+            const mInrExpenses = allExpenses.filter(e => {
+                if ((e.currency || 'INR') !== 'INR') return false;
+                const d = parseExpenseDate(e.date);
+                if (!d || isNaN(d.getTime())) return false;
+                return d.getFullYear().toString() === year && d.toLocaleString('default', { month: 'long' }).toLowerCase() === mName.toLowerCase();
+            });
+
+            const qB = mQarBudgets.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+            const iB = mInrBudgets.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+            const qS = mQarExpenses.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+            const iS = mInrExpenses.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+
+            if (budgetAnalysisCurrency === 'QAR') {
+                monthlyBudgets.push(qB);
+                monthlySpends.push(qS);
+            } else if (budgetAnalysisCurrency === 'INR') {
+                monthlyBudgets.push(iB);
+                monthlySpends.push(iS);
+            } else {
+                monthlyBudgets.push(iB + (qB * QAR_TO_INR));
+                monthlySpends.push(iS + (qS * QAR_TO_INR));
+            }
+        });
+
+        const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        window.budgetMonthlyTrendChartInst = new Chart(ctx3, {
+            type: 'line',
+            data: {
+                labels: shortMonths,
+                datasets: [
+                    {
+                        label: 'Planned Budget Ceiling',
+                        data: monthlyBudgets,
+                        borderColor: '#C9A46B',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#C9A46B',
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Actual Expense Spend',
+                        data: monthlySpends,
+                        borderColor: '#00f2fe',
+                        backgroundColor: 'rgba(0, 242, 254, 0.12)',
+                        fill: true,
+                        borderWidth: 2.5,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#00f2fe',
+                        pointHoverRadius: 7,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#94a3b8',
+                            usePointStyle: true,
+                            font: { family: "'JetBrains Mono', monospace", size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const val = context.raw || 0;
+                                return ` ${context.dataset.label}: ${currSym}${val.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8', font: { family: "'JetBrains Mono', monospace", size: 10 } },
+                        grid: { color: 'rgba(51, 65, 85, 0.15)' }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: "'JetBrains Mono', monospace", size: 10 },
+                            callback: function(val) { return currSym + (val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val); }
+                        },
+                        grid: { color: 'rgba(51, 65, 85, 0.25)' }
+                    }
+                }
+            }
+        });
+    }
+}
+window.renderBudgetAnalysis = renderBudgetAnalysis;
+
 function switchGoalSubTab(tabKey) {
     document.querySelectorAll('.goal-sub-view').forEach(v => v.classList.add('hidden'));
     const target = document.getElementById(`goalSubView-${tabKey}`);
@@ -2777,22 +3774,25 @@ function renderGoalsTable() {
 
             const progressBarHtml = `
                 <div class="flex items-center gap-3 w-full justify-center px-1">
-                    <div class="flex-1 min-w-[140px] max-w-[220px] bg-surface-950/90 rounded-full h-3.5 sm:h-4 overflow-hidden border border-surface-700/80 p-0.5 shadow-inner">
+                    <div class="flex-1 min-w-[180px] max-w-[320px] bg-surface-950/95 rounded-full h-4 sm:h-4.5 overflow-hidden border border-surface-700/90 p-0.5 shadow-inner">
                         <div class="h-full bg-gradient-to-r ${barGradient} rounded-full transition-all duration-500 flex items-center justify-end" style="width: ${progressPct}%">
-                            ${progressPct >= 20 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/80 mr-1 shadow-sm"></span>' : ''}
+                            ${progressPct >= 15 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/90 mr-1.5 shadow-sm"></span>' : ''}
                         </div>
                     </div>
-                    <span class="text-xs font-mono font-bold ${progressPct >= 100 ? 'text-emerald-400' : 'text-slate-200'} shrink-0 w-10 text-right">${progressPct}%</span>
+                    <span class="text-xs font-mono font-bold ${progressPct >= 100 ? 'text-emerald-400' : 'text-slate-200'} shrink-0 w-11 text-right">${progressPct}%</span>
                 </div>
+            `;
+
+            const dataNotesHtml = `
+                <button onclick="openMilestoneNotesModal('${g.id}')" class="w-8 h-8 rounded-xl bg-surface-900/90 hover:bg-brand-500/20 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 transition-all inline-flex items-center justify-center cursor-pointer shadow-sm group/note" title="Open Milestone Notes & Documentation">
+                    <i class="fa-regular fa-note-sticky text-xs group-hover/note:scale-110 transition-transform ${g.detailedNotes || g.notes ? 'text-brand-400' : ''}"></i>
+                </button>
             `;
 
             const manageHtml = `
                 <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="toggleGoalStatus('${g.id}')" class="p-1 text-slate-400 hover:text-emerald-400 transition-colors" title="${isComp ? 'Reactivate' : 'Mark Complete'}">
-                        <i class="fa-solid ${isComp ? 'fa-rotate-left text-amber-400' : 'fa-check text-emerald-400'} text-xs"></i>
-                    </button>
-                    <button onclick="openGoalModal('${g.id}')" class="p-1 text-slate-400 hover:text-brand-500 transition-colors" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
-                    <button onclick="deleteGoal('${g.id}')" class="p-1 text-slate-400 hover:text-rose-500 transition-colors" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
+                    <button onclick="openGoalModal('${g.id}')" class="p-1.5 text-slate-400 hover:text-brand-500 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Edit Milestone"><i class="fa-solid fa-pen text-xs"></i></button>
+                    <button onclick="deleteGoal('${g.id}')" class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Delete Milestone"><i class="fa-solid fa-trash text-xs"></i></button>
                 </div>
             `;
 
@@ -2811,6 +3811,7 @@ function renderGoalsTable() {
                     <td class="py-3 px-3 font-mono text-xs font-bold text-emerald-400 text-right">₹${paid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                     <td class="py-3 px-3 text-center">${progressBarHtml}</td>
                     <td class="py-3 px-3">${statusBadge}</td>
+                    <td class="py-3 px-3 text-center">${dataNotesHtml}</td>
                     <td class="py-3 px-3 text-center">${manageHtml}</td>
                 `;
             } else {
@@ -2825,6 +3826,7 @@ function renderGoalsTable() {
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${g.targetDate || '-'}</td>
                     <td class="py-3 px-3 text-center">${progressBarHtml}</td>
                     <td class="py-3 px-3">${statusBadge}</td>
+                    <td class="py-3 px-3 text-center">${dataNotesHtml}</td>
                     <td class="py-3 px-3 text-center">${manageHtml}</td>
                 `;
             }
@@ -2836,7 +3838,7 @@ function renderGoalsTable() {
             completedGoals.forEach((g, idx) => completedTableBody.appendChild(renderRow(g, idx, true)));
         }
 
-        const colSpan = cat === 'financial' ? 9 : 7;
+        const colSpan = cat === 'financial' ? 10 : 8;
         if (activeGoals.length === 0) {
             activeTableBody.innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> No active milestones in this track. Click Add Goal to create one.</td></tr>`;
         }
@@ -3082,7 +4084,7 @@ function renderGoalAnalytics() {
         const activeList = db.goals.filter(g => !g.completed);
 
         if (activeList.length === 0) {
-            activeTable.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> All milestones completed or no active targets logged.</td></tr>`;
+            activeTable.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> All milestones completed or no active targets logged.</td></tr>`;
         } else {
             activeList.slice(0, 10).forEach((g, idx) => {
                 const tr = document.createElement('tr');
@@ -3108,22 +4110,27 @@ function renderGoalAnalytics() {
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${g.targetDate || '-'}</td>
                     <td class="py-3 px-3 text-center">
-                        <div class="flex items-center gap-2.5 justify-center w-full min-w-[150px]">
-                            <div class="flex-1 max-w-[180px] bg-surface-950/90 rounded-full h-3.5 sm:h-4 overflow-hidden border border-surface-700/80 p-0.5 shadow-inner">
+                        <div class="flex items-center gap-3 justify-center w-full min-w-[180px]">
+                            <div class="flex-1 max-w-[280px] bg-surface-950/95 rounded-full h-4 overflow-hidden border border-surface-700/80 p-0.5 shadow-inner">
                                 <div class="h-full bg-gradient-to-r from-brand-600 via-brand-500 to-amber-300 rounded-full shadow-sm flex items-center justify-end" style="width: ${progressPct}%">
-                                    ${progressPct >= 20 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/80 mr-1 shadow-sm"></span>' : ''}
+                                    ${progressPct >= 15 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/90 mr-1 shadow-sm"></span>' : ''}
                                 </div>
                             </div>
-                            <span class="text-xs font-mono font-bold text-slate-200 shrink-0 w-9 text-right">${progressPct}%</span>
+                            <span class="text-xs font-mono font-bold text-slate-200 shrink-0 w-10 text-right">${progressPct}%</span>
                         </div>
                     </td>
                     <td class="py-3 px-3 text-center">
-                        <div class="flex items-center justify-center gap-2">
-                            <button onclick="toggleGoalStatus('${g.id}')" class="p-1 text-slate-400 hover:text-emerald-400 transition-colors" title="Mark as Complete">
-                                <i class="fa-solid fa-check text-xs"></i>
-                            </button>
-                            <button onclick="openGoalModal('${g.id}')" class="p-1 text-slate-400 hover:text-brand-500 transition-colors" title="Edit">
+                        <button onclick="openMilestoneNotesModal('${g.id}')" class="w-8 h-8 rounded-xl bg-surface-900/90 hover:bg-brand-500/20 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 transition-all inline-flex items-center justify-center cursor-pointer shadow-sm group/note" title="Open Milestone Notes & Documentation">
+                            <i class="fa-regular fa-note-sticky text-xs group-hover/note:scale-110 transition-transform ${g.detailedNotes || g.notes ? 'text-brand-400' : ''}"></i>
+                        </button>
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                        <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openGoalModal('${g.id}')" class="p-1.5 text-slate-400 hover:text-brand-500 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Edit Milestone">
                                 <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteGoal('${g.id}')" class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Delete Milestone">
+                                <i class="fa-solid fa-trash text-xs"></i>
                             </button>
                         </div>
                     </td>
@@ -3331,6 +4338,381 @@ function deleteGoal(id) {
     });
 }
 window.deleteGoal = deleteGoal;
+
+/* =========================================================================
+   MILESTONE NOTES & EXECUTIVE DOCUMENTATION WORKSPACE
+   ========================================================================= */
+
+function openMilestoneNotesModal(goalId) {
+    if (!db.goals) db.goals = [];
+    const g = db.goals.find(x => x.id === goalId);
+    if (!g) return;
+
+    // Set Goal ID
+    const goalIdEl = document.getElementById('msNoteGoalId');
+    if (goalIdEl) goalIdEl.value = g.id;
+
+    // Set Milestone Title
+    const titleEl = document.getElementById('msNoteMilestoneTitle');
+    if (titleEl) titleEl.innerText = g.title || 'Milestone Documentation';
+
+    // Track icon and Category badge
+    const cat = (g.category || 'Financial').toLowerCase();
+    const catBadge = document.getElementById('msNoteCategoryBadge');
+    const trackIcon = document.getElementById('msNoteTrackIcon');
+    const trackIconBox = document.getElementById('msNoteTrackIconBox');
+
+    const trackMeta = {
+        financial: { icon: 'fa-coins', color: 'text-amber-400', border: 'border-amber-500/40', bg: 'bg-amber-500/10' },
+        business: { icon: 'fa-briefcase', color: 'text-accent-blue', border: 'border-blue-500/40', bg: 'bg-blue-500/10' },
+        personal: { icon: 'fa-user-astronaut', color: 'text-cyan-400', border: 'border-cyan-500/40', bg: 'bg-cyan-500/10' },
+        reading: { icon: 'fa-book', color: 'text-amber-400', border: 'border-amber-500/40', bg: 'bg-amber-500/10' },
+        books: { icon: 'fa-book', color: 'text-amber-400', border: 'border-amber-500/40', bg: 'bg-amber-500/10' },
+        travel: { icon: 'fa-plane', color: 'text-sky-400', border: 'border-sky-500/40', bg: 'bg-sky-500/10' },
+        ziyara: { icon: 'fa-kaaba', color: 'text-emerald-400', border: 'border-emerald-500/40', bg: 'bg-emerald-500/10' }
+    };
+    const meta = trackMeta[cat] || trackMeta.financial;
+
+    if (catBadge) {
+        catBadge.innerText = capitalize(g.category || 'Financial');
+        catBadge.className = `px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${meta.bg} ${meta.border} ${meta.color}`;
+    }
+    if (trackIcon) {
+        trackIcon.className = `fa-solid ${meta.icon}`;
+    }
+    if (trackIconBox) {
+        trackIconBox.className = `w-11 h-11 rounded-2xl ${meta.bg} ${meta.border} ${meta.color} flex items-center justify-center text-lg shadow-inner shrink-0`;
+    }
+
+    // Target Date
+    const targetDateText = document.getElementById('msNoteTargetDateText');
+    if (targetDateText) targetDateText.innerText = g.targetDate ? `Target: ${g.targetDate}` : 'No target date set';
+
+    // Progress Bar
+    let progressPct = parseInt(g.progress) || 0;
+    if (cat === 'financial') {
+        const est = parseFloat(g.estimate) || 0;
+        const paid = parseFloat(g.paid) || 0;
+        if (est > 0) progressPct = Math.min(100, Math.round((paid / est) * 100));
+    }
+    if (g.completed) progressPct = 100;
+
+    const progBar = document.getElementById('msNoteProgressBar');
+    const progText = document.getElementById('msNoteProgressText');
+    if (progBar) progBar.style.width = `${progressPct}%`;
+    if (progText) progText.innerText = `${progressPct}%`;
+
+    // Populate Editor
+    const editor = document.getElementById('msNoteEditor');
+    if (editor) {
+        editor.innerHTML = g.detailedNotes || g.notes || g.desc || '';
+    }
+
+    // Set Font Size
+    const fontSizeSelect = document.getElementById('msNoteFontSizeSelect');
+    if (fontSizeSelect) {
+        fontSizeSelect.value = g.notesFontSize || '17px';
+        applyMsNoteFontSize(fontSizeSelect.value);
+    }
+
+    updateMsNoteStats();
+    openModal('milestoneNotesModal');
+
+    // Auto-focus editor cleanly at the end
+    setTimeout(() => {
+        if (editor) {
+            editor.focus();
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(editor);
+            range.collapse(false);
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    }, 100);
+}
+window.openMilestoneNotesModal = openMilestoneNotesModal;
+
+function saveMilestoneNotes() {
+    const goalIdEl = document.getElementById('msNoteGoalId');
+    const goalId = goalIdEl ? goalIdEl.value : null;
+    if (!goalId) return;
+
+    const g = (db.goals || []).find(x => x.id === goalId);
+    if (!g) return;
+
+    const editor = document.getElementById('msNoteEditor');
+    const fontSizeSelect = document.getElementById('msNoteFontSizeSelect');
+
+    const htmlContent = editor ? editor.innerHTML : '';
+    const textContent = editor ? (editor.innerText || editor.textContent || '') : '';
+
+    g.detailedNotes = htmlContent;
+    if (!g.notes || g.notes === g.desc) {
+        g.notes = textContent.slice(0, 120);
+        g.desc = g.notes;
+    }
+    if (fontSizeSelect) g.notesFontSize = fontSizeSelect.value;
+
+    saveDatabase();
+    renderGoalsTable();
+    showToast('Milestone notes saved to cloud');
+    closeModal('milestoneNotesModal');
+}
+window.saveMilestoneNotes = saveMilestoneNotes;
+
+function updateMsNoteStats() {
+    const editor = document.getElementById('msNoteEditor');
+    const wordCountEl = document.getElementById('msNoteWordCount');
+    const charCountEl = document.getElementById('msNoteCharCount');
+    if (!editor) return;
+
+    const text = editor.innerText || editor.textContent || '';
+    const trimmed = text.trim();
+    const words = trimmed ? trimmed.split(/\s+/).length : 0;
+    const chars = text.length;
+
+    if (wordCountEl) wordCountEl.innerText = words.toString();
+    if (charCountEl) charCountEl.innerText = chars.toString();
+}
+window.updateMsNoteStats = updateMsNoteStats;
+
+function handleMsNoteProgressChange(val) {
+    const num = Math.min(100, Math.max(0, parseInt(val) || 0));
+    const progBar = document.getElementById('msNoteProgressBar');
+    const progText = document.getElementById('msNoteProgressText');
+    if (progBar) progBar.style.width = `${num}%`;
+    if (progText) progText.innerText = `${num}%`;
+}
+window.handleMsNoteProgressChange = handleMsNoteProgressChange;
+
+function handleMsNoteStatusChange(status) {
+    const statusBadge = document.getElementById('msNoteStatusBadge');
+    if (statusBadge) {
+        statusBadge.innerText = status;
+        if (status === 'Completed') {
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400';
+            const progInput = document.getElementById('msNoteQuickProgressInput');
+            if (progInput) {
+                progInput.value = 100;
+                handleMsNoteProgressChange(100);
+            }
+        } else if (status === 'In Progress') {
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-brand-500/10 border border-brand-500/30 text-brand-400';
+        } else {
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-surface-900 border border-surface-700 text-slate-400';
+        }
+    }
+}
+window.handleMsNoteStatusChange = handleMsNoteStatusChange;
+
+function applyMsNoteFontFamily(fontKey) {
+    const editor = document.getElementById('msNoteEditor');
+    if (!editor) return;
+
+    editor.classList.remove('note-font-inter', 'note-font-playfair', 'note-font-outfit', 'note-font-merriweather', 'note-font-lora', 'note-font-mono', 'note-font-caveat', 'note-font-cinzel');
+    
+    const fontClassMap = {
+        inter: 'note-font-inter',
+        playfair: 'note-font-playfair',
+        outfit: 'note-font-outfit',
+        merriweather: 'note-font-merriweather',
+        lora: 'note-font-lora',
+        mono: 'note-font-mono',
+        caveat: 'note-font-caveat',
+        cinzel: 'note-font-cinzel'
+    };
+    editor.classList.add(fontClassMap[fontKey] || 'note-font-inter');
+}
+window.applyMsNoteFontFamily = applyMsNoteFontFamily;
+
+function applyMsNoteFontSize(sizeVal) {
+    const editor = document.getElementById('msNoteEditor');
+    if (!editor) return;
+    editor.style.fontSize = sizeVal;
+}
+window.applyMsNoteFontSize = applyMsNoteFontSize;
+
+function formatMsNoteText(cmd, value = null) {
+    document.execCommand(cmd, false, value);
+    const editor = document.getElementById('msNoteEditor');
+    if (editor) editor.focus();
+    updateMsNoteStats();
+}
+window.formatMsNoteText = formatMsNoteText;
+
+function formatMsNoteHighlight() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    document.execCommand('hiliteColor', false, 'rgba(245, 158, 11, 0.35)');
+    const editor = document.getElementById('msNoteEditor');
+    if (editor) editor.focus();
+}
+window.formatMsNoteHighlight = formatMsNoteHighlight;
+
+function formatMsNoteTextColor(colorHex) {
+    document.execCommand('foreColor', false, colorHex);
+    const editor = document.getElementById('msNoteEditor');
+    if (editor) editor.focus();
+}
+window.formatMsNoteTextColor = formatMsNoteTextColor;
+
+function formatMsNoteCodeBlock() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const selectedText = range.toString() || 'Code or execution snippet here...';
+    
+    const codeElem = document.createElement('pre');
+    codeElem.className = 'p-3 my-2 rounded-xl bg-surface-900 border border-surface-700/80 font-mono text-xs text-brand-400 overflow-x-auto';
+    codeElem.innerText = selectedText;
+    
+    range.deleteContents();
+    range.insertNode(codeElem);
+    updateMsNoteStats();
+}
+window.formatMsNoteCodeBlock = formatMsNoteCodeBlock;
+
+function insertMsNoteChecklist() {
+    const checkboxHtml = `<div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 text-brand-500 focus:ring-brand-500 accent-amber-500 cursor-pointer"><span>Task step item...</span></div><p></p>`;
+    document.execCommand('insertHTML', false, checkboxHtml);
+    updateMsNoteStats();
+}
+window.insertMsNoteChecklist = insertMsNoteChecklist;
+
+function insertMsNoteTimestamp() {
+    const now = new Date();
+    const formatted = `[${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}] `;
+    document.execCommand('insertHTML', false, `<span class="font-mono text-xs text-amber-400 font-semibold">${formatted}</span>`);
+    updateMsNoteStats();
+}
+window.insertMsNoteTimestamp = insertMsNoteTimestamp;
+
+function insertMsNoteTemplate(type) {
+    let templateHtml = '';
+    if (type === 'action_plan') {
+        templateHtml = `
+            <h2 class="text-base font-bold text-brand-400 mb-2">🎯 Strategic Action Plan</h2>
+            <p><strong>Primary Objective:</strong> Define key result here</p>
+            <p><strong>Target Timeline:</strong> Phase 1 & Phase 2</p>
+            <h3 class="text-sm font-semibold text-slate-200 mt-3 mb-1">Key Execution Milestones:</h3>
+            <ul>
+                <li>Phase 1: Initial research, requirements & budget allocation</li>
+                <li>Phase 2: Execution, partner outreach, and active tracking</li>
+                <li>Phase 3: Final delivery, review & milestone achievement</li>
+            </ul>
+            <p></p>
+        `;
+    } else if (type === 'checklist') {
+        templateHtml = `
+            <h2 class="text-base font-bold text-emerald-400 mb-2">📋 Action Checklist</h2>
+            <div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 accent-amber-500"><span>Finalize budget & allocate funds</span></div>
+            <div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 accent-amber-500"><span>Reach out to vendors / stakeholders</span></div>
+            <div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 accent-amber-500"><span>Complete checkpoint review 1</span></div>
+            <div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 accent-amber-500"><span>Achieve final completion</span></div>
+            <p></p>
+        `;
+    } else if (type === 'checkpoint') {
+        const d = new Date().toLocaleDateString('en-GB');
+        templateHtml = `
+            <h2 class="text-base font-bold text-cyan-400 mb-2">📅 Progress Checkpoint Log (${d})</h2>
+            <p><strong>Current Status:</strong> On track</p>
+            <p><strong>Progress Accomplished:</strong> Summary of achievements so far...</p>
+            <p><strong>Blockers / Risks:</strong> None identified</p>
+            <p><strong>Next Steps for This Week:</strong> Outline upcoming actions...</p>
+            <p></p>
+        `;
+    } else if (type === 'financial') {
+        templateHtml = `
+            <h2 class="text-base font-bold text-amber-400 mb-2">💰 Financial & Budget Breakdown</h2>
+            <p><strong>Total Estimate:</strong> ₹0.00</p>
+            <p><strong>Paid / Invested to Date:</strong> ₹0.00</p>
+            <p><strong>Balance Outstanding:</strong> ₹0.00</p>
+            <h3 class="text-sm font-semibold text-slate-200 mt-3 mb-1">Expense Allocation:</h3>
+            <ul>
+                <li>Item 1: ₹0.00</li>
+                <li>Item 2: ₹0.00</li>
+                <li>Contingency Buffer: ₹0.00</li>
+            </ul>
+            <p></p>
+        `;
+    }
+    document.execCommand('insertHTML', false, templateHtml);
+    updateMsNoteStats();
+}
+window.insertMsNoteTemplate = insertMsNoteTemplate;
+
+function copyMilestoneNotesToClipboard() {
+    const editor = document.getElementById('msNoteEditor');
+    const text = editor ? (editor.innerText || editor.textContent || '') : '';
+    if (navigator.clipboard && text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Notes copied to clipboard');
+        }).catch(() => {
+            showToast('Could not copy notes');
+        });
+    } else {
+        showToast('No content to copy');
+    }
+}
+window.copyMilestoneNotesToClipboard = copyMilestoneNotesToClipboard;
+
+function printMilestoneNotes() {
+    const title = document.getElementById('msNoteMilestoneTitle')?.innerText || 'Milestone Notes';
+    const content = document.getElementById('msNoteEditor')?.innerHTML || '';
+    const win = window.open('', '_blank');
+    if (!win) {
+        showToast('Popup blocked by browser. Please allow popups.');
+        return;
+    }
+    win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${title}</title>
+            <style>
+                body { font-family: 'Inter', system-ui, sans-serif; padding: 40px; color: #111; line-height: 1.6; }
+                h1 { font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                h2 { font-size: 18px; margin-top: 20px; }
+                pre { background: #f4f4f4; padding: 12px; border-radius: 8px; font-family: monospace; }
+                ul, ol { padding-left: 24px; }
+            </style>
+        </head>
+        <body>
+            <h1>${title}</h1>
+            <div>${content}</div>
+            <script>window.print();<\/script>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
+window.printMilestoneNotes = printMilestoneNotes;
+
+function toggleMilestoneNotesFullscreen() {
+    const card = document.getElementById('milestoneNotesCard');
+    const icon = document.getElementById('iconMsNotesExpand');
+    if (!card) return;
+
+    if (card.classList.contains('max-w-6xl')) {
+        card.classList.remove('max-w-6xl', 'h-[96vh]');
+        card.classList.add('w-full', 'h-full', 'rounded-none', 'max-w-none');
+        if (icon) {
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress');
+        }
+    } else {
+        card.classList.add('max-w-6xl', 'h-[96vh]');
+        card.classList.remove('w-full', 'h-full', 'rounded-none', 'max-w-none');
+        if (icon) {
+            icon.classList.add('fa-expand');
+            icon.classList.remove('fa-compress');
+        }
+    }
+}
+window.toggleMilestoneNotesFullscreen = toggleMilestoneNotesFullscreen;
 
 let notesViewMode = 'grid';
 let notesSearchQuery = '';
@@ -4862,8 +6244,11 @@ function executeUniversalSearch() {
 
     // Search Banks
     (db.bankAccounts || []).forEach(b => {
-        if ((b.bankName && b.bankName.toLowerCase().includes(q)) || (b.accountName && b.accountName.toLowerCase().includes(q))) {
-            results.push({ page: 'assets', tab: 'banking', label: `Bank: ${b.bankName} - ${b.accountName}` });
+        if ((b.bankName && b.bankName.toLowerCase().includes(q)) || 
+            (b.accountName && b.accountName.toLowerCase().includes(q)) ||
+            (b.accountNumber && b.accountNumber.toLowerCase().includes(q)) ||
+            (b.notes && b.notes.toLowerCase().includes(q))) {
+            results.push({ page: 'assets', tab: 'banking', label: `Bank: ${b.bankName} - ${b.accountName}${b.accountNumber ? ` (${b.accountNumber})` : ''}` });
         }
     });
 

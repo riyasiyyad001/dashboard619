@@ -99,30 +99,34 @@ function formatSentenceCapitalization(str) {
     });
 }
 
-// Global intelligent input listener across all text fields and contenteditable elements
+// Global intelligent input listener across standard form text inputs
 document.addEventListener('input', function(e) {
     const target = e.target;
-    if ((target.tagName === 'INPUT' && target.type === 'text') || target.tagName === 'TEXTAREA' || target.getAttribute('contenteditable') === 'true') {
-        if (target.type === 'password' || target.classList.contains('no-auto-case')) return;
+    // Exclude contenteditable rich editors (e.g. msNoteEditor, noteEditor), password inputs, and elements marked no-auto-case
+    if (!target || target.getAttribute('contenteditable') === 'true' || target.closest('[contenteditable="true"]') || target.classList.contains('no-auto-case') || target.classList.contains('note-rich-content')) {
+        return;
+    }
+
+    if ((target.tagName === 'INPUT' && (target.type === 'text' || !target.type)) || target.tagName === 'TEXTAREA') {
+        if (target.type === 'password') return;
         
         const start = target.selectionStart;
         const end = target.selectionEnd;
         
-        const val = target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' ? target.value : target.innerText;
+        const val = target.value;
+        if (!val) return;
         
         // If user is currently typing in all caps, allow it
-        if (val && val === val.toUpperCase() && /[A-Z]/.test(val) && val.length > 1) {
+        if (val === val.toUpperCase() && /[A-Z]/.test(val) && val.length > 1) {
             return;
         }
 
         // Format with sentence/title capitalization (First letter capital, rest lowercase)
         const formatted = formatSentenceCapitalization(val);
         if (val !== formatted) {
-            if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') {
-                target.value = formatted;
-                if (start !== null) target.setSelectionRange(start, end);
-            } else {
-                target.innerText = formatted;
+            target.value = formatted;
+            if (start !== null && end !== null) {
+                target.setSelectionRange(start, end);
             }
         }
     }
@@ -369,6 +373,7 @@ function refreshAllViews() {
     renderRemindersTable();
     renderNotifications();
     renderGrowthChart();
+    renderHomeProfile();
     applyBgCustomization();
     if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 }
@@ -653,6 +658,360 @@ function saveHomeProfile() {
     saveDatabase();
 }
 
+function saveHomePrinciples() {
+    const titleEl = document.getElementById('homePrinciplesTitle');
+    const items = [];
+    document.querySelectorAll('.home-principle-text').forEach(el => {
+        const txt = el.innerText.trim();
+        if (txt) items.push(txt);
+    });
+
+    if (!db.profile) db.profile = {};
+    if (titleEl) db.profile.principlesTitle = titleEl.innerText.trim() || 'Determine to Overcome';
+    if (items.length > 0) {
+        db.profile.principles = items;
+    }
+    saveDatabase();
+}
+
+function renderHomeProfile() {
+    if (!db.profile) return;
+    const nameEl = document.getElementById('homeProfileName');
+    const phoneEl = document.getElementById('homeProfilePhone');
+    const photoEl = document.getElementById('profilePhotoImg');
+    const titleEl = document.getElementById('homePrinciplesTitle');
+    const listEl = document.getElementById('homePrinciplesList');
+
+    if (nameEl && db.profile.name && document.activeElement !== nameEl) {
+        nameEl.innerText = db.profile.name;
+    }
+    if (phoneEl && db.profile.phone && document.activeElement !== phoneEl) {
+        phoneEl.innerText = db.profile.phone;
+    }
+    if (photoEl && db.profile.photo) {
+        photoEl.src = db.profile.photo;
+    }
+    if (titleEl && db.profile.principlesTitle && document.activeElement !== titleEl) {
+        titleEl.innerText = db.profile.principlesTitle;
+    }
+
+    if (listEl) {
+        if (listEl.contains(document.activeElement)) {
+            return;
+        }
+
+        const principles = Array.isArray(db.profile.principles) && db.profile.principles.length > 0
+            ? db.profile.principles
+            : [
+                'Set a highest goal',
+                'Make a plan',
+                'Work harder & harder for it',
+                'Evaluate the update daily',
+                'Gradually will get the result'
+            ];
+
+        const diamondGradients = [
+            'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.45)]',
+            'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.45)]',
+            'text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.45)]',
+            'text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.45)]',
+            'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.45)]'
+        ];
+
+        listEl.innerHTML = principles.map((item, idx) => {
+            const glow = diamondGradients[idx % diamondGradients.length];
+            const safeText = String(item).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return `
+                <div class="home-principle-row flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl hover:bg-surface-900/60 transition-all duration-200 group/item">
+                    <span class="w-5 h-5 rounded-lg bg-surface-900/90 flex items-center justify-center shrink-0 shadow-sm">
+                        <i class="fa-solid fa-gem ${glow} text-[10px]"></i>
+                    </span>
+                    <div class="home-principle-text flex-1 font-mono text-[12px] text-slate-200 leading-snug outline-none cursor-text hover:text-white transition-colors" contenteditable="true" onblur="saveHomePrinciples()" data-index="${idx}" title="Click to edit">${safeText}</div>
+                    <button type="button" onclick="deleteHomePrinciple(${idx})" class="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 transition-opacity p-1 text-[10px] cursor-pointer" title="Remove">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function addHomePrinciple() {
+    if (!db.profile) db.profile = {};
+    if (!Array.isArray(db.profile.principles)) {
+        db.profile.principles = [
+            'Set a highest goal',
+            'Make a plan',
+            'Work harder & harder for it',
+            'Evaluate the update daily',
+            'Gradually will get the result'
+        ];
+    }
+    db.profile.principles.push('New key milestone goal');
+    saveDatabase();
+    renderHomeProfile();
+
+    setTimeout(() => {
+        const texts = document.querySelectorAll('.home-principle-text');
+        if (texts.length > 0) {
+            const last = texts[texts.length - 1];
+            last.focus();
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(last);
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    }, 50);
+}
+
+// =========================================================================
+// GLOBAL UNDO ENGINE & RESTORATION STACK
+// =========================================================================
+window.undoStack = [];
+
+function recordDeletion(entry) {
+    if (!entry) return;
+    if (!window.undoStack) window.undoStack = [];
+    window.undoStack.push({
+        ...entry,
+        timestamp: Date.now()
+    });
+    if (window.undoStack.length > 50) {
+        window.undoStack.shift();
+    }
+    if (typeof updateUndoUI === 'function') updateUndoUI();
+    if (typeof showUndoToast === 'function') {
+        showUndoToast(entry.label || 'Item');
+    } else if (typeof showToast === 'function') {
+        showToast(`Deleted: ${entry.label || 'Item'}`);
+    }
+}
+window.recordDeletion = recordDeletion;
+
+function undoLastDelete() {
+    if (!window.undoStack || window.undoStack.length === 0) {
+        if (typeof showToast === 'function') showToast('No deleted items to restore');
+        return;
+    }
+    const item = window.undoStack.pop();
+    if (!item) return;
+
+    let restored = false;
+    try {
+        switch (item.type) {
+            case 'bank':
+                if (!db.bankAccounts) db.bankAccounts = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.bankAccounts.length) {
+                    db.bankAccounts.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.bankAccounts.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'loan':
+                if (!db.loans) db.loans = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.loans.length) {
+                    db.loans.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.loans.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'mutualFund':
+                if (!db.assetMutualFunds) db.assetMutualFunds = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.assetMutualFunds.length) {
+                    db.assetMutualFunds.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.assetMutualFunds.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'assetLog':
+                if (!db.assetLogs) db.assetLogs = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.assetLogs.length) {
+                    db.assetLogs.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.assetLogs.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'vaultFile':
+                const storageType = item.meta && item.meta.storageType ? item.meta.storageType : (window.currentStorageType || 'banking');
+                if (!db.vault) db.vault = { banking: [], legal: [], loans: [], personal: [] };
+                if (!db.vault[storageType]) db.vault[storageType] = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.vault[storageType].length) {
+                    db.vault[storageType].splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.vault[storageType].push(item.data);
+                }
+                if (typeof renderStorageFileList === 'function') renderStorageFileList();
+                restored = true;
+                break;
+            case 'equity':
+                if (!db.indiaOps) db.indiaOps = {};
+                if (!db.indiaOps.shareMarket) db.indiaOps.shareMarket = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.indiaOps.shareMarket.length) {
+                    db.indiaOps.shareMarket.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.indiaOps.shareMarket.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'others':
+                if (!db.indiaOps) db.indiaOps = {};
+                if (!db.indiaOps.othersEntries) db.indiaOps.othersEntries = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.indiaOps.othersEntries.length) {
+                    db.indiaOps.othersEntries.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.indiaOps.othersEntries.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'budget':
+                const curr = item.meta && item.meta.currency ? item.meta.currency : 'QAR';
+                if (!db.budget) db.budget = { QAR: [], INR: [] };
+                if (!db.budget[curr]) db.budget[curr] = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.budget[curr].length) {
+                    db.budget[curr].splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.budget[curr].push(item.data);
+                }
+                restored = true;
+                break;
+            case 'expense':
+                if (!db.dailyExpenses) db.dailyExpenses = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.dailyExpenses.length) {
+                    db.dailyExpenses.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.dailyExpenses.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'goal':
+                if (!db.goals) db.goals = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.goals.length) {
+                    db.goals.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.goals.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'note':
+                if (!db.notes) db.notes = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.notes.length) {
+                    db.notes.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.notes.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'reminder':
+                if (!db.reminders) db.reminders = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.reminders.length) {
+                    db.reminders.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.reminders.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'homePrinciple':
+                if (!db.profile) db.profile = {};
+                if (!Array.isArray(db.profile.principles)) db.profile.principles = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.profile.principles.length) {
+                    db.profile.principles.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.profile.principles.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'bulk':
+                if (item.data && typeof item.data === 'object') {
+                    Object.keys(item.data).forEach(k => {
+                        db[k] = JSON.parse(JSON.stringify(item.data[k]));
+                    });
+                    restored = true;
+                }
+                break;
+            default:
+                console.warn('Unknown restoration type:', item.type);
+                break;
+        }
+    } catch (e) {
+        console.error('Error during undo restore:', e);
+    }
+
+    if (restored) {
+        if (typeof saveDatabase === 'function') saveDatabase();
+        if (typeof refreshAllViews === 'function') refreshAllViews();
+        if (typeof updateUndoUI === 'function') updateUndoUI();
+        if (typeof showToast === 'function') {
+            showToast(`↺ Restored: ${item.label || 'Deleted item'}`);
+        }
+    }
+}
+window.undoLastDelete = undoLastDelete;
+
+function updateUndoUI() {
+    const count = window.undoStack ? window.undoStack.length : 0;
+    const lastItem = count > 0 ? window.undoStack[window.undoStack.length - 1] : null;
+    
+    document.querySelectorAll('.global-undo-btn').forEach(btn => {
+        if (count > 0) {
+            btn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+            btn.classList.add('opacity-100', 'cursor-pointer');
+            btn.setAttribute('title', `Undo last delete: ${lastItem ? lastItem.label : ''} (Ctrl+Z)`);
+        } else {
+            btn.classList.add('opacity-40', 'cursor-not-allowed');
+            btn.classList.remove('opacity-100');
+            btn.setAttribute('title', 'Nothing to undo (Ctrl+Z)');
+        }
+    });
+
+    document.querySelectorAll('.global-undo-badge').forEach(badge => {
+        if (count > 0) {
+            badge.innerText = count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    });
+}
+window.updateUndoUI = updateUndoUI;
+
+// Global Ctrl+Z shortcut listener for undoing deletions
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        const isEditable = document.activeElement && (document.activeElement.isContentEditable || activeTag === 'input' || activeTag === 'textarea');
+        if (!isEditable) {
+            e.preventDefault();
+            undoLastDelete();
+        }
+    }
+});
+
+function deleteHomePrinciple(index) {
+    if (!db.profile || !Array.isArray(db.profile.principles)) return;
+    const removedText = db.profile.principles[index];
+    if (typeof recordDeletion === 'function' && removedText) {
+        recordDeletion({
+            type: 'homePrinciple',
+            label: `Principle: "${removedText}"`,
+            data: removedText,
+            originalIndex: index
+        });
+    }
+    db.profile.principles.splice(index, 1);
+    if (db.profile.principles.length === 0) {
+        db.profile.principles = ['Set a highest goal'];
+    }
+    saveDatabase();
+    renderHomeProfile();
+}
+
 function saveHomeAddress() {
     const addrEl = document.getElementById('homeAddressContent');
     if (addrEl) db.profile.address = addrEl.innerText;
@@ -672,3 +1031,10 @@ function uploadProfilePhoto(event) {
         reader.readAsDataURL(file);
     }
 }
+
+window.saveHomeProfile = saveHomeProfile;
+window.saveHomeAddress = saveHomeAddress;
+window.saveHomePrinciples = saveHomePrinciples;
+window.addHomePrinciple = addHomePrinciple;
+window.deleteHomePrinciple = deleteHomePrinciple;
+window.renderHomeProfile = renderHomeProfile;

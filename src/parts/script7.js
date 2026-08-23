@@ -103,22 +103,25 @@ function renderGoalsTable() {
 
             const progressBarHtml = `
                 <div class="flex items-center gap-3 w-full justify-center px-1">
-                    <div class="flex-1 min-w-[140px] max-w-[220px] bg-surface-950/90 rounded-full h-3.5 sm:h-4 overflow-hidden border border-surface-700/80 p-0.5 shadow-inner">
+                    <div class="flex-1 min-w-[180px] max-w-[320px] bg-surface-950/95 rounded-full h-4 sm:h-4.5 overflow-hidden border border-surface-700/90 p-0.5 shadow-inner">
                         <div class="h-full bg-gradient-to-r ${barGradient} rounded-full transition-all duration-500 flex items-center justify-end" style="width: ${progressPct}%">
-                            ${progressPct >= 20 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/80 mr-1 shadow-sm"></span>' : ''}
+                            ${progressPct >= 15 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/90 mr-1.5 shadow-sm"></span>' : ''}
                         </div>
                     </div>
-                    <span class="text-xs font-mono font-bold ${progressPct >= 100 ? 'text-emerald-400' : 'text-slate-200'} shrink-0 w-10 text-right">${progressPct}%</span>
+                    <span class="text-xs font-mono font-bold ${progressPct >= 100 ? 'text-emerald-400' : 'text-slate-200'} shrink-0 w-11 text-right">${progressPct}%</span>
                 </div>
+            `;
+
+            const dataNotesHtml = `
+                <button onclick="openMilestoneNotesModal('${g.id}')" class="w-8 h-8 rounded-xl bg-surface-900/90 hover:bg-brand-500/20 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 transition-all inline-flex items-center justify-center cursor-pointer shadow-sm group/note" title="Open Milestone Notes & Documentation">
+                    <i class="fa-regular fa-note-sticky text-xs group-hover/note:scale-110 transition-transform ${g.detailedNotes || g.notes ? 'text-brand-400' : ''}"></i>
+                </button>
             `;
 
             const manageHtml = `
                 <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="toggleGoalStatus('${g.id}')" class="p-1 text-slate-400 hover:text-emerald-400 transition-colors" title="${isComp ? 'Reactivate' : 'Mark Complete'}">
-                        <i class="fa-solid ${isComp ? 'fa-rotate-left text-amber-400' : 'fa-check text-emerald-400'} text-xs"></i>
-                    </button>
-                    <button onclick="openGoalModal('${g.id}')" class="p-1 text-slate-400 hover:text-brand-500 transition-colors" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
-                    <button onclick="deleteGoal('${g.id}')" class="p-1 text-slate-400 hover:text-rose-500 transition-colors" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
+                    <button onclick="openGoalModal('${g.id}')" class="p-1.5 text-slate-400 hover:text-brand-500 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Edit Milestone"><i class="fa-solid fa-pen text-xs"></i></button>
+                    <button onclick="deleteGoal('${g.id}')" class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Delete Milestone"><i class="fa-solid fa-trash text-xs"></i></button>
                 </div>
             `;
 
@@ -137,6 +140,7 @@ function renderGoalsTable() {
                     <td class="py-3 px-3 font-mono text-xs font-bold text-emerald-400 text-right">₹${paid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                     <td class="py-3 px-3 text-center">${progressBarHtml}</td>
                     <td class="py-3 px-3">${statusBadge}</td>
+                    <td class="py-3 px-3 text-center">${dataNotesHtml}</td>
                     <td class="py-3 px-3 text-center">${manageHtml}</td>
                 `;
             } else {
@@ -151,6 +155,7 @@ function renderGoalsTable() {
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${g.targetDate || '-'}</td>
                     <td class="py-3 px-3 text-center">${progressBarHtml}</td>
                     <td class="py-3 px-3">${statusBadge}</td>
+                    <td class="py-3 px-3 text-center">${dataNotesHtml}</td>
                     <td class="py-3 px-3 text-center">${manageHtml}</td>
                 `;
             }
@@ -162,7 +167,7 @@ function renderGoalsTable() {
             completedGoals.forEach((g, idx) => completedTableBody.appendChild(renderRow(g, idx, true)));
         }
 
-        const colSpan = cat === 'financial' ? 9 : 7;
+        const colSpan = cat === 'financial' ? 10 : 8;
         if (activeGoals.length === 0) {
             activeTableBody.innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> No active milestones in this track. Click Add Goal to create one.</td></tr>`;
         }
@@ -408,7 +413,7 @@ function renderGoalAnalytics() {
         const activeList = db.goals.filter(g => !g.completed);
 
         if (activeList.length === 0) {
-            activeTable.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> All milestones completed or no active targets logged.</td></tr>`;
+            activeTable.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> All milestones completed or no active targets logged.</td></tr>`;
         } else {
             activeList.slice(0, 10).forEach((g, idx) => {
                 const tr = document.createElement('tr');
@@ -434,22 +439,27 @@ function renderGoalAnalytics() {
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${g.targetDate || '-'}</td>
                     <td class="py-3 px-3 text-center">
-                        <div class="flex items-center gap-2.5 justify-center w-full min-w-[150px]">
-                            <div class="flex-1 max-w-[180px] bg-surface-950/90 rounded-full h-3.5 sm:h-4 overflow-hidden border border-surface-700/80 p-0.5 shadow-inner">
+                        <div class="flex items-center gap-3 justify-center w-full min-w-[180px]">
+                            <div class="flex-1 max-w-[280px] bg-surface-950/95 rounded-full h-4 overflow-hidden border border-surface-700/80 p-0.5 shadow-inner">
                                 <div class="h-full bg-gradient-to-r from-brand-600 via-brand-500 to-amber-300 rounded-full shadow-sm flex items-center justify-end" style="width: ${progressPct}%">
-                                    ${progressPct >= 20 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/80 mr-1 shadow-sm"></span>' : ''}
+                                    ${progressPct >= 15 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/90 mr-1 shadow-sm"></span>' : ''}
                                 </div>
                             </div>
-                            <span class="text-xs font-mono font-bold text-slate-200 shrink-0 w-9 text-right">${progressPct}%</span>
+                            <span class="text-xs font-mono font-bold text-slate-200 shrink-0 w-10 text-right">${progressPct}%</span>
                         </div>
                     </td>
                     <td class="py-3 px-3 text-center">
-                        <div class="flex items-center justify-center gap-2">
-                            <button onclick="toggleGoalStatus('${g.id}')" class="p-1 text-slate-400 hover:text-emerald-400 transition-colors" title="Mark as Complete">
-                                <i class="fa-solid fa-check text-xs"></i>
-                            </button>
-                            <button onclick="openGoalModal('${g.id}')" class="p-1 text-slate-400 hover:text-brand-500 transition-colors" title="Edit">
+                        <button onclick="openMilestoneNotesModal('${g.id}')" class="w-8 h-8 rounded-xl bg-surface-900/90 hover:bg-brand-500/20 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 transition-all inline-flex items-center justify-center cursor-pointer shadow-sm group/note" title="Open Milestone Notes & Documentation">
+                            <i class="fa-regular fa-note-sticky text-xs group-hover/note:scale-110 transition-transform ${g.detailedNotes || g.notes ? 'text-brand-400' : ''}"></i>
+                        </button>
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                        <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openGoalModal('${g.id}')" class="p-1.5 text-slate-400 hover:text-brand-500 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Edit Milestone">
                                 <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteGoal('${g.id}')" class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Delete Milestone">
+                                <i class="fa-solid fa-trash text-xs"></i>
                             </button>
                         </div>
                     </td>
@@ -649,14 +659,398 @@ window.toggleGoalStatus = toggleGoalStatus;
 function deleteGoal(id) {
     requireConfirmation('Delete this milestone?', () => {
         if (db.goals) {
+            const item = db.goals.find(x => x.id === id);
+            const idx = db.goals.findIndex(x => x.id === id);
+            if (item && typeof recordDeletion === 'function') {
+                recordDeletion({
+                    type: 'goal',
+                    label: `Milestone: ${item.title || item.name || 'Goal'}`,
+                    data: JSON.parse(JSON.stringify(item)),
+                    originalIndex: idx
+                });
+            }
             db.goals = db.goals.filter(x => x.id !== id);
             saveDatabase();
             renderGoalsTable();
-            showToast('Milestone removed');
         }
     });
 }
 window.deleteGoal = deleteGoal;
+
+/* =========================================================================
+   MILESTONE NOTES & EXECUTIVE DOCUMENTATION WORKSPACE
+   ========================================================================= */
+
+function openMilestoneNotesModal(goalId) {
+    if (!db.goals) db.goals = [];
+    const g = db.goals.find(x => x.id === goalId);
+    if (!g) return;
+
+    // Set Goal ID
+    const goalIdEl = document.getElementById('msNoteGoalId');
+    if (goalIdEl) goalIdEl.value = g.id;
+
+    // Set Milestone Title
+    const titleEl = document.getElementById('msNoteMilestoneTitle');
+    if (titleEl) titleEl.innerText = g.title || 'Milestone Documentation';
+
+    // Track icon and Category badge
+    const cat = (g.category || 'Financial').toLowerCase();
+    const catBadge = document.getElementById('msNoteCategoryBadge');
+    const trackIcon = document.getElementById('msNoteTrackIcon');
+    const trackIconBox = document.getElementById('msNoteTrackIconBox');
+
+    const trackMeta = {
+        financial: { icon: 'fa-coins', color: 'text-amber-400', border: 'border-amber-500/40', bg: 'bg-amber-500/10' },
+        business: { icon: 'fa-briefcase', color: 'text-accent-blue', border: 'border-blue-500/40', bg: 'bg-blue-500/10' },
+        personal: { icon: 'fa-user-astronaut', color: 'text-cyan-400', border: 'border-cyan-500/40', bg: 'bg-cyan-500/10' },
+        reading: { icon: 'fa-book', color: 'text-amber-400', border: 'border-amber-500/40', bg: 'bg-amber-500/10' },
+        books: { icon: 'fa-book', color: 'text-amber-400', border: 'border-amber-500/40', bg: 'bg-amber-500/10' },
+        travel: { icon: 'fa-plane', color: 'text-sky-400', border: 'border-sky-500/40', bg: 'bg-sky-500/10' },
+        ziyara: { icon: 'fa-kaaba', color: 'text-emerald-400', border: 'border-emerald-500/40', bg: 'bg-emerald-500/10' }
+    };
+    const meta = trackMeta[cat] || trackMeta.financial;
+
+    if (catBadge) {
+        catBadge.innerText = capitalize(g.category || 'Financial');
+        catBadge.className = `px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${meta.bg} ${meta.border} ${meta.color}`;
+    }
+    if (trackIcon) {
+        trackIcon.className = `fa-solid ${meta.icon}`;
+    }
+    if (trackIconBox) {
+        trackIconBox.className = `w-11 h-11 rounded-2xl ${meta.bg} ${meta.border} ${meta.color} flex items-center justify-center text-lg shadow-inner shrink-0`;
+    }
+
+    // Target Date
+    const targetDateText = document.getElementById('msNoteTargetDateText');
+    if (targetDateText) targetDateText.innerText = g.targetDate ? `Target: ${g.targetDate}` : 'No target date set';
+
+    // Progress Bar
+    let progressPct = parseInt(g.progress) || 0;
+    if (cat === 'financial') {
+        const est = parseFloat(g.estimate) || 0;
+        const paid = parseFloat(g.paid) || 0;
+        if (est > 0) progressPct = Math.min(100, Math.round((paid / est) * 100));
+    }
+    if (g.completed) progressPct = 100;
+
+    const progBar = document.getElementById('msNoteProgressBar');
+    const progText = document.getElementById('msNoteProgressText');
+    if (progBar) progBar.style.width = `${progressPct}%`;
+    if (progText) progText.innerText = `${progressPct}%`;
+
+    // Populate Editor
+    const editor = document.getElementById('msNoteEditor');
+    if (editor) {
+        editor.innerHTML = g.detailedNotes || g.notes || g.desc || '';
+    }
+
+    // Set Font Size
+    const fontSizeSelect = document.getElementById('msNoteFontSizeSelect');
+    if (fontSizeSelect) {
+        fontSizeSelect.value = g.notesFontSize || '17px';
+        applyMsNoteFontSize(fontSizeSelect.value);
+    }
+
+    updateMsNoteStats();
+    openModal('milestoneNotesModal');
+
+    // Auto-focus editor cleanly at the end
+    setTimeout(() => {
+        if (editor) {
+            editor.focus();
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(editor);
+            range.collapse(false);
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    }, 100);
+}
+window.openMilestoneNotesModal = openMilestoneNotesModal;
+
+function saveMilestoneNotes() {
+    const goalIdEl = document.getElementById('msNoteGoalId');
+    const goalId = goalIdEl ? goalIdEl.value : null;
+    if (!goalId) return;
+
+    const g = (db.goals || []).find(x => x.id === goalId);
+    if (!g) return;
+
+    const editor = document.getElementById('msNoteEditor');
+    const fontSizeSelect = document.getElementById('msNoteFontSizeSelect');
+
+    const htmlContent = editor ? editor.innerHTML : '';
+    const textContent = editor ? (editor.innerText || editor.textContent || '') : '';
+
+    g.detailedNotes = htmlContent;
+    if (!g.notes || g.notes === g.desc) {
+        g.notes = textContent.slice(0, 120);
+        g.desc = g.notes;
+    }
+    if (fontSizeSelect) g.notesFontSize = fontSizeSelect.value;
+
+    saveDatabase();
+    renderGoalsTable();
+    showToast('Milestone notes saved to cloud');
+    closeModal('milestoneNotesModal');
+}
+window.saveMilestoneNotes = saveMilestoneNotes;
+
+function updateMsNoteStats() {
+    const editor = document.getElementById('msNoteEditor');
+    const wordCountEl = document.getElementById('msNoteWordCount');
+    const charCountEl = document.getElementById('msNoteCharCount');
+    if (!editor) return;
+
+    const text = editor.innerText || editor.textContent || '';
+    const trimmed = text.trim();
+    const words = trimmed ? trimmed.split(/\s+/).length : 0;
+    const chars = text.length;
+
+    if (wordCountEl) wordCountEl.innerText = words.toString();
+    if (charCountEl) charCountEl.innerText = chars.toString();
+}
+window.updateMsNoteStats = updateMsNoteStats;
+
+function handleMsNoteProgressChange(val) {
+    const num = Math.min(100, Math.max(0, parseInt(val) || 0));
+    const progBar = document.getElementById('msNoteProgressBar');
+    const progText = document.getElementById('msNoteProgressText');
+    if (progBar) progBar.style.width = `${num}%`;
+    if (progText) progText.innerText = `${num}%`;
+}
+window.handleMsNoteProgressChange = handleMsNoteProgressChange;
+
+function handleMsNoteStatusChange(status) {
+    const statusBadge = document.getElementById('msNoteStatusBadge');
+    if (statusBadge) {
+        statusBadge.innerText = status;
+        if (status === 'Completed') {
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400';
+            const progInput = document.getElementById('msNoteQuickProgressInput');
+            if (progInput) {
+                progInput.value = 100;
+                handleMsNoteProgressChange(100);
+            }
+        } else if (status === 'In Progress') {
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-brand-500/10 border border-brand-500/30 text-brand-400';
+        } else {
+            statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-surface-900 border border-surface-700 text-slate-400';
+        }
+    }
+}
+window.handleMsNoteStatusChange = handleMsNoteStatusChange;
+
+function applyMsNoteFontFamily(fontKey) {
+    const editor = document.getElementById('msNoteEditor');
+    if (!editor) return;
+
+    editor.classList.remove('note-font-inter', 'note-font-playfair', 'note-font-outfit', 'note-font-merriweather', 'note-font-lora', 'note-font-mono', 'note-font-caveat', 'note-font-cinzel');
+    
+    const fontClassMap = {
+        inter: 'note-font-inter',
+        playfair: 'note-font-playfair',
+        outfit: 'note-font-outfit',
+        merriweather: 'note-font-merriweather',
+        lora: 'note-font-lora',
+        mono: 'note-font-mono',
+        caveat: 'note-font-caveat',
+        cinzel: 'note-font-cinzel'
+    };
+    editor.classList.add(fontClassMap[fontKey] || 'note-font-inter');
+}
+window.applyMsNoteFontFamily = applyMsNoteFontFamily;
+
+function applyMsNoteFontSize(sizeVal) {
+    const editor = document.getElementById('msNoteEditor');
+    if (!editor) return;
+    editor.style.fontSize = sizeVal;
+}
+window.applyMsNoteFontSize = applyMsNoteFontSize;
+
+function formatMsNoteText(cmd, value = null) {
+    document.execCommand(cmd, false, value);
+    const editor = document.getElementById('msNoteEditor');
+    if (editor) editor.focus();
+    updateMsNoteStats();
+}
+window.formatMsNoteText = formatMsNoteText;
+
+function formatMsNoteHighlight() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    document.execCommand('hiliteColor', false, 'rgba(245, 158, 11, 0.35)');
+    const editor = document.getElementById('msNoteEditor');
+    if (editor) editor.focus();
+}
+window.formatMsNoteHighlight = formatMsNoteHighlight;
+
+function formatMsNoteTextColor(colorHex) {
+    document.execCommand('foreColor', false, colorHex);
+    const editor = document.getElementById('msNoteEditor');
+    if (editor) editor.focus();
+}
+window.formatMsNoteTextColor = formatMsNoteTextColor;
+
+function formatMsNoteCodeBlock() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const selectedText = range.toString() || 'Code or execution snippet here...';
+    
+    const codeElem = document.createElement('pre');
+    codeElem.className = 'p-3 my-2 rounded-xl bg-surface-900 border border-surface-700/80 font-mono text-xs text-brand-400 overflow-x-auto';
+    codeElem.innerText = selectedText;
+    
+    range.deleteContents();
+    range.insertNode(codeElem);
+    updateMsNoteStats();
+}
+window.formatMsNoteCodeBlock = formatMsNoteCodeBlock;
+
+function insertMsNoteChecklist() {
+    const checkboxHtml = `<div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 text-brand-500 focus:ring-brand-500 accent-amber-500 cursor-pointer"><span>Task step item...</span></div><p></p>`;
+    document.execCommand('insertHTML', false, checkboxHtml);
+    updateMsNoteStats();
+}
+window.insertMsNoteChecklist = insertMsNoteChecklist;
+
+function insertMsNoteTimestamp() {
+    const now = new Date();
+    const formatted = `[${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}] `;
+    document.execCommand('insertHTML', false, `<span class="font-mono text-xs text-amber-400 font-semibold">${formatted}</span>`);
+    updateMsNoteStats();
+}
+window.insertMsNoteTimestamp = insertMsNoteTimestamp;
+
+function insertMsNoteTemplate(type) {
+    let templateHtml = '';
+    if (type === 'action_plan') {
+        templateHtml = `
+            <h2 class="text-base font-bold text-brand-400 mb-2">🎯 Strategic Action Plan</h2>
+            <p><strong>Primary Objective:</strong> Define key result here</p>
+            <p><strong>Target Timeline:</strong> Phase 1 & Phase 2</p>
+            <h3 class="text-sm font-semibold text-slate-200 mt-3 mb-1">Key Execution Milestones:</h3>
+            <ul>
+                <li>Phase 1: Initial research, requirements & budget allocation</li>
+                <li>Phase 2: Execution, partner outreach, and active tracking</li>
+                <li>Phase 3: Final delivery, review & milestone achievement</li>
+            </ul>
+            <p></p>
+        `;
+    } else if (type === 'checklist') {
+        templateHtml = `
+            <h2 class="text-base font-bold text-emerald-400 mb-2">📋 Action Checklist</h2>
+            <div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 accent-amber-500"><span>Finalize budget & allocate funds</span></div>
+            <div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 accent-amber-500"><span>Reach out to vendors / stakeholders</span></div>
+            <div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 accent-amber-500"><span>Complete checkpoint review 1</span></div>
+            <div class="flex items-center gap-2.5 my-1.5"><input type="checkbox" class="w-4 h-4 rounded border-surface-600 bg-surface-900 accent-amber-500"><span>Achieve final completion</span></div>
+            <p></p>
+        `;
+    } else if (type === 'checkpoint') {
+        const d = new Date().toLocaleDateString('en-GB');
+        templateHtml = `
+            <h2 class="text-base font-bold text-cyan-400 mb-2">📅 Progress Checkpoint Log (${d})</h2>
+            <p><strong>Current Status:</strong> On track</p>
+            <p><strong>Progress Accomplished:</strong> Summary of achievements so far...</p>
+            <p><strong>Blockers / Risks:</strong> None identified</p>
+            <p><strong>Next Steps for This Week:</strong> Outline upcoming actions...</p>
+            <p></p>
+        `;
+    } else if (type === 'financial') {
+        templateHtml = `
+            <h2 class="text-base font-bold text-amber-400 mb-2">💰 Financial & Budget Breakdown</h2>
+            <p><strong>Total Estimate:</strong> ₹0.00</p>
+            <p><strong>Paid / Invested to Date:</strong> ₹0.00</p>
+            <p><strong>Balance Outstanding:</strong> ₹0.00</p>
+            <h3 class="text-sm font-semibold text-slate-200 mt-3 mb-1">Expense Allocation:</h3>
+            <ul>
+                <li>Item 1: ₹0.00</li>
+                <li>Item 2: ₹0.00</li>
+                <li>Contingency Buffer: ₹0.00</li>
+            </ul>
+            <p></p>
+        `;
+    }
+    document.execCommand('insertHTML', false, templateHtml);
+    updateMsNoteStats();
+}
+window.insertMsNoteTemplate = insertMsNoteTemplate;
+
+function copyMilestoneNotesToClipboard() {
+    const editor = document.getElementById('msNoteEditor');
+    const text = editor ? (editor.innerText || editor.textContent || '') : '';
+    if (navigator.clipboard && text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Notes copied to clipboard');
+        }).catch(() => {
+            showToast('Could not copy notes');
+        });
+    } else {
+        showToast('No content to copy');
+    }
+}
+window.copyMilestoneNotesToClipboard = copyMilestoneNotesToClipboard;
+
+function printMilestoneNotes() {
+    const title = document.getElementById('msNoteMilestoneTitle')?.innerText || 'Milestone Notes';
+    const content = document.getElementById('msNoteEditor')?.innerHTML || '';
+    const win = window.open('', '_blank');
+    if (!win) {
+        showToast('Popup blocked by browser. Please allow popups.');
+        return;
+    }
+    win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${title}</title>
+            <style>
+                body { font-family: 'Inter', system-ui, sans-serif; padding: 40px; color: #111; line-height: 1.6; }
+                h1 { font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                h2 { font-size: 18px; margin-top: 20px; }
+                pre { background: #f4f4f4; padding: 12px; border-radius: 8px; font-family: monospace; }
+                ul, ol { padding-left: 24px; }
+            </style>
+        </head>
+        <body>
+            <h1>${title}</h1>
+            <div>${content}</div>
+            <script>window.print();<\/script>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
+window.printMilestoneNotes = printMilestoneNotes;
+
+function toggleMilestoneNotesFullscreen() {
+    const card = document.getElementById('milestoneNotesCard');
+    const icon = document.getElementById('iconMsNotesExpand');
+    if (!card) return;
+
+    if (card.classList.contains('max-w-6xl')) {
+        card.classList.remove('max-w-6xl', 'h-[96vh]');
+        card.classList.add('w-full', 'h-full', 'rounded-none', 'max-w-none');
+        if (icon) {
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress');
+        }
+    } else {
+        card.classList.add('max-w-6xl', 'h-[96vh]');
+        card.classList.remove('w-full', 'h-full', 'rounded-none', 'max-w-none');
+        if (icon) {
+            icon.classList.add('fa-expand');
+            icon.classList.remove('fa-compress');
+        }
+    }
+}
+window.toggleMilestoneNotesFullscreen = toggleMilestoneNotesFullscreen;
 
 let notesViewMode = 'grid';
 let notesSearchQuery = '';
@@ -1299,10 +1693,20 @@ window.editNoteFromView = editNoteFromView;
 
 function deleteNote(id) {
     requireConfirmation('Delete this executive note permanently?', () => {
+        if (!db.notes) return;
+        const item = db.notes.find(x => x.id === id);
+        const idx = db.notes.findIndex(x => x.id === id);
+        if (item && typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'note',
+                label: `Note: ${item.title || 'Untitled Note'}`,
+                data: JSON.parse(JSON.stringify(item)),
+                originalIndex: idx
+            });
+        }
         db.notes = db.notes.filter(x => x.id !== id);
         saveDatabase();
         renderNotesList();
-        showToast('Note deleted');
     });
 }
 window.deleteNote = deleteNote;
@@ -1977,11 +2381,20 @@ window.toggleReminderStatus = toggleReminderStatus;
 function deleteReminder(id) {
     requireConfirmation('Delete this reminder?', () => {
         if (db.reminders) {
+            const item = db.reminders.find(x => x.id === id);
+            const idx = db.reminders.findIndex(x => x.id === id);
+            if (item && typeof recordDeletion === 'function') {
+                recordDeletion({
+                    type: 'reminder',
+                    label: `Reminder: ${item.title || 'Reminder Item'}`,
+                    data: JSON.parse(JSON.stringify(item)),
+                    originalIndex: idx
+                });
+            }
             db.reminders = db.reminders.filter(x => x.id !== id);
             saveDatabase();
             renderRemindersTable();
             renderNotifications();
-            showToast('Reminder deleted');
         }
     });
 }
@@ -2188,8 +2601,11 @@ function executeUniversalSearch() {
 
     // Search Banks
     (db.bankAccounts || []).forEach(b => {
-        if ((b.bankName && b.bankName.toLowerCase().includes(q)) || (b.accountName && b.accountName.toLowerCase().includes(q))) {
-            results.push({ page: 'assets', tab: 'banking', label: `Bank: ${b.bankName} - ${b.accountName}` });
+        if ((b.bankName && b.bankName.toLowerCase().includes(q)) || 
+            (b.accountName && b.accountName.toLowerCase().includes(q)) ||
+            (b.accountNumber && b.accountNumber.toLowerCase().includes(q)) ||
+            (b.notes && b.notes.toLowerCase().includes(q))) {
+            results.push({ page: 'assets', tab: 'banking', label: `Bank: ${b.bankName} - ${b.accountName}${b.accountNumber ? ` (${b.accountNumber})` : ''}` });
         }
     });
 
@@ -2444,54 +2860,85 @@ function confirmClearAllData(section = null) {
 
     let targetTitle = '';
     let clearAction = null;
+    let backupState = null;
 
     if (targetPage === 'assets' || targetPage === 'portfolio') {
         targetTitle = 'Portfolio records (Bank accounts, Credit liabilities, Mutual funds & Asset Valuation logs)';
+        backupState = {
+            bankAccounts: JSON.parse(JSON.stringify(db.bankAccounts || [])),
+            loans: JSON.parse(JSON.stringify(db.loans || [])),
+            assetMutualFunds: JSON.parse(JSON.stringify(db.assetMutualFunds || [])),
+            assetLogs: JSON.parse(JSON.stringify(db.assetLogs || [])),
+            assetCards: JSON.parse(JSON.stringify(db.assetCards || []))
+        };
         clearAction = () => {
             db.bankAccounts = [];
             db.loans = [];
             db.assetMutualFunds = [];
             db.assetLogs = [];
             db.assetCards = [];
-            showToast('Portfolio data cleared successfully');
         };
     } else if (targetPage === 'india-ops' || targetPage === 'equities') {
         targetTitle = 'Equities and Trading Desk entries';
+        backupState = {
+            indiaOps: JSON.parse(JSON.stringify(db.indiaOps || {}))
+        };
         clearAction = () => {
             if (db.indiaOps) {
                 db.indiaOps.shareMarket = [];
                 db.indiaOps.ventures = [];
                 db.indiaOps.othersEntries = [];
             }
-            showToast('Equities data cleared successfully');
         };
     } else if (targetPage === 'budget' || targetPage === 'budgets') {
         targetTitle = 'Budget allocations and Daily Outflows';
+        backupState = {
+            budget: JSON.parse(JSON.stringify(db.budget || {})),
+            dailyExpenses: JSON.parse(JSON.stringify(db.dailyExpenses || []))
+        };
         clearAction = () => {
             db.budget = { INR: [], QAR: [] };
             db.dailyExpenses = [];
-            showToast('Budget data cleared successfully');
         };
     } else if (targetPage === 'goals' || targetPage === 'milestones') {
         targetTitle = 'Milestones and Goals';
+        backupState = {
+            goals: JSON.parse(JSON.stringify(db.goals || []))
+        };
         clearAction = () => {
             db.goals = [];
-            showToast('Milestones cleared successfully');
         };
     } else if (targetPage === 'notes' || targetPage === 'journal') {
         targetTitle = 'Executive Notes and Journal entries';
+        backupState = {
+            notes: JSON.parse(JSON.stringify(db.notes || []))
+        };
         clearAction = () => {
             db.notes = [];
-            showToast('Notes cleared successfully');
         };
     } else if (targetPage === 'reminders') {
         targetTitle = 'Reminders and Alerts';
+        backupState = {
+            reminders: JSON.parse(JSON.stringify(db.reminders || []))
+        };
         clearAction = () => {
             db.reminders = [];
-            showToast('Reminders cleared successfully');
         };
     } else if (targetPage === 'all') {
         targetTitle = 'ALL application records across the entire dashboard';
+        backupState = {
+            bankAccounts: JSON.parse(JSON.stringify(db.bankAccounts || [])),
+            loans: JSON.parse(JSON.stringify(db.loans || [])),
+            assetMutualFunds: JSON.parse(JSON.stringify(db.assetMutualFunds || [])),
+            assetLogs: JSON.parse(JSON.stringify(db.assetLogs || [])),
+            assetCards: JSON.parse(JSON.stringify(db.assetCards || [])),
+            indiaOps: JSON.parse(JSON.stringify(db.indiaOps || {})),
+            budget: JSON.parse(JSON.stringify(db.budget || {})),
+            dailyExpenses: JSON.parse(JSON.stringify(db.dailyExpenses || [])),
+            goals: JSON.parse(JSON.stringify(db.goals || [])),
+            notes: JSON.parse(JSON.stringify(db.notes || [])),
+            reminders: JSON.parse(JSON.stringify(db.reminders || []))
+        };
         clearAction = () => {
             db.bankAccounts = [];
             db.loans = [];
@@ -2509,20 +2956,31 @@ function confirmClearAllData(section = null) {
             db.notes = [];
             db.reminders = [];
             db.notifications = [];
-            showToast('All dashboard data cleared');
         };
     } else {
         targetTitle = 'Portfolio records';
+        backupState = {
+            bankAccounts: JSON.parse(JSON.stringify(db.bankAccounts || [])),
+            loans: JSON.parse(JSON.stringify(db.loans || [])),
+            assetMutualFunds: JSON.parse(JSON.stringify(db.assetMutualFunds || [])),
+            assetLogs: JSON.parse(JSON.stringify(db.assetLogs || []))
+        };
         clearAction = () => {
             db.bankAccounts = [];
             db.loans = [];
             db.assetMutualFunds = [];
             db.assetLogs = [];
-            showToast('Portfolio data cleared successfully');
         };
     }
 
     requireConfirmation(`Are you sure you want to clear ${targetTitle}? This will only delete data for this page and keep the rest intact.`, () => {
+        if (backupState && typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'bulk',
+                label: `Cleared ${targetTitle.split('(')[0].trim()}`,
+                data: backupState
+            });
+        }
         if (typeof clearAction === 'function') {
             clearAction();
         }
@@ -2535,17 +2993,54 @@ function confirmClearAllData(section = null) {
 window.confirmClearAllData = confirmClearAllData;
 window.confirmClearPageData = confirmClearAllData;
 
+let appToastTimer = null;
+
 function showToast(msg) {
     const toast = document.getElementById('appToast');
     const toastMsg = document.getElementById('appToastMsg');
+    const undoBtn = document.getElementById('appToastUndoBtn');
     if (toast && toastMsg) {
-        toastMsg.innerText = msg;
+        toastMsg.innerHTML = msg;
+        if (undoBtn) undoBtn.classList.add('hidden');
         toast.classList.remove('translate-y-24', 'opacity-0');
-        setTimeout(() => {
+        if (appToastTimer) clearTimeout(appToastTimer);
+        appToastTimer = setTimeout(() => {
             toast.classList.add('translate-y-24', 'opacity-0');
-        }, 3000);
+        }, 3200);
     }
 }
+window.showToast = showToast;
+
+function showUndoToast(deletedLabel) {
+    const toast = document.getElementById('appToast');
+    const toastMsg = document.getElementById('appToastMsg');
+    const undoBtn = document.getElementById('appToastUndoBtn');
+    if (toast && toastMsg) {
+        toastMsg.innerHTML = `<span class="text-rose-400 font-bold mr-1"><i class="fa-solid fa-trash text-[10px]"></i> Deleted:</span> <span class="text-slate-200">${deletedLabel || 'Item'}</span>`;
+        if (undoBtn) {
+            undoBtn.classList.remove('hidden');
+            undoBtn.onclick = () => {
+                undoLastDelete();
+                hideToast();
+            };
+        }
+        toast.classList.remove('translate-y-24', 'opacity-0');
+        if (appToastTimer) clearTimeout(appToastTimer);
+        appToastTimer = setTimeout(() => {
+            toast.classList.add('translate-y-24', 'opacity-0');
+        }, 6000);
+    }
+}
+window.showUndoToast = showUndoToast;
+
+function hideToast() {
+    const toast = document.getElementById('appToast');
+    if (toast) {
+        toast.classList.add('translate-y-24', 'opacity-0');
+    }
+    if (appToastTimer) clearTimeout(appToastTimer);
+}
+window.hideToast = hideToast;
 
 function openCloudSyncModal() {
     updateCloudModalUI();

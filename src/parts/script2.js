@@ -132,10 +132,20 @@ window.downloadVaultFile = downloadVaultFile;
 function deleteVaultFile(id) {
     requireConfirmation('Delete this file from your vault?', () => {
         if (!db.vault || !db.vault[currentStorageType]) return;
+        const item = db.vault[currentStorageType].find(x => x.id === id);
+        const idx = db.vault[currentStorageType].findIndex(x => x.id === id);
+        if (item && typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'vaultFile',
+                label: `Vault Document: ${item.name || 'File'}`,
+                data: JSON.parse(JSON.stringify(item)),
+                originalIndex: idx,
+                meta: { storageType: currentStorageType }
+            });
+        }
         db.vault[currentStorageType] = db.vault[currentStorageType].filter(x => x.id !== id);
         saveDatabase();
         renderStorageFileList();
-        showToast('File removed from vault');
     });
 }
 window.deleteVaultFile = deleteVaultFile;
@@ -262,7 +272,8 @@ function switchBudgetSubTab(tabKey) {
 
     const tabs = { 
         qatar: { id: 'btnBudgetSubQatar', icon: 'fa-coins', label: 'Qatar Budget (QAR)' }, 
-        india: { id: 'btnBudgetSubIndia', icon: 'fa-piggy-bank', label: 'India Budget (INR)' }
+        india: { id: 'btnBudgetSubIndia', icon: 'fa-piggy-bank', label: 'India Budget (INR)' },
+        analysis: { id: 'btnBudgetSubAnalysis', icon: 'fa-chart-pie', label: 'Analysis' }
     };
 
     Object.keys(tabs).forEach(k => {
@@ -277,6 +288,12 @@ function switchBudgetSubTab(tabKey) {
             }
         }
     });
+
+    if (tabKey === 'analysis' && typeof renderBudgetAnalysis === 'function') {
+        setTimeout(() => {
+            renderBudgetAnalysis();
+        }, 50);
+    }
 }
 
 function switchAssetSubTab(tabKey) {
@@ -483,6 +500,17 @@ function saveAssetLog() {
 
 function deleteAssetLog(id) {
     requireConfirmation('Delete this asset activity log?', () => {
+        if (!db.assetLogs) return;
+        const item = db.assetLogs.find(x => x.id === id);
+        const idx = db.assetLogs.findIndex(x => x.id === id);
+        if (item && typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'assetLog',
+                label: `Asset Log: ${item.assetName || 'Asset Activity'}`,
+                data: JSON.parse(JSON.stringify(item)),
+                originalIndex: idx
+            });
+        }
         db.assetLogs = db.assetLogs.filter(x => x.id !== id);
         saveDatabase();
         renderAssetLogsTable();
