@@ -371,30 +371,48 @@ function sanitizeDatabase(data) {
 }
 window.sanitizeDatabase = sanitizeDatabase;
 
-async function saveDatabase() {
+async function saveDatabase(immediate = false) {
+    const now = Date.now();
+    db.lastUpdatedAt = now;
     sanitizeDatabase(db);
-    // Save to local cache first for zero-latency UI (stripping heavy base64 binaries to protect 5MB localStorage limit)
+
+    // 1. Save to local cache for fast reload
     try {
         const localCopy = JSON.parse(JSON.stringify(db));
+        localCopy.lastUpdatedAt = now;
         if (Array.isArray(localCopy.documents)) {
-            localCopy.documents.forEach(d => {
+            for (let i = 0; i < localCopy.documents.length; i++) {
+                const d = localCopy.documents[i];
                 if (d.fileData && (d.fileData.startsWith('data:') || d.fileData.length > 2000)) {
-                    if (window.vaultStorage) window.vaultStorage.saveFile(d.id, d.fileData);
+                    if (window.vaultStorage) {
+                        await window.vaultStorage.saveFile(d.id, d.fileData);
+                    }
                     d.hasBinary = true;
                     delete d.fileData;
                 }
-            });
+            }
         }
         localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(localCopy));
+        localStorage.setItem('riyas_executive_os_last_updated', String(now));
     } catch (err) {
         console.warn("Local storage cache warning:", err);
     }
-    // Persist to Firebase Firestore Cloud database
+
+    // 2. Persist full state to high-capacity IndexedDB
+    if (window.vaultStorage && typeof window.vaultStorage.saveState === 'function') {
+        try {
+            await window.vaultStorage.saveState(db);
+        } catch (idbErr) {
+            console.warn("IndexedDB state save warning:", idbErr);
+        }
+    }
+
+    // 3. Persist to Firebase Firestore Cloud database (debounced & deduplicated)
     if (window.cloudSave) {
         try {
-            await window.cloudSave(db);
+            await window.cloudSave(db, immediate);
         } catch (e) {
-            console.error("Firebase cloudSave error in saveDatabase:", e);
+            console.warn("Firebase cloudSave warning:", e);
         }
     }
 }
@@ -402,6 +420,8 @@ async function saveDatabase() {
 async function loadDatabase() {
     // 1. Load from local cache immediately for instantaneous rendering
     const local = localStorage.getItem('riyas_executive_os_db_v2');
+    let localTs = parseInt(localStorage.getItem('riyas_executive_os_last_updated') || '0', 10) || 0;
+    
     if (local) {
         try { 
             const parsed = JSON.parse(local);
@@ -413,31 +433,108 @@ async function loadDatabase() {
                 profile: { ...(db.profile || {}), ...(parsed.profile || {}) },
                 preferences: { ...(db.preferences || {}), ...(parsed.preferences || {}) }
             });
+            if (localTs) db.lastUpdatedAt = localTs;
         } catch (e) {
             console.error("Error reading local db cache:", e);
         }
     }
+
+    // 2. Load from IndexedDB to catch changes that exceeded localStorage size
+    if (window.vaultStorage && typeof window.vaultStorage.getState === 'function') {
+        try {
+            const idbState = await window.vaultStorage.getState();
+            if (idbState && typeof idbState === 'object') {
+                const idbTs = idbState.lastUpdatedAt || 0;
+                if (idbTs >= localTs) {
+                    db = sanitizeDatabase({
+                        ...db,
+                        ...idbState,
+                        indiaOps: { ...(db.indiaOps || {}), ...(idbState.indiaOps || {}) },
+                        budget: { ...(db.budget || {}), ...(idbState.budget || {}) },
+                        profile: { ...(db.profile || {}), ...(idbState.profile || {}) },
+                        preferences: { ...(db.preferences || {}), ...(idbState.preferences || {}) }
+                    });
+                    if (idbTs) {
+                        db.lastUpdatedAt = idbTs;
+                        localTs = idbTs;
+                    }
+                }
+            }
+        } catch (idbReadErr) {
+            console.warn("IndexedDB state read warning:", idbReadErr);
+        }
+    }
+
     sanitizeDatabase(db);
+
+    // 3. Hydrate all document binaries from IndexedDB into memory before initial view render
+    if (window.vaultStorage && Array.isArray(db.documents)) {
+        try {
+            await Promise.all(db.documents.map(async (doc) => {
+                if (!doc.fileData) {
+                    const storedBinary = await window.vaultStorage.getFile(doc.id);
+                    if (storedBinary) {
+                        doc.fileData = storedBinary;
+                    }
+                }
+            }));
+        } catch (hydErr) {
+            console.warn("IndexedDB document hydration warning:", hydErr);
+        }
+    }
     
-    // 2. Connect to Firebase and fetch the latest cloud document
+    // 4. Connect to Firebase and fetch the latest cloud document (respecting local freshness)
     if (window.initCloudStorage) {
         try {
             const ok = await window.initCloudStorage();
             if (ok && window.cloudLoad) {
                 const remote = await window.cloudLoad();
                 if (remote && typeof remote === 'object') {
-                    db = sanitizeDatabase({
-                        ...db,
-                        ...remote,
-                        indiaOps: { ...(db.indiaOps || {}), ...(remote.indiaOps || {}) },
-                        budget: { ...(db.budget || {}), ...(remote.budget || {}) },
-                        profile: { ...(db.profile || {}), ...(remote.profile || {}) },
-                        preferences: { ...(db.preferences || {}), ...(remote.preferences || {}) }
-                    });
-                    localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(db));
-                    refreshAllViews();
-                } else if (local) {
-                    // Initial bootstrap: Upload local state to the cloud database
+                    const remoteTs = remote.lastUpdatedAt || 0;
+                    const currentLocalTs = db.lastUpdatedAt || localTs || 0;
+
+                    // Only adopt remote if it is strictly newer than our local state
+                    if (remoteTs > currentLocalTs + 500) {
+                        const inMemoryBinaries = new Map();
+                        if (Array.isArray(db.documents)) {
+                            db.documents.forEach(d => { if (d.fileData) inMemoryBinaries.set(d.id, d.fileData); });
+                        }
+
+                        db = sanitizeDatabase({
+                            ...db,
+                            ...remote,
+                            indiaOps: { ...(db.indiaOps || {}), ...(remote.indiaOps || {}) },
+                            budget: { ...(db.budget || {}), ...(remote.budget || {}) },
+                            profile: { ...(db.profile || {}), ...(remote.profile || {}) },
+                            preferences: { ...(db.preferences || {}), ...(remote.preferences || {}) }
+                        });
+
+                        // Reattach/hydrate binaries
+                        if (Array.isArray(db.documents)) {
+                            await Promise.all(db.documents.map(async (d) => {
+                                if (inMemoryBinaries.has(d.id)) {
+                                    d.fileData = inMemoryBinaries.get(d.id);
+                                } else if (!d.fileData && window.vaultStorage) {
+                                    const b = await window.vaultStorage.getFile(d.id);
+                                    if (b) d.fileData = b;
+                                }
+                            }));
+                        }
+
+                        localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(db));
+                        localStorage.setItem('riyas_executive_os_last_updated', String(remoteTs));
+                        if (window.vaultStorage && typeof window.vaultStorage.saveState === 'function') {
+                            await window.vaultStorage.saveState(db);
+                        }
+                        refreshAllViews();
+                    } else if (currentLocalTs > remoteTs + 500 && !window.isFirestoreQuotaExceeded) {
+                        // Local is newer than cloud; push up our fresh local data
+                        if (window.cloudSave) {
+                            await window.cloudSave(db, true);
+                        }
+                    }
+                } else if (local && !window.isFirestoreQuotaExceeded) {
+                    // Initial bootstrap: Upload local state to the cloud database if remote is empty
                     if (window.cloudSave) {
                         await window.cloudSave(db);
                     }
@@ -450,13 +547,24 @@ async function loadDatabase() {
 }
 
 // Handler for real-time updates from Firebase Firestore
-window.onRemoteStateUpdate = function(remoteDb) {
+window.onRemoteStateUpdate = async function(remoteDb) {
     if (remoteDb && typeof remoteDb === 'object') {
+        const remoteTs = remoteDb.lastUpdatedAt || 0;
+        const currentLocalTs = db.lastUpdatedAt || parseInt(localStorage.getItem('riyas_executive_os_last_updated') || '0', 10) || 0;
+
+        // If local state has newer modifications, do NOT overwrite with stale cloud snapshot!
+        if (remoteTs <= currentLocalTs) {
+            return;
+        }
+
         const prevNotifIds = new Set((db.notifications || []).map(n => n.id));
         const remoteNotifs = Array.isArray(remoteDb.notifications) ? remoteDb.notifications : [];
-        
-        // Detect if brand new unread notifications arrived from cloud
         const hasNewUnreadFromRemote = remoteNotifs.some(n => !n.read && !prevNotifIds.has(n.id));
+
+        const inMemoryBinaries = new Map();
+        if (Array.isArray(db.documents)) {
+            db.documents.forEach(d => { if (d.fileData) inMemoryBinaries.set(d.id, d.fileData); });
+        }
 
         db = sanitizeDatabase({
             ...db,
@@ -466,7 +574,24 @@ window.onRemoteStateUpdate = function(remoteDb) {
             profile: { ...(db.profile || {}), ...(remoteDb.profile || {}) },
             preferences: { ...(db.preferences || {}), ...(remoteDb.preferences || {}) }
         });
+
+        // Hydrate binaries for updated documents
+        if (Array.isArray(db.documents)) {
+            await Promise.all(db.documents.map(async (d) => {
+                if (inMemoryBinaries.has(d.id)) {
+                    d.fileData = inMemoryBinaries.get(d.id);
+                } else if (!d.fileData && window.vaultStorage) {
+                    const b = await window.vaultStorage.getFile(d.id);
+                    if (b) d.fileData = b;
+                }
+            }));
+        }
+
         localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(db));
+        localStorage.setItem('riyas_executive_os_last_updated', String(remoteTs));
+        if (window.vaultStorage && typeof window.vaultStorage.saveState === 'function') {
+            await window.vaultStorage.saveState(db);
+        }
         refreshAllViews();
 
         if (hasNewUnreadFromRemote && typeof playNotificationSound === 'function') {
@@ -808,13 +933,31 @@ window.toggleCompletedSectionCollapse = function(category) {
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 function switchEqSubTab(tabKey) {
+    window.currentEqActiveTab = tabKey;
     document.querySelectorAll('.eq-sub-view').forEach(v => v.classList.add('hidden'));
-    const target = document.getElementById(`eqSubView-${tabKey}`);
-    if(target) target.classList.remove('hidden');
+    
+    if (['options', 'futures', 'mcx', 'equity'].includes(tabKey)) {
+        const target = document.getElementById('eqSubView-trading');
+        if (target) target.classList.remove('hidden');
+        window.currentEqSegment = tabKey;
+        if (typeof renderShareMarketTable === 'function') renderShareMarketTable();
+    } else if (tabKey === 'others') {
+        const target = document.getElementById('eqSubView-others');
+        if (target) target.classList.remove('hidden');
+        if (typeof renderOthersTable === 'function') renderOthersTable();
+    } else if (tabKey === 'analysis') {
+        const target = document.getElementById('eqSubView-analysis');
+        if (target) target.classList.remove('hidden');
+        if (typeof renderTradingAnalysis === 'function') renderTradingAnalysis();
+    }
 
     const tabs = { 
-        trading: { id: 'btnEqSubTrading', icon: 'fa-chart-pie', label: 'Trading Desk' }, 
-        others: { id: 'btnEqSubOthers', icon: 'fa-layer-group', label: 'Others' }
+        options: { id: 'btnEqSubOptions', icon: 'fa-bolt', label: 'Options' },
+        futures: { id: 'btnEqSubFutures', icon: 'fa-arrow-trend-up', label: 'Futures' },
+        mcx: { id: 'btnEqSubMcx', icon: 'fa-coins', label: 'MCX' },
+        equity: { id: 'btnEqSubEquity', icon: 'fa-cubes', label: 'Equity' },
+        others: { id: 'btnEqSubOthers', icon: 'fa-layer-group', label: 'Others' },
+        analysis: { id: 'btnEqSubAnalysis', icon: 'fa-chart-pie', label: 'Analysis' }
     };
 
     Object.keys(tabs).forEach(k => {
@@ -2083,8 +2226,8 @@ function renderAssetLogsTable() {
         <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-amber-400"></i> Live</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-semibold text-amber-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-earth-asia w-5 mr-1"></i> Qatar Assets Valuation</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-slate-300 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">Qatar Offshore Holdings</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 font-bold text-amber-400/80 transition-colors">Auto-Synced (QR ${qatarAssetsTotalQr.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-right font-bold font-mono text-amber-400 flex items-center justify-end h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">₹${qatarAssetsTotalRs.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 font-bold ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-amber-400/80'} transition-colors">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-right font-bold font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-amber-400'} flex items-center justify-end h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center justify-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">
             <button onclick="switchAssetSubTab('qatarvaluation')" class="text-amber-400 hover:text-amber-300 font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-amber-500/40 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
@@ -2268,6 +2411,13 @@ function renderQatarAssetsTable() {
             totalInr += inrVal;
 
             const iconClass = getQatarCategoryIcon(item.category);
+            const isNegQr = qrVal < 0;
+            const isNegInr = inrVal < 0;
+            const formattedQr = (isNegQr ? '-' : '') + 'QR ' + Math.abs(qrVal).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const formattedInr = (isNegInr ? '-' : '') + '₹' + Math.abs(inrVal).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const qrColorClass = isNegQr ? 'text-rose-400' : 'text-amber-400';
+            const inrColorClass = isNegInr ? 'text-rose-400' : 'text-emerald-400';
+
             const tr = document.createElement('tr');
             tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
             tr.innerHTML = `
@@ -2278,9 +2428,9 @@ function renderQatarAssetsTable() {
                     ${item.remarks ? `<span class="text-[10px] font-mono text-slate-400 font-normal mt-0.5 truncate max-w-xs">${item.remarks}</span>` : ''}
                 </div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs text-slate-300">${item.category || 'Asset'}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono text-amber-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">QR ${qrVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${qrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedQr}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-mono text-slate-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs">₹${perQr.toFixed(2)}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono text-emerald-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${inrVal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${inrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedInr}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                     <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
                         <button onclick="openQatarAssetModal('${item.id}')" title="Edit" class="text-slate-400 hover:text-amber-400 transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
@@ -2297,19 +2447,31 @@ function renderQatarAssetsTable() {
     const totalInrEl = document.getElementById('qatarAssetTotalInrVal');
     const countEl = document.getElementById('qatarAssetCountVal');
 
-    if (totalQrEl) totalQrEl.innerText = `QR ${totalQr.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    if (totalInrEl) totalInrEl.innerText = `₹${totalInr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    const totQrIsNeg = totalQr < 0;
+    const totInrIsNeg = totalInr < 0;
+    const totQrText = (totQrIsNeg ? '-' : '') + 'QR ' + Math.abs(totalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const totInrText = (totInrIsNeg ? '-' : '') + '₹' + Math.abs(totalInr).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+    if (totalQrEl) {
+        totalQrEl.innerText = totQrText;
+        totalQrEl.className = totQrIsNeg ? 'text-xl font-bold font-mono text-rose-400' : 'text-xl font-bold font-mono text-amber-400';
+    }
+    if (totalInrEl) {
+        totalInrEl.innerText = totInrText;
+        totalInrEl.className = totInrIsNeg ? 'text-xl font-bold font-mono text-rose-400' : 'text-xl font-bold font-mono text-emerald-400';
+    }
     if (countEl) countEl.innerText = `${sortedList.length} ${sortedList.length === 1 ? 'Holding' : 'Holdings'}`;
 
     // Render footer totals
     const foot = document.getElementById('qatarAssetsTableFoot');
     if (foot) {
+        const avgRate = totalQr !== 0 ? Math.abs(totalInr / totalQr).toFixed(2) : '23.50';
         foot.innerHTML = `
             <tr class="border-t border-surface-800 bg-surface-900/90 font-bold">
                 <td colspan="4" class="py-3.5 px-4 text-right uppercase tracking-widest text-slate-400 text-[10px]">Total Qatar Portfolio Valuation:</td>
-                <td class="py-3.5 px-4 text-right font-mono text-amber-400 text-sm">QR ${totalQr.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td class="py-3.5 px-4 text-right font-mono text-slate-400 text-xs">Avg: ₹${totalQr > 0 ? (totalInr / totalQr).toFixed(2) : '23.50'}</td>
-                <td class="py-3.5 px-4 text-right font-mono text-emerald-400 text-sm">₹${totalInr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="py-3.5 px-4 text-right font-mono ${totQrIsNeg ? 'text-rose-400' : 'text-amber-400'} text-sm">${totQrText}</td>
+                <td class="py-3.5 px-4 text-right font-mono text-slate-400 text-xs">Avg: ₹${avgRate}</td>
+                <td class="py-3.5 px-4 text-right font-mono ${totInrIsNeg ? 'text-rose-400' : 'text-emerald-400'} text-sm">${totInrText}</td>
                 <td></td>
             </tr>
         `;
@@ -2344,7 +2506,7 @@ function openQatarAssetModal(id = null) {
             }
             if (catEl) catEl.value = item.category || 'Real Estate';
             if (nameEl) nameEl.value = item.assetIdentity || '';
-            if (valQrEl) valQrEl.value = item.valueQr || '';
+            if (valQrEl) valQrEl.value = item.valueQr !== undefined ? item.valueQr : '';
             if (perQrEl) perQrEl.value = item.perQr || '23.50';
             if (remEl) remEl.value = item.remarks || '';
             computeQatarModalInrValue();
@@ -2357,7 +2519,10 @@ function openQatarAssetModal(id = null) {
         if (nameEl) nameEl.value = '';
         if (valQrEl) valQrEl.value = '';
         if (perQrEl) perQrEl.value = '23.50';
-        if (valRsEl) valRsEl.value = '₹0.00';
+        if (valRsEl) {
+            valRsEl.value = '₹0.00';
+            valRsEl.className = 'w-full p-3 rounded-xl border border-surface-700/80 bg-surface-950 text-emerald-400 font-mono text-xs font-bold cursor-not-allowed';
+        }
         if (remEl) remEl.value = '';
     }
 
@@ -2370,7 +2535,11 @@ function computeQatarModalInrValue() {
     const inr = valQr * perQr;
     const valRsEl = document.getElementById('qatarAssetValueRsInput');
     if (valRsEl) {
-        valRsEl.value = `₹${inr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        const isNeg = inr < 0;
+        valRsEl.value = `${isNeg ? '-' : ''}₹${Math.abs(inr).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        valRsEl.className = isNeg 
+            ? 'w-full p-3 rounded-xl border border-rose-500/50 bg-surface-950 text-rose-400 font-mono text-xs font-bold cursor-not-allowed'
+            : 'w-full p-3 rounded-xl border border-surface-700/80 bg-surface-950 text-emerald-400 font-mono text-xs font-bold cursor-not-allowed';
     }
 }
 
@@ -2391,8 +2560,8 @@ function saveQatarAssetDetails() {
         showToast('Please enter an asset identity or name');
         return;
     }
-    if (isNaN(valueQr) || valueQr <= 0) {
-        showToast('Please enter a valid Value in QR greater than 0');
+    if (isNaN(valueQr)) {
+        showToast('Please enter a valid Value in QR (positive or negative amount)');
         return;
     }
 
@@ -2616,13 +2785,64 @@ function deleteBankRow(id) {
     });
 }
 
+function getLoanPriorityWeight(priority) {
+    const p = (priority || 'Medium').toLowerCase().trim();
+    if (p === 'critical' || p === 'urgent') return 4;
+    if (p === 'high') return 3;
+    if (p === 'medium' || p === 'normal') return 2;
+    if (p === 'low') return 1;
+    return 2;
+}
+window.getLoanPriorityWeight = getLoanPriorityWeight;
+
+function getLoanPriorityBadge(priority) {
+    const p = (priority || 'Medium').toLowerCase().trim();
+    if (p === 'critical' || p === 'urgent') {
+        return '<span class="w-6 h-6 rounded-md border border-rose-500/50 bg-rose-500/20 text-rose-400 inline-flex items-center justify-center shadow-[0_0_8px_rgba(244,63,94,0.25)] transition-transform cursor-pointer" title="Critical Priority (Click to cycle)"><i class="fa-solid fa-angles-up text-[10px]"></i></span>';
+    }
+    if (p === 'high') {
+        return '<span class="w-6 h-6 rounded-md border border-amber-500/50 bg-amber-500/20 text-amber-400 inline-flex items-center justify-center transition-transform cursor-pointer" title="High Priority (Click to cycle)"><i class="fa-solid fa-angle-up text-[11px] font-bold"></i></span>';
+    }
+    if (p === 'low') {
+        return '<span class="w-6 h-6 rounded-md border border-slate-700 bg-surface-900 text-slate-400 inline-flex items-center justify-center transition-transform cursor-pointer" title="Low Priority (Click to cycle)"><i class="fa-solid fa-angle-down text-[10px]"></i></span>';
+    }
+    return '<span class="w-6 h-6 rounded-md border border-brand-500/40 bg-brand-500/15 text-brand-400 inline-flex items-center justify-center transition-transform cursor-pointer" title="Medium Priority (Click to cycle)"><i class="fa-solid fa-minus text-[10px]"></i></span>';
+}
+window.getLoanPriorityBadge = getLoanPriorityBadge;
+
+function cycleLoanPriority(loanId, e) {
+    if (e) e.stopPropagation();
+    if (!db.loans) return;
+    const l = db.loans.find(x => x.id === loanId);
+    if (!l) return;
+    const current = (l.priority || 'Medium').toLowerCase().trim();
+    let next = 'Medium';
+    if (current === 'critical' || current === 'urgent') next = 'High';
+    else if (current === 'high') next = 'Medium';
+    else if (current === 'medium' || current === 'normal') next = 'Low';
+    else if (current === 'low') next = 'Critical';
+    l.priority = next;
+    saveDatabase();
+    renderLoansTable();
+    showToast(`Priority set to ${next}`);
+}
+window.cycleLoanPriority = cycleLoanPriority;
+
 function renderLoansTable() {
     const body = document.getElementById('loansTableBody');
     if(!body) return;
     body.innerHTML = '';
     let totalAmount = 0, totalRepaid = 0, totalOutstanding = 0;
 
+    if (!Array.isArray(db.loans)) db.loans = [];
+
+    // Priority-based sorting (Milestone style): Critical > High > Medium > Low, then by date
     const sortedLoans = [...db.loans].sort((a, b) => {
+        const weightA = getLoanPriorityWeight(a.priority || 'Medium');
+        const weightB = getLoanPriorityWeight(b.priority || 'Medium');
+        if (weightB !== weightA) {
+            return weightB - weightA;
+        }
         const dateA = a.startDate ? (a.startDate.includes('-') ? a.startDate : a.startDate.split('/').reverse().join('-')) : '';
         const dateB = b.startDate ? (b.startDate.includes('-') ? b.startDate : b.startDate.split('/').reverse().join('-')) : '';
         return new Date(dateA) - new Date(dateB);
@@ -2638,17 +2858,18 @@ function renderLoansTable() {
         tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
+            <td class="py-px px-1"><div class="px-2 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-16" onclick="cycleLoanPriority('${l.id}', event)">${getLoanPriorityBadge(l.priority || 'Medium')}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-mono text-xs bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(l.startDate)}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-mono text-xs bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(l.endDate)}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-medium bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[250px] w-full">${l.source}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-medium bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[250px] w-full">${l.source}${l.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${l.notes}">(${l.notes})</span>` : ''}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${l.type}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${rep.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-rose-400 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${outstanding.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
-                    <button onclick="openLoanModal('${l.id}')" class="text-slate-500 hover:text-brand-500"><i class="fa-solid fa-pen"></i></button>
-                    <button onclick="deleteLoanRow('${l.id}')" class="text-slate-500 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="openLoanModal('${l.id}')" class="text-slate-500 hover:text-brand-500 cursor-pointer"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteLoanRow('${l.id}')" class="text-slate-500 hover:text-rose-500 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div></td>
         `;
@@ -2660,7 +2881,7 @@ function renderLoansTable() {
         foot.className = 'font-mono text-xs bg-surface-900/80 border-none';
         foot.innerHTML = `
             <tr>
-                <td colspan="5" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Liabilities:</td>
+                <td colspan="6" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Liabilities:</td>
                 <td class="p-4 text-right align-middle text-brand-500 text-sm font-bold border-none">₹${totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                 <td class="p-4 text-right align-middle text-emerald-400 text-sm font-bold border-none">₹${totalRepaid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
@@ -2691,8 +2912,10 @@ function openLoanModal(id = null) {
             }
             if (document.getElementById('loanSourceInput')) document.getElementById('loanSourceInput').value = l.source || '';
             if (document.getElementById('loanTypeInput')) document.getElementById('loanTypeInput').value = l.type || 'Commercial';
+            if (document.getElementById('loanPriorityInput')) document.getElementById('loanPriorityInput').value = l.priority || 'Medium';
             if (document.getElementById('loanAmountInput')) document.getElementById('loanAmountInput').value = l.amount || '';
             if (document.getElementById('loanRepaidInput')) document.getElementById('loanRepaidInput').value = l.repaid || '0';
+            if (document.getElementById('loanNotesInput')) document.getElementById('loanNotesInput').value = l.notes || '';
         }
     } else {
         if (titleEl) titleEl.innerText = 'Add Credit Facility';
@@ -2702,8 +2925,10 @@ function openLoanModal(id = null) {
         if (eInput && eInput._flatpickr) eInput._flatpickr.clear();
         if (document.getElementById('loanSourceInput')) document.getElementById('loanSourceInput').value = '';
         if (document.getElementById('loanTypeInput')) document.getElementById('loanTypeInput').value = 'Commercial';
+        if (document.getElementById('loanPriorityInput')) document.getElementById('loanPriorityInput').value = 'Medium';
         if (document.getElementById('loanAmountInput')) document.getElementById('loanAmountInput').value = '';
         if (document.getElementById('loanRepaidInput')) document.getElementById('loanRepaidInput').value = '0';
+        if (document.getElementById('loanNotesInput')) document.getElementById('loanNotesInput').value = '';
     }
     openModal('loanModal');
 }
@@ -2723,14 +2948,25 @@ function saveLoanDetails() {
     }
     const source = document.getElementById('loanSourceInput').value || 'Creditor';
     const type = document.getElementById('loanTypeInput').value;
+    const priority = document.getElementById('loanPriorityInput')?.value || 'Medium';
     const amount = parseFloat(document.getElementById('loanAmountInput').value) || 0;
     const repaid = parseFloat(document.getElementById('loanRepaidInput').value) || 0;
+    const notes = document.getElementById('loanNotesInput')?.value?.trim() || '';
 
     if (id) {
         const l = db.loans.find(x => x.id === id);
-        if (l) { l.startDate = startDate; l.endDate = endDate; l.source = source; l.type = type; l.amount = amount; l.repaid = repaid; }
+        if (l) { 
+            l.startDate = startDate; 
+            l.endDate = endDate; 
+            l.source = source; 
+            l.type = type; 
+            l.priority = priority; 
+            l.amount = amount; 
+            l.repaid = repaid; 
+            l.notes = notes; 
+        }
     } else {
-        db.loans.push({ id: Date.now().toString(), startDate, endDate, source, type, amount, repaid });
+        db.loans.push({ id: Date.now().toString(), startDate, endDate, source, type, priority, amount, repaid, notes });
     }
 
     saveDatabase();
@@ -2969,7 +3205,7 @@ function renderNetWorthAnalysis() {
 
     const netWorth = totalAssets - totalLiabilities;
 
-    const formatINR = (val) => '₹' + val.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const formatINR = (val) => (val < 0 ? '-' : '') + '₹' + Math.abs(val).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
     const elTotalAssets = document.getElementById('nwTotalAssets');
     const elTotalLiab = document.getElementById('nwTotalLiabilities');
@@ -3073,6 +3309,9 @@ function renderNetWorthAnalysis() {
 function renderIndiaOperations() {
     renderShareMarketTable();
     renderOthersTable();
+    if (typeof renderTradingAnalysis === 'function') {
+        renderTradingAnalysis();
+    }
 }
 
 function renderOthersTable() {
@@ -3282,6 +3521,37 @@ function deleteOthersEntry(id) {
     });
 }
 
+function formatTradeParticular(str) {
+    if (!str) return '';
+    const trimmed = str.trim();
+    if (!trimmed) return '';
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+}
+window.formatTradeParticular = formatTradeParticular;
+
+function getTradeSegment(sm) {
+    if (sm && sm.segment) return sm.segment.toLowerCase();
+    const scrip = (sm && sm.script ? sm.script : '').toUpperCase();
+    if (scrip.includes('CE') || scrip.includes('PE') || scrip.includes('CALL') || scrip.includes('PUT') || scrip.includes('OPTION') || scrip.includes('OPT')) {
+        return 'options';
+    }
+    if (scrip.includes('FUT') || scrip.includes('FUTURE')) {
+        return 'futures';
+    }
+    if (scrip.includes('CRUDE') || scrip.includes('GOLD') || scrip.includes('SILVER') || scrip.includes('NATGAS') || scrip.includes('NATURAL GAS') || scrip.includes('MCX') || scrip.includes('COPPER') || scrip.includes('ZINC') || scrip.includes('NICKEL') || scrip.includes('LEAD') || scrip.includes('ALUMINIUM') || scrip.includes('COTTON')) {
+        return 'mcx';
+    }
+    return 'equity';
+}
+window.getTradeSegment = getTradeSegment;
+
+const SEGMENT_CONFIG = {
+    options: { title: 'Options Trading Log', icon: 'fa-bolt', color: 'text-brand-400', bg: 'bg-brand-500/10', border: 'border-brand-500/30' },
+    futures: { title: 'Futures Trading Log', icon: 'fa-arrow-trend-up', color: 'text-accent-cyan', bg: 'bg-accent-cyan/10', border: 'border-accent-cyan/30' },
+    mcx: { title: 'MCX Commodity Trading Log', icon: 'fa-coins', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
+    equity: { title: 'Equity Stocks Trading Log', icon: 'fa-cubes', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30' }
+};
+
 function renderShareMarketTable() {
     const body = document.getElementById('shareMarketTableBody');
     if (!body) return;
@@ -3291,9 +3561,24 @@ function renderShareMarketTable() {
     if (!db.indiaOps) db.indiaOps = {};
     if (!db.indiaOps.shareMarket) db.indiaOps.shareMarket = [];
 
+    const activeSegment = window.currentEqSegment || 'options';
+    const config = SEGMENT_CONFIG[activeSegment] || SEGMENT_CONFIG.options;
+
+    // Update Header
+    const titleTextEl = document.getElementById('tradingTableTitleText');
+    const titleIconEl = document.getElementById('tradingTableIcon');
+    if (titleTextEl) titleTextEl.innerText = config.title;
+    if (titleIconEl) {
+        titleIconEl.className = `fa-solid ${config.icon} ${config.color} text-sm`;
+    }
+
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
-    let filteredList = [...db.indiaOps.shareMarket];
+    // Filter by segment first
+    let segmentFiltered = db.indiaOps.shareMarket.filter(sm => getTradeSegment(sm) === activeSegment);
+
+    // Apply Time Filters
+    let filteredList = [...segmentFiltered];
     if (eqFilterMode === 'monthly') {
         filteredList = filteredList.filter(sm => sm.year === eqFilterYear && sm.month.toLowerCase() === eqFilterMonth.toLowerCase());
     } else if (eqFilterMode === 'yearly') {
@@ -3306,9 +3591,15 @@ function renderShareMarketTable() {
         return monthNames.indexOf(a.month) - monthNames.indexOf(b.month);
     });
 
+    const countBadge = document.getElementById('tradingTableCountBadge');
+    if (countBadge) {
+        countBadge.innerText = `${sortedList.length} Trade${sortedList.length === 1 ? '' : 's'}`;
+    }
+
     if (sortedList.length === 0) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="9" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-chart-pie text-2xl mb-2 block opacity-40"></i> No equity positions found for ${eqFilterMonth} ${eqFilterYear}. Click "+ Log Trade" above to add one.</td>`;
+        const filterStr = eqFilterMode === 'monthly' ? ` for ${eqFilterMonth} ${eqFilterYear}` : (eqFilterMode === 'yearly' ? ` for Year ${eqFilterYear}` : '');
+        tr.innerHTML = `<td colspan="9" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid ${config.icon} text-2xl mb-2 block opacity-40"></i> No ${activeSegment.toUpperCase()} trades found${filterStr}. Click "+ Log Trade" above to add one.</td>`;
         body.appendChild(tr);
     }
 
@@ -3328,7 +3619,7 @@ function renderShareMarketTable() {
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${sm.year || '2026'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-mono text-xs">${sm.month || 'February'}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]"><span class="uppercase font-bold text-accent-cyan tracking-wide">${sm.script}</span>${sm.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${sm.notes}">(${sm.notes})</span>` : ''}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]"><span class="font-bold text-accent-cyan tracking-wide">${formatTradeParticular(sm.script)}</span>${sm.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${sm.notes}">(${sm.notes})</span>` : ''}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-medium text-slate-300">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div></td>
@@ -3347,12 +3638,16 @@ function renderShareMarketTable() {
         body.appendChild(tr);
     });
 
+    const tradeCount = sortedList.length;
+    const avgInvested = tradeCount > 0 ? (totalInvested / tradeCount) : 0;
+    const profitPctOnAvg = avgInvested > 0 ? (totalPnl / avgInvested) * 100 : 0;
+
     // Mobile Cards View
     const mobileContainer = document.getElementById('shareMarketMobileCards');
     if (mobileContainer) {
         mobileContainer.innerHTML = '';
-        if (sortedList.length === 0) {
-            mobileContainer.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs font-light"><i class="fa-solid fa-chart-line text-2xl mb-2 block opacity-40"></i> No equity positions found. Click "+ Log Trade" to record one.</div>`;
+        if (tradeCount === 0) {
+            mobileContainer.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs font-light"><i class="fa-solid ${config.icon} text-2xl mb-2 block opacity-40"></i> No ${activeSegment.toUpperCase()} trades recorded. Click "+ Log Trade" to add one.</div>`;
         } else {
             sortedList.forEach(sm => {
                 const inv = parseFloat(sm.invested) || 0;
@@ -3367,7 +3662,7 @@ function renderShareMarketTable() {
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <h5 class="font-bold text-white text-sm tracking-wide uppercase">${sm.script}</h5>
+                            <h5 class="font-bold text-white text-sm tracking-wide">${formatTradeParticular(sm.script)}</h5>
                             <span class="font-mono text-[10px] uppercase tracking-widest text-slate-500 px-2 py-0.5 rounded border border-surface-700 bg-surface-800">${sm.month || 'February'} ${sm.year || '2026'}</span>
                         </div>
                         <div class="flex items-center gap-2">
@@ -3392,24 +3687,47 @@ function renderShareMarketTable() {
                 `;
                 mobileContainer.appendChild(card);
             });
+
+            // Summary Card on Mobile
+            const summaryCard = document.createElement('div');
+            summaryCard.className = 'p-4 bg-surface-950/80 border-t-2 border-brand-500/30 flex flex-col gap-2.5';
+            summaryCard.innerHTML = `
+                <div class="grid grid-cols-3 gap-2 pt-1">
+                    <div class="flex flex-col">
+                        <span class="font-mono text-xs font-bold text-slate-200">₹${avgInvested.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="flex flex-col items-center text-center">
+                        <span class="font-mono text-xs font-bold ${totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalPnl >= 0 ? '+' : ''}₹${totalPnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="flex flex-col items-end text-right">
+                        <span class="font-mono text-xs font-bold ${profitPctOnAvg >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${profitPctOnAvg >= 0 ? '+' : ''}${profitPctOnAvg.toFixed(2)}%</span>
+                    </div>
+                </div>
+            `;
+            mobileContainer.appendChild(summaryCard);
         }
     }
 
     const foot = document.getElementById('shareMarketTableFoot');
     if (foot) {
-        const totalPnlPct = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
         foot.className = 'font-mono text-xs bg-surface-900/80 border-none';
         foot.innerHTML = `
             <tr>
-                <td colspan="4" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Period Totals:</td>
+                <td colspan="4" class="py-4 pr-4 pl-4 border-none"></td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
-                    <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border border-slate-500/30 text-base font-mono tracking-wider font-bold text-slate-300">₹${totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                    <div class="flex flex-col items-end">
+                        <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border border-slate-500/30 text-sm sm:text-base font-mono tracking-wider font-bold text-slate-300">₹${avgInvested.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
                 </td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
-                    <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${totalPnl>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-base font-mono tracking-wider font-bold">${totalPnl >= 0 ? '+' : ''}₹${totalPnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                    <div class="flex flex-col items-end">
+                        <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${totalPnl>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-sm sm:text-base font-mono tracking-wider font-bold">${totalPnl >= 0 ? '+' : ''}₹${totalPnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
                 </td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
-                    <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${totalPnlPct>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-base font-mono tracking-wider font-bold">${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%</span>
+                    <div class="flex flex-col items-end">
+                        <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${profitPctOnAvg>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-sm sm:text-base font-mono tracking-wider font-bold">${profitPctOnAvg >= 0 ? '+' : ''}${profitPctOnAvg.toFixed(2)}%</span>
+                    </div>
                 </td>
                 <td class="border-none"></td>
                 <td class="border-none"></td>
@@ -3422,11 +3740,15 @@ function openShareMarketModal(id = null) {
     const idField = document.getElementById('shareTradeId');
     if (idField) idField.value = id || '';
     
+    const activeSeg = window.currentEqSegment || 'options';
+    const segInput = document.getElementById('shareSegmentInput');
+
     if (id) {
         const sm = db.indiaOps.shareMarket.find(x => x.id === id);
         if (sm) {
             const titleEl = document.getElementById('shareTradeModalTitle');
-            if (titleEl) titleEl.innerText = 'Edit Equity Trade';
+            if (titleEl) titleEl.innerText = 'Edit Trade Record';
+            if (segInput) segInput.value = sm.segment || getTradeSegment(sm);
             if (document.getElementById('shareYearInput')) document.getElementById('shareYearInput').value = sm.year || '2026';
             if (document.getElementById('shareMonthInput')) document.getElementById('shareMonthInput').value = sm.month || 'February';
             if (document.getElementById('shareParticularsInput')) document.getElementById('shareParticularsInput').value = sm.script || '';
@@ -3439,7 +3761,9 @@ function openShareMarketModal(id = null) {
         }
     } else {
         const titleEl = document.getElementById('shareTradeModalTitle');
-        if (titleEl) titleEl.innerText = 'Log Equities Trade';
+        const segName = activeSeg.charAt(0).toUpperCase() + activeSeg.slice(1);
+        if (titleEl) titleEl.innerText = `Log ${segName} Trade`;
+        if (segInput) segInput.value = activeSeg;
         if (document.getElementById('shareYearInput')) document.getElementById('shareYearInput').value = eqFilterYear || '2026';
         if (document.getElementById('shareMonthInput')) document.getElementById('shareMonthInput').value = eqFilterMonth || 'February';
         if (document.getElementById('shareParticularsInput')) document.getElementById('shareParticularsInput').value = '';
@@ -3454,9 +3778,10 @@ window.openShareTradeModal = openShareMarketModal;
 function saveShareTrade() {
     const idField = document.getElementById('shareTradeId');
     const id = idField ? idField.value : '';
+    const segment = (document.getElementById('shareSegmentInput') ? document.getElementById('shareSegmentInput').value : '') || (window.currentEqSegment || 'options');
     const year = document.getElementById('shareYearInput') ? document.getElementById('shareYearInput').value : (eqFilterYear || '2026');
     const month = document.getElementById('shareMonthInput') ? document.getElementById('shareMonthInput').value : (eqFilterMonth || 'February');
-    const script = (document.getElementById('shareParticularsInput') ? document.getElementById('shareParticularsInput').value.trim() : '') || 'SCRIPT';
+    const script = (document.getElementById('shareParticularsInput') ? document.getElementById('shareParticularsInput').value.trim() : '') || 'Trade Position';
     const invested = parseFloat(document.getElementById('shareCapitalInput') ? document.getElementById('shareCapitalInput').value : 0) || 0;
     const pnl = parseFloat(document.getElementById('sharePnlInput') ? document.getElementById('sharePnlInput').value : 0) || 0;
     const current = invested + pnl;
@@ -3468,6 +3793,7 @@ function saveShareTrade() {
     if (id) {
         const sm = db.indiaOps.shareMarket.find(x => x.id === id);
         if (sm) {
+            sm.segment = segment;
             sm.year = year;
             sm.month = month;
             sm.script = script;
@@ -3478,6 +3804,7 @@ function saveShareTrade() {
     } else {
         db.indiaOps.shareMarket.push({
             id: Date.now().toString(),
+            segment,
             year,
             month,
             script,
@@ -3489,20 +3816,21 @@ function saveShareTrade() {
 
     saveDatabase();
     renderShareMarketTable();
+    if (typeof renderTradingAnalysis === 'function') renderTradingAnalysis();
     closeModal('shareTradeModal');
-    showToast('Equity trade recorded successfully');
+    showToast('Trade record saved successfully');
 }
 window.saveShareMarketDetails = saveShareTrade;
 
 function deleteShareMarketRow(id) {
-    requireConfirmation('Delete this equity position?', () => {
+    requireConfirmation('Delete this trading position?', () => {
         if (!db.indiaOps || !db.indiaOps.shareMarket) return;
         const item = db.indiaOps.shareMarket.find(x => x.id === id);
         const idx = db.indiaOps.shareMarket.findIndex(x => x.id === id);
         if (item && typeof recordDeletion === 'function') {
             recordDeletion({
                 type: 'equity',
-                label: `Equity Position: ${item.scriptName || item.stockName || 'Stock Position'}`,
+                label: `Trade Position: ${item.script || item.scriptName || 'Trading Entry'}`,
                 data: JSON.parse(JSON.stringify(item)),
                 originalIndex: idx
             });
@@ -3510,6 +3838,525 @@ function deleteShareMarketRow(id) {
         db.indiaOps.shareMarket = db.indiaOps.shareMarket.filter(x => x.id !== id);
         saveDatabase();
         renderShareMarketTable();
+        if (typeof renderTradingAnalysis === 'function') renderTradingAnalysis();
+    });
+}
+
+/* ==========================================================================
+   QUANTITATIVE TRADING ANALYSIS MODULE
+   ========================================================================== */
+window.tradingMonthlyChartInstance = null;
+window.tradingSegmentChartInstance = null;
+
+function renderTradingAnalysis() {
+    if (!db.indiaOps || !db.indiaOps.shareMarket) {
+        db.indiaOps = db.indiaOps || {};
+        db.indiaOps.shareMarket = [];
+    }
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const allTrades = [...db.indiaOps.shareMarket];
+
+    // Filter by time filters if active
+    let filteredTrades = [...allTrades];
+    let filterLabel = "All Time Quantitative Performance";
+    if (eqFilterMode === 'monthly') {
+        filteredTrades = filteredTrades.filter(t => t.year === eqFilterYear && t.month?.toLowerCase() === eqFilterMonth?.toLowerCase());
+        filterLabel = `${eqFilterMonth} ${eqFilterYear} Period Analysis`;
+    } else if (eqFilterMode === 'yearly') {
+        filteredTrades = filteredTrades.filter(t => t.year === eqFilterYear);
+        filterLabel = `Year ${eqFilterYear} Annual Analysis`;
+    }
+
+    const filterBadgeEl = document.getElementById('analysisFilterLabel');
+    if (filterBadgeEl) filterBadgeEl.innerText = filterLabel;
+
+    // KPI Metrics calculation
+    let totalInvested = 0;
+    let totalPnl = 0;
+    let winCount = 0;
+    let lossCount = 0;
+    let beCount = 0;
+    let grossWins = 0;
+    let grossLosses = 0;
+    let bestTradePnl = -Infinity;
+    let bestTradeScript = 'None';
+
+    filteredTrades.forEach(t => {
+        const inv = parseFloat(t.invested) || 0;
+        const cur = parseFloat(t.current) || 0;
+        const pnl = cur - inv;
+        totalInvested += inv;
+        totalPnl += pnl;
+
+        if (pnl > 0) {
+            winCount++;
+            grossWins += pnl;
+            if (pnl > bestTradePnl) {
+                bestTradePnl = pnl;
+                bestTradeScript = formatTradeParticular(t.script);
+            }
+        } else if (pnl < 0) {
+            lossCount++;
+            grossLosses += Math.abs(pnl);
+        } else {
+            beCount++;
+        }
+    });
+
+    const totalTrades = filteredTrades.length;
+    const winRate = totalTrades > 0 ? (winCount / totalTrades) * 100 : 0;
+    const avgCapital = totalTrades > 0 ? (totalInvested / totalTrades) : 0;
+    const pnlRoi = avgCapital > 0 ? (totalPnl / avgCapital) * 100 : 0;
+    const avgWin = winCount > 0 ? (grossWins / winCount) : 0;
+    const avgLoss = lossCount > 0 ? (grossLosses / lossCount) : 0;
+    const profitFactor = grossLosses > 0 ? (grossWins / grossLosses) : (grossWins > 0 ? 99.9 : 0);
+
+    // Update KPI Stat Elements
+    const netPnlEl = document.getElementById('anStatNetPnl');
+    const pnlRoiEl = document.getElementById('anStatPnlRoi');
+    if (netPnlEl) {
+        netPnlEl.innerText = (totalPnl >= 0 ? '+' : '') + '₹' + totalPnl.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        netPnlEl.className = `text-base sm:text-lg font-bold font-mono ${totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+    }
+    if (pnlRoiEl) {
+        pnlRoiEl.innerText = `${pnlRoi >= 0 ? '+' : ''}${pnlRoi.toFixed(2)}% on Avg Cap`;
+    }
+
+    const winRateEl = document.getElementById('anStatWinRate');
+    const winCountEl = document.getElementById('anStatWinCount');
+    if (winRateEl) {
+        winRateEl.innerText = `${winRate.toFixed(1)}%`;
+        winRateEl.className = `text-base sm:text-lg font-bold font-mono ${winRate >= 50 ? 'text-emerald-400' : 'text-amber-400'}`;
+    }
+    if (winCountEl) {
+        winCountEl.innerText = `${winCount}W • ${lossCount}L ${beCount > 0 ? `• ${beCount}BE` : ''}`;
+    }
+
+    const avgCapEl = document.getElementById('anStatAvgCap');
+    const totalTradesEl = document.getElementById('anStatTotalTrades');
+    if (avgCapEl) avgCapEl.innerText = `₹${avgCapital.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (totalTradesEl) totalTradesEl.innerText = `Across ${totalTrades} Trade${totalTrades === 1 ? '' : 's'}`;
+
+    const pfEl = document.getElementById('anStatProfitFactor');
+    const payoffEl = document.getElementById('anStatPayoffRatio');
+    if (pfEl) {
+        pfEl.innerText = grossLosses === 0 && grossWins > 0 ? 'Max (No Loss)' : `${profitFactor.toFixed(2)}x`;
+        pfEl.className = `text-base sm:text-lg font-bold font-mono ${profitFactor >= 1.5 ? 'text-emerald-400' : (profitFactor >= 1 ? 'text-brand-400' : 'text-rose-400')}`;
+    }
+    if (payoffEl) {
+        payoffEl.innerText = `Gross: +₹${Math.round(grossWins).toLocaleString('en-IN')} / -₹${Math.round(grossLosses).toLocaleString('en-IN')}`;
+    }
+
+    const avgWinLossEl = document.getElementById('anStatAvgWinLoss');
+    const riskRewardEl = document.getElementById('anStatRiskReward');
+    if (avgWinLossEl) {
+        avgWinLossEl.innerText = `+₹${Math.round(avgWin).toLocaleString('en-IN')} / -₹${Math.round(avgLoss).toLocaleString('en-IN')}`;
+    }
+    if (riskRewardEl) {
+        const rr = avgLoss > 0 ? (avgWin / avgLoss).toFixed(2) + ':1' : '-';
+        riskRewardEl.innerText = `Win/Loss Ratio: ${rr}`;
+    }
+
+    const bestTradeEl = document.getElementById('anStatBestTrade');
+    const bestTradeScriptEl = document.getElementById('anStatBestTradeScript');
+    if (bestTradeEl) {
+        bestTradeEl.innerText = bestTradePnl > -Infinity ? `+₹${bestTradePnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '₹0.00';
+    }
+    if (bestTradeScriptEl) {
+        bestTradeScriptEl.innerText = bestTradeScript !== 'None' ? bestTradeScript : 'No winning trades yet';
+    }
+
+    // Chart 1: Monthly Realized P&L & Trajectory Curve
+    renderMonthlyTrajectoryChart(allTrades);
+
+    // Chart 2: Segment Attribution Donut Chart
+    renderSegmentShareChart(filteredTrades);
+
+    // Table 1: Segment Matrix
+    renderSegmentPerformanceMatrix(filteredTrades);
+
+    // Table 2: Chronological Monthly Matrix
+    renderChronologicalMonthlyMatrix(allTrades);
+}
+window.renderTradingAnalysis = renderTradingAnalysis;
+
+function renderMonthlyTrajectoryChart(tradesList) {
+    const canvas = document.getElementById('tradingMonthlyPnlChartCanvas');
+    if (!canvas) return;
+
+    if (window.tradingMonthlyChartInstance) {
+        window.tradingMonthlyChartInstance.destroy();
+        window.tradingMonthlyChartInstance = null;
+    }
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthlyMap = {};
+
+    tradesList.forEach(t => {
+        const y = t.year || '2026';
+        const m = t.month || 'February';
+        const key = `${y}-${String(monthNames.indexOf(m) + 1).padStart(2, '0')}`;
+        const label = `${m.slice(0, 3)} '${y.slice(2)}`;
+
+        if (!monthlyMap[key]) {
+            monthlyMap[key] = { label, year: y, month: m, pnl: 0, capital: 0, trades: 0 };
+        }
+        const inv = parseFloat(t.invested) || 0;
+        const cur = parseFloat(t.current) || 0;
+        monthlyMap[key].pnl += (cur - inv);
+        monthlyMap[key].capital += inv;
+        monthlyMap[key].trades += 1;
+    });
+
+    const sortedKeys = Object.keys(monthlyMap).sort();
+    
+    // If no trades, default to current months
+    let labels = [];
+    let pnlData = [];
+    let barColors = [];
+    let cumPnlData = [];
+    let cumTotal = 0;
+
+    if (sortedKeys.length === 0) {
+        labels = ['Jan \'26', 'Feb \'26', 'Mar \'26'];
+        pnlData = [0, 0, 0];
+        barColors = ['rgba(0,255,157,0.3)', 'rgba(0,255,157,0.3)', 'rgba(0,255,157,0.3)'];
+        cumPnlData = [0, 0, 0];
+    } else {
+        sortedKeys.forEach(k => {
+            const item = monthlyMap[k];
+            labels.push(item.label);
+            pnlData.push(item.pnl);
+            barColors.push(item.pnl >= 0 ? '#34D399' : '#F43F5E');
+            cumTotal += item.pnl;
+            cumPnlData.push(cumTotal);
+        });
+    }
+
+    const ctx = canvas.getContext('2d');
+    window.tradingMonthlyChartInstance = new Chart(ctx, {
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'Cumulative P&L (Equity Curve)',
+                    data: cumPnlData,
+                    borderColor: '#C9A46B',
+                    backgroundColor: 'rgba(201,164,107,0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#C9A46B',
+                    pointBorderColor: '#0A140F',
+                    pointBorderWidth: 2,
+                    yAxisID: 'y1',
+                    order: 1
+                },
+                {
+                    type: 'bar',
+                    label: 'Net Monthly Realized P&L',
+                    data: pnlData,
+                    backgroundColor: barColors,
+                    borderRadius: 6,
+                    borderWidth: 0,
+                    yAxisID: 'y',
+                    order: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#94A3B8',
+                        font: { family: 'JetBrains Mono', size: 10 },
+                        usePointStyle: true,
+                        boxWidth: 8
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(10, 20, 15, 0.95)',
+                    titleColor: '#FFFFFF',
+                    bodyColor: '#E2E8F0',
+                    borderColor: 'rgba(201, 164, 107, 0.3)',
+                    borderWidth: 1,
+                    padding: 10,
+                    titleFont: { family: 'Inter', size: 12, weight: 'bold' },
+                    bodyFont: { family: 'JetBrains Mono', size: 11 },
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.raw || 0;
+                            return `${context.dataset.label}: ₹${val.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                    ticks: { color: '#64748B', font: { family: 'JetBrains Mono', size: 10 } }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                    ticks: {
+                        color: '#64748B',
+                        font: { family: 'JetBrains Mono', size: 10 },
+                        callback: (v) => '₹' + (v >= 1000 || v <= -1000 ? (v / 1000).toFixed(0) + 'k' : v)
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: false,
+                    position: 'right',
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+}
+
+function renderSegmentShareChart(tradesList) {
+    const canvas = document.getElementById('tradingSegmentShareChartCanvas');
+    const legendEl = document.getElementById('tradingSegmentLegend');
+    if (!canvas) return;
+
+    if (window.tradingSegmentChartInstance) {
+        window.tradingSegmentChartInstance.destroy();
+        window.tradingSegmentChartInstance = null;
+    }
+
+    const segStats = {
+        options: { label: 'Options', trades: 0, pnl: 0, capital: 0, color: '#C9A46B', icon: 'fa-bolt' },
+        futures: { label: 'Futures', trades: 0, pnl: 0, capital: 0, color: '#00F0FF', icon: 'fa-arrow-trend-up' },
+        mcx: { label: 'MCX', trades: 0, pnl: 0, capital: 0, color: '#FBBF24', icon: 'fa-coins' },
+        equity: { label: 'Equity', trades: 0, pnl: 0, capital: 0, color: '#A855F7', icon: 'fa-cubes' }
+    };
+
+    tradesList.forEach(t => {
+        const seg = getTradeSegment(t);
+        const target = segStats[seg] || segStats.equity;
+        const inv = parseFloat(t.invested) || 0;
+        const cur = parseFloat(t.current) || 0;
+        target.trades += 1;
+        target.capital += inv;
+        target.pnl += (cur - inv);
+    });
+
+    const segments = ['options', 'futures', 'mcx', 'equity'];
+    const tradeCounts = segments.map(s => segStats[s].trades);
+    const colors = segments.map(s => segStats[s].color);
+
+    const hasData = tradeCounts.some(c => c > 0);
+    const chartData = hasData ? tradeCounts : [1, 1, 1, 1];
+    const chartColors = hasData ? colors : ['#334155', '#475569', '#64748B', '#1E293B'];
+
+    const ctx = canvas.getContext('2d');
+    window.tradingSegmentChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: segments.map(s => segStats[s].label),
+            datasets: [{
+                data: chartData,
+                backgroundColor: chartColors,
+                borderColor: '#0A140F',
+                borderWidth: 3,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '72%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(10, 20, 15, 0.95)',
+                    titleColor: '#FFFFFF',
+                    bodyColor: '#E2E8F0',
+                    borderColor: 'rgba(201, 164, 107, 0.3)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const segKey = segments[context.dataIndex];
+                            const s = segStats[segKey];
+                            return `${s.label}: ${s.trades} trades | Net: ${s.pnl >= 0 ? '+' : ''}₹${s.pnl.toLocaleString('en-IN')}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Populate Custom Segment Legend
+    if (legendEl) {
+        legendEl.innerHTML = '';
+        segments.forEach(s => {
+            const st = segStats[s];
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between p-2 rounded-lg bg-surface-900/60 border border-surface-800/80';
+            item.innerHTML = `
+                <div class="flex items-center gap-1.5 truncate">
+                    <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${st.color}"></span>
+                    <span class="text-slate-300 font-medium text-[10px]">${st.label}</span>
+                </div>
+                <div class="text-right">
+                    <span class="font-bold font-mono text-[10px] ${st.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${st.pnl >= 0 ? '+' : ''}₹${Math.round(st.pnl).toLocaleString('en-IN')}</span>
+                </div>
+            `;
+            legendEl.appendChild(item);
+        });
+    }
+}
+
+function renderSegmentPerformanceMatrix(tradesList) {
+    const body = document.getElementById('tradingSegmentMatrixBody');
+    if (!body) return;
+    body.innerHTML = '';
+
+    const segments = [
+        { key: 'options', name: 'Options Trading', icon: 'fa-bolt', color: 'text-brand-400', badgeClass: 'bg-brand-500/10 text-brand-400 border-brand-500/20' },
+        { key: 'futures', name: 'Futures Trading', icon: 'fa-arrow-trend-up', color: 'text-accent-cyan', badgeClass: 'bg-accent-cyan/10 text-accent-cyan border-accent-cyan/20' },
+        { key: 'mcx', name: 'MCX Commodity', icon: 'fa-coins', color: 'text-amber-400', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+        { key: 'equity', name: 'Cash Equities', icon: 'fa-cubes', color: 'text-purple-400', badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20' }
+    ];
+
+    let totalAllTrades = 0, totalAllWins = 0, totalAllLosses = 0, totalAllCapital = 0, totalAllPnl = 0;
+
+    segments.forEach(seg => {
+        const segTrades = tradesList.filter(t => getTradeSegment(t) === seg.key);
+        let segCap = 0, segPnl = 0, segWins = 0, segLosses = 0;
+
+        segTrades.forEach(t => {
+            const inv = parseFloat(t.invested) || 0;
+            const cur = parseFloat(t.current) || 0;
+            const pnl = cur - inv;
+            segCap += inv;
+            segPnl += pnl;
+            if (pnl > 0) segWins++;
+            else if (pnl < 0) segLosses++;
+        });
+
+        const count = segTrades.length;
+        const winRate = count > 0 ? (segWins / count) * 100 : 0;
+        const avgCap = count > 0 ? (segCap / count) : 0;
+        const pnlPct = avgCap > 0 ? (segPnl / avgCap) * 100 : 0;
+
+        totalAllTrades += count;
+        totalAllWins += segWins;
+        totalAllLosses += segLosses;
+        totalAllCapital += segCap;
+        totalAllPnl += segPnl;
+
+        const statusBadge = count === 0 
+            ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono text-slate-500 bg-surface-900 border border-surface-800">No Trades</span>`
+            : (segPnl >= 0 
+                ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Profitable</span>`
+                : `<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">Drawdown</span>`);
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-surface-800/30 transition-colors';
+        tr.innerHTML = `
+            <td class="py-3 px-4 flex items-center gap-2.5">
+                <div class="w-6 h-6 rounded-lg ${seg.badgeClass} flex items-center justify-center text-xs">
+                    <i class="fa-solid ${seg.icon}"></i>
+                </div>
+                <span class="font-bold text-white tracking-wide">${seg.name}</span>
+            </td>
+            <td class="py-3 px-4 text-center font-mono text-xs text-slate-300">${count}</td>
+            <td class="py-3 px-4 text-center font-mono text-xs text-slate-400">${segWins}W / ${segLosses}L</td>
+            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-slate-300'} font-bold">${count > 0 ? winRate.toFixed(1) + '%' : '-'}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">₹${avgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${segPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${segPnl >= 0 ? '+' : ''}₹${segPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${pnlPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${count > 0 ? (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%' : '-'}</td>
+            <td class="py-3 px-4 text-center">${statusBadge}</td>
+        `;
+        body.appendChild(tr);
+    });
+
+    // Summary Total Row
+    const totalAvgCap = totalAllTrades > 0 ? (totalAllCapital / totalAllTrades) : 0;
+    const totalAllWinRate = totalAllTrades > 0 ? (totalAllWins / totalAllTrades) * 100 : 0;
+    const totalAllPct = totalAvgCap > 0 ? (totalAllPnl / totalAvgCap) * 100 : 0;
+
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'bg-surface-900/90 font-mono text-xs border-t-2 border-brand-500/30 font-bold';
+    totalTr.innerHTML = `
+        <td class="py-3.5 px-4 text-brand-400 uppercase tracking-widest">Total Combined Portfolio</td>
+        <td class="py-3.5 px-4 text-center text-white">${totalAllTrades}</td>
+        <td class="py-3.5 px-4 text-center text-slate-300">${totalAllWins}W / ${totalAllLosses}L</td>
+        <td class="py-3.5 px-4 text-center text-emerald-400">${totalAllTrades > 0 ? totalAllWinRate.toFixed(1) + '%' : '-'}</td>
+        <td class="py-3.5 px-4 text-right text-slate-200">₹${totalAvgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        <td class="py-3.5 px-4 text-right ${totalAllPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalAllPnl >= 0 ? '+' : ''}₹${totalAllPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        <td class="py-3.5 px-4 text-right ${totalAllPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalAllTrades > 0 ? (totalAllPct >= 0 ? '+' : '') + totalAllPct.toFixed(2) + '%' : '-'}</td>
+        <td class="py-3.5 px-4 text-center"><span class="px-2 py-0.5 rounded text-[9px] bg-brand-500/10 text-brand-400 border border-brand-500/30">Aggregated</span></td>
+    `;
+    body.appendChild(totalTr);
+}
+
+function renderChronologicalMonthlyMatrix(tradesList) {
+    const body = document.getElementById('tradingMonthlyMatrixBody');
+    if (!body) return;
+    body.innerHTML = '';
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthlyMap = {};
+
+    tradesList.forEach(t => {
+        const y = t.year || '2026';
+        const m = t.month || 'February';
+        const key = `${y}-${String(monthNames.indexOf(m) + 1).padStart(2, '0')}`;
+        if (!monthlyMap[key]) {
+            monthlyMap[key] = { year: y, month: m, trades: 0, wins: 0, capital: 0, pnl: 0 };
+        }
+        const inv = parseFloat(t.invested) || 0;
+        const cur = parseFloat(t.current) || 0;
+        const pnl = cur - inv;
+        monthlyMap[key].trades += 1;
+        monthlyMap[key].capital += inv;
+        monthlyMap[key].pnl += pnl;
+        if (pnl > 0) monthlyMap[key].wins += 1;
+    });
+
+    const sortedKeys = Object.keys(monthlyMap).sort().reverse(); // Newest first
+
+    if (sortedKeys.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="6" class="p-6 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-calendar-days text-xl mb-1.5 block opacity-40"></i> No monthly trading history recorded yet.</td>`;
+        body.appendChild(tr);
+        return;
+    }
+
+    sortedKeys.forEach(k => {
+        const item = monthlyMap[k];
+        const winRate = item.trades > 0 ? (item.wins / item.trades) * 100 : 0;
+        const avgCap = item.trades > 0 ? (item.capital / item.trades) : 0;
+        const yieldPct = avgCap > 0 ? (item.pnl / avgCap) * 100 : 0;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-surface-800/30 transition-colors';
+        tr.innerHTML = `
+            <td class="py-3 px-4 font-bold text-white font-mono text-xs">${item.month} ${item.year}</td>
+            <td class="py-3 px-4 text-center font-mono text-xs text-slate-300">${item.trades}</td>
+            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-amber-400'} font-bold">${winRate.toFixed(1)}%</td>
+            <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">₹${avgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl >= 0 ? '+' : ''}₹${item.pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${yieldPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${yieldPct >= 0 ? '+' : ''}${yieldPct.toFixed(2)}%</td>
+        `;
+        body.appendChild(tr);
     });
 }
 
@@ -3884,6 +4731,9 @@ function renderFavoriteCompactCard(item) {
                     
                     <!-- Quick action buttons on hover -->
                     <div class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onclick="event.stopPropagation()">
+                        <button onclick="openUniversalShare('favorite', '${item.id}', event);" class="w-6 h-6 rounded-lg bg-surface-950/90 hover:bg-surface-800 text-slate-300 hover:text-brand-400 flex items-center justify-center transition-colors shadow" title="Share Options">
+                            <i class="fa-solid fa-share-nodes text-[10px]"></i>
+                        </button>
                         <button onclick="openFavoriteModal('${item.id}', 'photo');" class="w-6 h-6 rounded-lg bg-surface-950/90 hover:bg-surface-800 text-slate-300 hover:text-cyan-300 flex items-center justify-center transition-colors shadow" title="Edit">
                             <i class="fa-solid fa-pen text-[10px]"></i>
                         </button>
@@ -3909,6 +4759,9 @@ function renderFavoriteCompactCard(item) {
                         <i class="fa-solid fa-quote-left"></i>
                     </span>
                     <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                        <button onclick="openUniversalShare('favorite', '${item.id}', event)" class="w-6 h-6 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-brand-400 flex items-center justify-center transition-colors" title="Share Options">
+                            <i class="fa-solid fa-share-nodes text-[10px]"></i>
+                        </button>
                         <button onclick="copyFavoriteText('${item.id}')" class="w-6 h-6 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors" title="Copy">
                             <i class="fa-regular fa-copy text-[10px]"></i>
                         </button>
@@ -3957,6 +4810,9 @@ function renderFavoriteListRow(item) {
                 </div>
                 
                 <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
+                    <button onclick="openUniversalShare('favorite', '${item.id}', event)" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-brand-400 rounded-xl text-xs transition-colors cursor-pointer" title="Share Options">
+                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                    </button>
                     <button onclick="openFavoritePhotoLightbox('${item.id}')" class="px-2.5 py-1.5 bg-surface-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 rounded-xl text-xs font-mono transition-colors flex items-center gap-1 cursor-pointer">
                         <i class="fa-solid fa-eye text-xs"></i> <span class="hidden sm:inline">View</span>
                     </button>
@@ -3988,6 +4844,9 @@ function renderFavoriteListRow(item) {
                 
                 <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
                     <span class="text-[10px] font-mono text-slate-500 hidden md:inline mr-1">${dateFormatted}</span>
+                    <button onclick="openUniversalShare('favorite', '${item.id}', event)" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-brand-400 rounded-xl text-xs transition-colors cursor-pointer" title="Share Options">
+                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                    </button>
                     <button onclick="copyFavoriteText('${item.id}')" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white rounded-xl text-xs transition-colors cursor-pointer" title="Copy">
                         <i class="fa-regular fa-copy text-xs"></i>
                     </button>
@@ -4234,10 +5093,16 @@ function copyFavoriteText(id) {
 }
 window.copyFavoriteText = copyFavoriteText;
 
+let currentLightboxFavId = null;
+let currentQuoteViewFavId = null;
+
 function openFavoritePhotoLightbox(id) {
     if (!db.favorites) return;
     const item = db.favorites.find(x => x.id === id);
     if (!item) return;
+
+    currentLightboxFavId = id;
+    window.currentLightboxFavId = id;
 
     const img = document.getElementById('lightboxFavPhotoImg');
     const title = document.getElementById('lightboxFavPhotoTitle');
@@ -4271,10 +5136,29 @@ function openFavoritePhotoLightbox(id) {
 }
 window.openFavoritePhotoLightbox = openFavoritePhotoLightbox;
 
+function shareFavoriteFromLightbox(channel) {
+    if (!currentLightboxFavId) return;
+    if (typeof shareItemDirect === 'function') {
+        shareItemDirect('favorite', currentLightboxFavId, channel);
+    }
+}
+window.shareFavoriteFromLightbox = shareFavoriteFromLightbox;
+
+function openShareForCurrentLightboxFav() {
+    if (!currentLightboxFavId) return;
+    if (typeof openUniversalShare === 'function') {
+        openUniversalShare('favorite', currentLightboxFavId);
+    }
+}
+window.openShareForCurrentLightboxFav = openShareForCurrentLightboxFav;
+
 function openFavoriteQuoteView(id) {
     if (!db.favorites) return;
     const item = db.favorites.find(x => x.id === id);
     if (!item) return;
+
+    currentQuoteViewFavId = id;
+    window.currentQuoteViewFavId = id;
 
     const contentEl = document.getElementById('viewFavQuoteContent');
     const authorEl = document.getElementById('viewFavQuoteAuthor');
@@ -4306,6 +5190,22 @@ function openFavoriteQuoteView(id) {
     openModal('favoriteQuoteViewModal');
 }
 window.openFavoriteQuoteView = openFavoriteQuoteView;
+
+function shareFavoriteFromQuoteView(channel) {
+    if (!currentQuoteViewFavId) return;
+    if (typeof shareItemDirect === 'function') {
+        shareItemDirect('favorite', currentQuoteViewFavId, channel);
+    }
+}
+window.shareFavoriteFromQuoteView = shareFavoriteFromQuoteView;
+
+function openShareForCurrentQuoteViewFav() {
+    if (!currentQuoteViewFavId) return;
+    if (typeof openUniversalShare === 'function') {
+        openUniversalShare('favorite', currentQuoteViewFavId);
+    }
+}
+window.openShareForCurrentQuoteViewFav = openShareForCurrentQuoteViewFav;
 
 
 
@@ -6929,6 +7829,9 @@ function renderNotesList() {
                             </div>
                             <!-- Quick Action Buttons on Hover -->
                             <div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onclick="event.stopPropagation()">
+                                <button onclick="openUniversalShare('note', '${note.id}', event)" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="Share Options">
+                                    <i class="fa-solid fa-share-nodes text-xs"></i>
+                                </button>
                                 <button onclick="toggleNotePin('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="${isPinned ? 'Unpin Note' : 'Pin Note'}">
                                     <i class="fa-solid fa-thumbtack text-xs ${isPinned ? 'text-amber-400' : ''}"></i>
                                 </button>
@@ -7015,6 +7918,7 @@ function renderNotesList() {
                     <td class="p-4 font-mono text-[11px] text-slate-400 whitespace-nowrap">${note.date || '-'}</td>
                     <td class="p-4 text-center" onclick="event.stopPropagation()">
                         <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="openUniversalShare('note', '${note.id}', event)" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="Share Options"><i class="fa-solid fa-share-nodes text-xs"></i></button>
                             <button onclick="openNoteModal('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
                             <button onclick="deleteNote('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors flex items-center justify-center cursor-pointer" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
                         </div>
@@ -7697,6 +8601,7 @@ function openNoteReader(id) {
     }
 
     if (curIdEl) curIdEl.value = n.id;
+    window.currentViewNoteId = n.id;
 
     openModal('noteViewModal');
 }
@@ -9698,20 +10603,41 @@ function updateCloudModalUI() {
     const emailDisp = document.getElementById('cloudUserEmailDisplay');
     const authBtn = document.getElementById('cloudAuthBtn');
     const syncTime = document.getElementById('lastCloudSyncTime');
+    const quotaCard = document.getElementById('cloudQuotaNoticeCard');
+    const activeCard = document.getElementById('cloudActiveInfoCard');
+
+    const isQuota = window.isFirestoreQuotaExceeded && Date.now() < (window.firestoreQuotaExceededUntil || 0);
+    if (quotaCard && activeCard) {
+        if (isQuota) {
+            quotaCard.classList.remove('hidden');
+            activeCard.classList.add('hidden');
+        } else {
+            quotaCard.classList.add('hidden');
+            activeCard.classList.remove('hidden');
+        }
+    }
 
     if (window.firebaseUser) {
         if (window.firebaseUser.isAnonymous) {
-            if (emailDisp) emailDisp.innerHTML = '<span class="text-emerald-400 font-mono text-xs">● Connected (Worldwide Cloud Sync Active)</span>';
+            if (emailDisp) {
+                emailDisp.innerHTML = isQuota 
+                    ? '<span class="text-amber-400 font-mono text-xs">● Daily Quota Limit (Local Storage Safe)</span>'
+                    : '<span class="text-emerald-400 font-mono text-xs">● Connected (Worldwide Cloud Sync Active)</span>';
+            }
             if (authBtn) {
                 authBtn.innerHTML = '<i class="fa-brands fa-google text-brand-500"></i> <span>Sign in with Google</span>';
-                authBtn.className = 'px-4 py-2 bg-brand-600 hover:bg-brand-500 text-surface-950 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-md';
+                authBtn.className = 'px-4 py-2 bg-brand-600 hover:bg-brand-500 text-surface-950 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-md cursor-pointer';
             }
         } else {
             const email = window.firebaseUser.email || window.firebaseUser.displayName || 'Google Account';
-            if (emailDisp) emailDisp.innerHTML = `<span class="text-emerald-400 font-mono text-xs">● Signed In:</span> <span class="text-white font-medium text-xs">${email}</span>`;
+            if (emailDisp) {
+                emailDisp.innerHTML = isQuota 
+                    ? `<span class="text-amber-400 font-mono text-xs">● Signed In (Quota Limit):</span> <span class="text-white font-medium text-xs">${email}</span>`
+                    : `<span class="text-emerald-400 font-mono text-xs">● Signed In:</span> <span class="text-white font-medium text-xs">${email}</span>`;
+            }
             if (authBtn) {
                 authBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket text-rose-400"></i> <span>Sign Out</span>';
-                authBtn.className = 'px-4 py-2 bg-surface-800 hover:bg-rose-900/40 text-rose-300 rounded-xl text-xs font-semibold border border-surface-700 transition-all flex items-center gap-2';
+                authBtn.className = 'px-4 py-2 bg-surface-800 hover:bg-rose-900/40 text-rose-300 rounded-xl text-xs font-semibold border border-surface-700 transition-all flex items-center gap-2 cursor-pointer';
             }
         }
     } else {
@@ -9719,7 +10645,7 @@ function updateCloudModalUI() {
     }
 
     if (syncTime) {
-        syncTime.innerText = 'Last sync: ' + new Date().toLocaleTimeString();
+        syncTime.innerText = isQuota ? 'Status: Local device cache active (Free quota reached)' : ('Last sync: ' + new Date().toLocaleTimeString());
     }
 }
 
@@ -9953,7 +10879,7 @@ function stageDocumentFile(file) {
     reader.readAsDataURL(file);
 }
 
-function saveDocumentItem() {
+async function saveDocumentItem() {
     const titleInput = document.getElementById('modalDocTitleInput');
     const catSelect = document.getElementById('modalDocCategorySelect');
     const dateInput = document.getElementById('modalDocDateInput');
@@ -9975,13 +10901,16 @@ function saveDocumentItem() {
         .filter(t => t.length > 0)
         .map(t => t.startsWith('#') ? t : `#${t}`);
 
+    const docId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    const fileData = modalDocStagedFile ? modalDocStagedFile.data : null;
+
     const newDoc = {
-        id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        id: docId,
         title: title,
         category: catSelect ? catSelect.value : 'identity',
         fileType: modalDocStagedFile ? modalDocStagedFile.type : 'pdf',
         mimeType: modalDocStagedFile ? modalDocStagedFile.mimeType : 'application/pdf',
-        fileData: modalDocStagedFile ? modalDocStagedFile.data : null,
+        fileData: fileData,
         fileSize: modalDocStagedFile ? modalDocStagedFile.size : 124000,
         date: dateInput ? (dateInput.value || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
         tags: tags,
@@ -9990,8 +10919,27 @@ function saveDocumentItem() {
         createdAt: new Date().toISOString()
     };
 
+    if (fileData && window.vaultStorage) {
+        try {
+            await window.vaultStorage.saveFile(docId, fileData);
+        } catch (e) {
+            console.warn("Vault direct save error:", e);
+        }
+    }
+
     db.documents.unshift(newDoc);
-    saveDatabase();
+    await saveDatabase(true);
+
+    // Reset staged file & modal fields
+    modalDocStagedFile = null;
+    if (titleInput) titleInput.value = '';
+    if (tagsInput) tagsInput.value = '';
+    if (notesInput) notesInput.value = '';
+    const fileChip = document.getElementById('modalDocSelectedFileInfo');
+    if (fileChip) fileChip.classList.add('hidden');
+    const fileInput = document.getElementById('docModalFileInput');
+    if (fileInput) fileInput.value = '';
+
     closeModal('documentUploadModal');
     renderDocumentsPage();
     showToast(`Saved "${title}" to Documents Vault`);
@@ -10069,13 +11017,20 @@ function renderDocumentsPage() {
                         </div>
 
                         <!-- Center Media Preview / Icon -->
-                        <div onclick="previewDocumentItem('${d.id}')" class="h-32 w-full rounded-xl bg-surface-950/80 border border-surface-800/80 flex flex-col items-center justify-center p-2 relative overflow-hidden group-hover/dcard:border-emerald-500/30 transition-all cursor-pointer">
-                            ${isImg && d.fileData ? `
+                        <div onclick="previewDocumentItem('${d.id}')" id="doc_card_preview_${d.id}" class="h-32 w-full rounded-xl bg-surface-950/80 border border-surface-800/80 flex flex-col items-center justify-center p-2 relative overflow-hidden group-hover/dcard:border-emerald-500/30 transition-all cursor-pointer">
+                            ${isImg ? (d.fileData ? `
                                 <img src="${d.fileData}" alt="${d.title}" class="w-full h-full object-cover rounded-lg group-hover/dcard:scale-105 transition-transform duration-300">
                                 <div class="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-transparent to-transparent flex items-end p-2 opacity-0 group-hover/dcard:opacity-100 transition-opacity">
                                     <span class="text-[10px] font-mono text-emerald-300 flex items-center gap-1"><i class="fa-solid fa-eye text-[9px]"></i> View Full Image</span>
                                 </div>
                             ` : `
+                                <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center shadow-sm group-hover/dcard:scale-110 transition-transform">
+                                    <i class="fa-solid fa-image text-2xl"></i>
+                                </div>
+                                <span class="text-[10px] font-mono text-slate-400 mt-2 flex items-center gap-1">
+                                    <i class="fa-solid fa-expand text-[9px] text-cyan-400"></i> High-Res Photo
+                                </span>
+                            `) : `
                                 <div class="w-12 h-12 rounded-2xl ${isPdf ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'} flex items-center justify-center shadow-sm group-hover/dcard:scale-110 transition-transform">
                                     <i class="fa-solid ${isPdf ? 'fa-file-pdf' : 'fa-file-shield'} text-2xl"></i>
                                 </div>
@@ -10102,6 +11057,9 @@ function renderDocumentsPage() {
                             <i class="fa-regular fa-eye text-xs"></i> Preview
                         </button>
                         <div class="flex items-center gap-1 opacity-0 group-hover/dcard:opacity-100 transition-opacity duration-200">
+                            <button onclick="openUniversalShare('document', '${d.id}', event)" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Share Options">
+                                <i class="fa-solid fa-share-nodes text-xs"></i>
+                            </button>
                             <button onclick="downloadDocumentItem('${d.id}')" class="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Download File">
                                 <i class="fa-solid fa-download text-xs"></i>
                             </button>
@@ -10115,6 +11073,24 @@ function renderDocumentsPage() {
                     </div>
                 `;
                 gridContainer.appendChild(card);
+
+                // If image binary is not yet in memory, resolve in background and display immediately
+                if (isImg && !d.fileData && window.vaultStorage) {
+                    window.vaultStorage.getFile(d.id).then(url => {
+                        if (url) {
+                            d.fileData = url;
+                            const prevBox = document.getElementById(`doc_card_preview_${d.id}`);
+                            if (prevBox) {
+                                prevBox.innerHTML = `
+                                    <img src="${url}" alt="${d.title}" class="w-full h-full object-cover rounded-lg group-hover/dcard:scale-105 transition-transform duration-300">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-transparent to-transparent flex items-end p-2 opacity-0 group-hover/dcard:opacity-100 transition-opacity">
+                                        <span class="text-[10px] font-mono text-emerald-300 flex items-center gap-1"><i class="fa-solid fa-eye text-[9px]"></i> View Full Image</span>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }).catch(() => {});
+                }
             });
         }
     }
@@ -10150,6 +11126,9 @@ function renderDocumentsPage() {
                     <td class="p-3.5 font-mono text-xs text-slate-400">${d.date || '-'}</td>
                     <td class="p-3.5 text-right">
                         <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openUniversalShare('document', '${d.id}', event)" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Share Options">
+                                <i class="fa-solid fa-share-nodes text-xs"></i>
+                            </button>
                             <button onclick="previewDocumentItem('${d.id}')" class="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Preview">
                                 <i class="fa-solid fa-eye text-xs"></i>
                             </button>
@@ -10193,10 +11172,15 @@ function getDocCategoryBadge(cat) {
     }
 }
 
+let currentPreviewDocId = null;
+
 async function previewDocumentItem(id) {
     if (!Array.isArray(db.documents)) return;
     const doc = db.documents.find(x => x.id === id);
     if (!doc) return;
+
+    currentPreviewDocId = id;
+    window.currentPreviewDocId = id;
 
     const iconEl = document.getElementById('docViewerTypeIcon');
     const titleEl = document.getElementById('docViewerTitle');
@@ -10570,5 +11554,210 @@ function deleteDocumentItem(id) {
     });
 }
 window.deleteDocumentItem = deleteDocumentItem;
+
+// ==========================================
+// UNIVERSAL SHARE ENGINE & DIRECT SHARE CHANNELS
+// ==========================================
+window.currentSharePayload = null;
+
+function formatItemSharePayload(type, id) {
+    let title = 'Executive Vault Item';
+    let subject = 'Shared from Executive Vault';
+    let shareText = '';
+    let excerpt = '';
+    let badgeHtml = '<span class="px-2 py-0.5 rounded-md bg-surface-800 text-slate-300 font-mono text-[9px] uppercase">Item</span>';
+
+    if (type === 'note') {
+        const note = (db.notes || []).find(x => x.id === id);
+        if (note) {
+            title = note.title || 'Untitled Note';
+            subject = `Note: ${title}`;
+            const temp = document.createElement('div');
+            temp.innerHTML = note.body || note.content || '';
+            const plainText = temp.innerText.trim();
+            excerpt = plainText.length > 280 ? plainText.substring(0, 280) + '...' : (plainText || 'No content');
+            
+            shareText = `📌 *${title}*\n📁 Category: ${note.category || 'General'} | 📅 Date: ${note.date || 'Active'}\n\n${plainText}\n\n— Shared securely from Executive Vault`;
+            badgeHtml = `<span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-[9px] uppercase font-bold">Note</span>`;
+        }
+    } else if (type === 'document') {
+        const doc = (db.documents || []).find(x => x.id === id);
+        if (doc) {
+            title = doc.title || 'Document Record';
+            subject = `Document: ${title}`;
+            excerpt = doc.notes || `Category: ${doc.category || 'General'} • Date: ${doc.date || 'Active'}`;
+            const isPdf = doc.fileType === 'pdf' || (doc.mimeType && doc.mimeType.includes('pdf'));
+            const isImg = doc.fileType === 'photo' || (doc.mimeType && doc.mimeType.startsWith('image/'));
+            const fileKind = isPdf ? 'PDF Document' : (isImg ? 'Photo Asset' : 'Secure File');
+
+            shareText = `📄 *Document: ${title}*\n📂 Category: ${(doc.category || 'General').toUpperCase()} | 📎 Type: ${fileKind} | 📅 Date: ${doc.date || 'Active'}${doc.notes ? `\n\n📝 Notes:\n${doc.notes}` : ''}\n\n— Shared securely from Executive Vault`;
+            badgeHtml = `<span class="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono text-[9px] uppercase font-bold">Document</span>`;
+        }
+    } else if (type === 'favorite') {
+        const fav = (db.favorites || []).find(x => x.id === id);
+        if (fav) {
+            if (fav.type === 'quote') {
+                title = `Quote by ${fav.author || 'Anonymous'}`;
+                subject = `Quote: ${fav.author || 'Inspiration'}`;
+                excerpt = `"${fav.content || ''}" — ${fav.author || 'Anonymous'}`;
+                shareText = `💬 *Quote*\n\n"${fav.content || ''}"\n— ${fav.author || 'Anonymous'}${fav.date ? ` (${fav.date})` : ''}\n\n— Shared from Executive Vault`;
+                badgeHtml = `<span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-[9px] uppercase font-bold">Quote</span>`;
+            } else {
+                title = fav.title || 'Photo Memory';
+                subject = `Photo: ${title}`;
+                excerpt = fav.notes || fav.date || 'High-Resolution Vault Photo';
+                const photoSrc = fav.photoUrl ? `\n🖼️ Link: ${fav.photoUrl}` : '';
+                shareText = `📸 *${title}*${photoSrc}${fav.date ? `\n📅 Date: ${fav.date}` : ''}${fav.notes ? `\n📝 Notes: ${fav.notes}` : ''}\n\n— Shared from Executive Vault`;
+                badgeHtml = `<span class="px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono text-[9px] uppercase font-bold">Photo</span>`;
+            }
+        }
+    }
+
+    return { type, id, title, subject, shareText, excerpt, badgeHtml };
+}
+window.formatItemSharePayload = formatItemSharePayload;
+
+function shareItemDirect(type, id, channel, event) {
+    if (event && event.stopPropagation) event.stopPropagation();
+    
+    const payload = formatItemSharePayload(type, id);
+    if (!payload || !payload.shareText) {
+        showToast('Item content not available to share.');
+        return;
+    }
+
+    window.currentSharePayload = payload;
+
+    if (channel === 'whatsapp') {
+        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(payload.shareText)}`;
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+        showToast('Opening WhatsApp...');
+    } else if (channel === 'email') {
+        const mailtoUrl = `mailto:?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.shareText)}`;
+        window.location.href = mailtoUrl;
+        showToast('Opening Email Client...');
+    } else if (channel === 'copy') {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(payload.shareText).then(() => {
+                showToast('Item text copied to clipboard!');
+            }).catch(() => {
+                showToast('Text ready to paste!');
+            });
+        } else {
+            showToast('Text copied!');
+        }
+    } else {
+        openUniversalShare(type, id);
+    }
+}
+window.shareItemDirect = shareItemDirect;
+
+function openUniversalShare(type, id, event) {
+    if (event && event.stopPropagation) event.stopPropagation();
+
+    const payload = formatItemSharePayload(type, id);
+    if (!payload) return;
+
+    window.currentSharePayload = payload;
+
+    const badgeEl = document.getElementById('shareItemTypeBadge');
+    const titleEl = document.getElementById('shareItemTitlePreview');
+    const contentEl = document.getElementById('shareItemContentPreview');
+    const customMsgEl = document.getElementById('shareCustomMessageInput');
+
+    if (badgeEl) badgeEl.innerHTML = payload.badgeHtml;
+    if (titleEl) titleEl.innerText = payload.title;
+    if (contentEl) contentEl.innerText = payload.excerpt;
+    if (customMsgEl) customMsgEl.value = '';
+
+    openModal('universalShareModal');
+}
+window.openUniversalShare = openUniversalShare;
+
+function executeShareWhatsApp() {
+    if (!window.currentSharePayload) return;
+    const customMsg = (document.getElementById('shareCustomMessageInput')?.value || '').trim();
+    let textToSend = window.currentSharePayload.shareText;
+    if (customMsg) {
+        textToSend = `💬 *Note:* ${customMsg}\n\n${textToSend}`;
+    }
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToSend)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    closeModal('universalShareModal');
+    showToast('Opening WhatsApp...');
+}
+window.executeShareWhatsApp = executeShareWhatsApp;
+
+function executeShareEmail() {
+    if (!window.currentSharePayload) return;
+    const customMsg = (document.getElementById('shareCustomMessageInput')?.value || '').trim();
+    let textToSend = window.currentSharePayload.shareText;
+    if (customMsg) {
+        textToSend = `Note from sender: ${customMsg}\n\n--------------------\n\n${textToSend}`;
+    }
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(window.currentSharePayload.subject)}&body=${encodeURIComponent(textToSend)}`;
+    window.location.href = mailtoUrl;
+    closeModal('universalShareModal');
+    showToast('Opening Email Client...');
+}
+window.executeShareEmail = executeShareEmail;
+
+function copyShareModalText() {
+    if (!window.currentSharePayload) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(window.currentSharePayload.shareText).then(() => {
+            showToast('Share content copied to clipboard!');
+            closeModal('universalShareModal');
+        }).catch(() => {
+            showToast('Share content copied!');
+            closeModal('universalShareModal');
+        });
+    } else {
+        showToast('Share content copied!');
+        closeModal('universalShareModal');
+    }
+}
+window.copyShareModalText = copyShareModalText;
+
+// Shortcuts from open viewer modals
+function shareCurrentViewNote(channel) {
+    const idEl = document.getElementById('currentViewNoteId');
+    const id = (idEl && idEl.value) || window.currentViewNoteId;
+    if (!id) {
+        showToast('No note selected to share');
+        return;
+    }
+    if (channel === 'modal') {
+        openUniversalShare('note', id);
+    } else {
+        shareItemDirect('note', id, channel);
+    }
+}
+window.shareCurrentViewNote = shareCurrentViewNote;
+
+function openShareForCurrentViewNote() {
+    shareCurrentViewNote('modal');
+}
+window.openShareForCurrentViewNote = openShareForCurrentViewNote;
+
+function shareCurrentPreviewDoc(channel) {
+    const id = window.currentPreviewDocId;
+    if (!id) {
+        showToast('No document selected to share');
+        return;
+    }
+    if (channel === 'modal') {
+        openUniversalShare('document', id);
+    } else {
+        shareItemDirect('document', id, channel);
+    }
+}
+window.shareCurrentPreviewDoc = shareCurrentPreviewDoc;
+
+function openShareForCurrentPreviewDoc() {
+    shareCurrentPreviewDoc('modal');
+}
+window.openShareForCurrentPreviewDoc = openShareForCurrentPreviewDoc;
+
 
 

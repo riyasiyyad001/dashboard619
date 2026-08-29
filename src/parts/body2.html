@@ -170,6 +170,7 @@
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
                                     <th class="py-3 px-4 w-12 text-center">S.No.</th>
+                                    <th class="py-3 px-4 w-16 text-center">Priority</th>
                                     <th class="py-3 px-4 w-[10%]">Inception</th>
                                     <th class="py-3 px-4 w-[10%]">Maturity</th>
                                     <th class="py-3 px-4 min-w-[250px] w-[25%]">Creditor</th>
@@ -334,13 +335,25 @@
         <section id="page-india-ops" class="page-view space-y-8 hidden">
             
             <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-surface-800/80 pb-3 group">
-                <!-- SUB-PAGE TAB BAR FOR EQUITIES -->
-                <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
-                    <button onclick="switchEqSubTab('trading')" id="btnEqSubTrading" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-brand-600 to-brand-700 text-surface-950 font-bold transition-all whitespace-nowrap shadow-[0_4px_15px_rgba(201,164,107,0.25)] flex items-center gap-2 border border-brand-500/30">
-                        <i class="fa-solid fa-chart-line text-[10px]"></i> Trading Desk
+                <!-- SUB-PAGE TAB BAR FOR EQUITIES & TRADING -->
+                <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar py-1">
+                    <button onclick="switchEqSubTab('options')" id="btnEqSubOptions" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-brand-600 to-brand-700 text-surface-950 font-bold transition-all whitespace-nowrap shadow-[0_4px_15px_rgba(201,164,107,0.25)] flex items-center gap-2 border border-brand-500/30">
+                        <i class="fa-solid fa-bolt text-[10px]"></i> Options
                     </button>
-                    <button onclick="switchEqSubTab('others')" id="btnEqSubOthers" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white hover:border-brand-500/40 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                    <button onclick="switchEqSubTab('futures')" id="btnEqSubFutures" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-arrow-trend-up text-[10px]"></i> Futures
+                    </button>
+                    <button onclick="switchEqSubTab('mcx')" id="btnEqSubMcx" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-coins text-[10px]"></i> MCX
+                    </button>
+                    <button onclick="switchEqSubTab('equity')" id="btnEqSubEquity" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-cubes text-[10px]"></i> Equity
+                    </button>
+                    <button onclick="switchEqSubTab('others')" id="btnEqSubOthers" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
                         <i class="fa-solid fa-layer-group text-[10px]"></i> Others
+                    </button>
+                    <button onclick="switchEqSubTab('analysis')" id="btnEqSubAnalysis" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-chart-pie text-[10px]"></i> Analysis
                     </button>
                 </div>
                 
@@ -400,16 +413,16 @@
                 </div>
             </div>
 
-            <!-- SUB-PAGE 1: TRADING DESK -->
+            <!-- SUB-PAGE 1: TRADING DESK (OPTIONS / FUTURES / MCX / EQUITY) -->
             <div id="eqSubView-trading" class="eq-sub-view space-y-8">
                 <div class="premium-card overflow-hidden">
                     <!-- Header -->
                     <div class="p-6 flex flex-wrap items-center justify-between gap-4 border-b border-surface-800 bg-surface-900/50 group">
-                        <h4 class="font-display text-lg text-white flex items-center gap-3 tracking-wide">
+                        <h4 id="tradingTableTitle" class="font-display text-lg text-white flex items-center gap-3 tracking-wide">
                             <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/30 flex items-center justify-center">
-                                <i class="fa-solid fa-chart-line text-brand-500 text-sm"></i>
+                                <i id="tradingTableIcon" class="fa-solid fa-bolt text-brand-500 text-sm"></i>
                             </div>
-                            Equities Trading Log
+                            <span id="tradingTableTitleText">Options Trading Log</span>
                         </h4>
                         <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
                             <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-4 py-2.5 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
@@ -507,6 +520,203 @@
                         <div id="othersMobileCards" class="lg:hidden flex flex-col divide-y divide-surface-800/50 bg-surface-900/20">
                             <!-- JS Injected Cards -->
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-PAGE 3: TRADING ANALYSIS (CHARTS & PERFORMANCE DETAILS) -->
+            <div id="eqSubView-analysis" class="eq-sub-view space-y-8 hidden animate-fade-in">
+                <!-- Header Banner -->
+                <div class="p-6 rounded-2xl bg-gradient-to-r from-surface-900 via-surface-900/90 to-surface-800/60 border border-surface-800 shadow-xl flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 shadow-inner">
+                            <i class="fa-solid fa-chart-pie text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-lg font-bold text-white tracking-wide">Trading Analytics & Quantitative Performance</h3>
+                            <p class="text-xs font-mono text-slate-400">Deep performance metrics, win-loss ratio, segment attribution, and visual yield analysis</p>
+                        </div>
+                    </div>
+                    <div id="tradingAnalysisFilterBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-950 border border-surface-800 font-mono text-[10px] uppercase text-brand-400 font-bold">
+                        <i class="fa-solid fa-filter text-[9px]"></i>
+                        <span id="analysisFilterLabel">All Time Analysis</span>
+                    </div>
+                </div>
+
+                <!-- 6 Executive KPI Stat Cards -->
+                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <!-- Stat 1: Total Realized P&L -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Net Realized P&L</span>
+                            <div class="w-6 h-6 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center text-[10px]"><i class="fa-solid fa-wallet"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatNetPnl" class="text-base sm:text-lg font-bold font-mono text-emerald-400">₹0.00</h4>
+                            <span id="anStatPnlRoi" class="text-[10px] font-mono text-slate-400">0.00% Return</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 2: Win Rate % -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Win Rate</span>
+                            <div class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px]"><i class="fa-solid fa-bullseye"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatWinRate" class="text-base sm:text-lg font-bold font-mono text-emerald-400">0.0%</h4>
+                            <span id="anStatWinCount" class="text-[10px] font-mono text-slate-400">0W / 0L Trades</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 3: Avg Deployed Capital -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Avg Capital</span>
+                            <div class="w-6 h-6 rounded-lg bg-accent-cyan/10 text-accent-cyan flex items-center justify-center text-[10px]"><i class="fa-solid fa-coins"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatAvgCap" class="text-base sm:text-lg font-bold font-mono text-slate-200">₹0.00</h4>
+                            <span id="anStatTotalTrades" class="text-[10px] font-mono text-slate-400">Across 0 Trades</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 4: Profit Factor -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Profit Factor</span>
+                            <div class="w-6 h-6 rounded-lg bg-accent-blue/10 text-accent-blue flex items-center justify-center text-[10px]"><i class="fa-solid fa-scale-balanced"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatProfitFactor" class="text-base sm:text-lg font-bold font-mono text-brand-400">0.00x</h4>
+                            <span id="anStatPayoffRatio" class="text-[10px] font-mono text-slate-400">Gains / Losses</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 5: Avg Win / Avg Loss -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Avg Win / Loss</span>
+                            <div class="w-6 h-6 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center text-[10px]"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatAvgWinLoss" class="text-xs sm:text-sm font-bold font-mono text-slate-200">₹0 / ₹0</h4>
+                            <span id="anStatRiskReward" class="text-[10px] font-mono text-slate-400">Risk:Reward</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 6: Best Trade -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Best Gain</span>
+                            <div class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px]"><i class="fa-solid fa-trophy"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatBestTrade" class="text-base sm:text-lg font-bold font-mono text-emerald-400">+₹0.00</h4>
+                            <span id="anStatBestTradeScript" class="text-[10px] font-mono text-slate-400 truncate block">None</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section: 3 Visual Graphs -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Chart 1: Monthly Realized P&L & Cumulative Curve (2 cols on large) -->
+                    <div class="lg:col-span-2 premium-card p-6 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4 border-b border-surface-800/80 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400">
+                                    <i class="fa-solid fa-chart-column text-xs"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-display text-sm font-bold text-white tracking-wide">Realized P&L Trajectory & Monthly Yield</h4>
+                                    <p class="text-[10px] font-mono text-slate-400">Net monthly realized profits vs losses and equity curve</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full h-64 sm:h-72 relative">
+                            <canvas id="tradingMonthlyPnlChartCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Segment Breakdown Donut -->
+                    <div class="premium-card p-6 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4 border-b border-surface-800/80 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center text-accent-cyan">
+                                    <i class="fa-solid fa-chart-pie text-xs"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-display text-sm font-bold text-white tracking-wide">Segment Attribution</h4>
+                                    <p class="text-[10px] font-mono text-slate-400">P&L & volume distribution across segments</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full h-56 sm:h-64 relative flex items-center justify-center">
+                            <canvas id="tradingSegmentShareChartCanvas"></canvas>
+                        </div>
+                        <div id="tradingSegmentLegend" class="grid grid-cols-2 gap-2 pt-3 border-t border-surface-800/60 font-mono text-[10px]">
+                            <!-- Injected Legend -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Breakdown: Segment Performance Matrix -->
+                <div class="premium-card overflow-hidden">
+                    <div class="p-6 flex items-center justify-between border-b border-surface-800 bg-surface-900/50">
+                        <h4 class="font-display text-base text-white flex items-center gap-3 tracking-wide">
+                            <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400">
+                                <i class="fa-solid fa-table-cells text-xs"></i>
+                            </div>
+                            Segment Performance Matrix (Options vs Futures vs MCX vs Equity)
+                        </h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-surface-900/90 border-b border-surface-800">
+                                <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
+                                    <th class="py-3 px-4">Segment</th>
+                                    <th class="py-3 px-4 text-center">Total Trades</th>
+                                    <th class="py-3 px-4 text-center">Win / Loss</th>
+                                    <th class="py-3 px-4 text-center">Win Rate</th>
+                                    <th class="py-3 px-4 text-right">Avg Deployed Cap</th>
+                                    <th class="py-3 px-4 text-right">Total Realized P&L</th>
+                                    <th class="py-3 px-4 text-right">Profit % (on Avg Cap)</th>
+                                    <th class="py-3 px-4 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradingSegmentMatrixBody" class="divide-y divide-surface-800/50 font-light text-slate-300">
+                                <!-- JS Injected Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Monthly Performance Ledger -->
+                <div class="premium-card overflow-hidden">
+                    <div class="p-6 flex items-center justify-between border-b border-surface-800 bg-surface-900/50">
+                        <h4 class="font-display text-base text-white flex items-center gap-3 tracking-wide">
+                            <div class="w-8 h-8 rounded-lg bg-accent-blue/10 border border-accent-blue/30 flex items-center justify-center text-accent-blue">
+                                <i class="fa-solid fa-calendar-days text-xs"></i>
+                            </div>
+                            Chronological Monthly Trading Performance Ledger
+                        </h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-surface-900/90 border-b border-surface-800">
+                                <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
+                                    <th class="py-3 px-4">Period (Month / Year)</th>
+                                    <th class="py-3 px-4 text-center">Trades Count</th>
+                                    <th class="py-3 px-4 text-center">Win Rate</th>
+                                    <th class="py-3 px-4 text-right">Avg Capital</th>
+                                    <th class="py-3 px-4 text-right">Realized P&L</th>
+                                    <th class="py-3 px-4 text-right">Yield %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradingMonthlyMatrixBody" class="divide-y divide-surface-800/50 font-light text-slate-300">
+                                <!-- JS Injected Rows -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

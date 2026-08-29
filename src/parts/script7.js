@@ -1370,6 +1370,9 @@ function renderNotesList() {
                             </div>
                             <!-- Quick Action Buttons on Hover -->
                             <div class="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onclick="event.stopPropagation()">
+                                <button onclick="openUniversalShare('note', '${note.id}', event)" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="Share Options">
+                                    <i class="fa-solid fa-share-nodes text-xs"></i>
+                                </button>
                                 <button onclick="toggleNotePin('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="${isPinned ? 'Unpin Note' : 'Pin Note'}">
                                     <i class="fa-solid fa-thumbtack text-xs ${isPinned ? 'text-amber-400' : ''}"></i>
                                 </button>
@@ -1456,6 +1459,7 @@ function renderNotesList() {
                     <td class="p-4 font-mono text-[11px] text-slate-400 whitespace-nowrap">${note.date || '-'}</td>
                     <td class="p-4 text-center" onclick="event.stopPropagation()">
                         <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="openUniversalShare('note', '${note.id}', event)" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="Share Options"><i class="fa-solid fa-share-nodes text-xs"></i></button>
                             <button onclick="openNoteModal('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 transition-colors flex items-center justify-center cursor-pointer" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
                             <button onclick="deleteNote('${note.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors flex items-center justify-center cursor-pointer" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
                         </div>
@@ -2138,6 +2142,7 @@ function openNoteReader(id) {
     }
 
     if (curIdEl) curIdEl.value = n.id;
+    window.currentViewNoteId = n.id;
 
     openModal('noteViewModal');
 }
@@ -4139,20 +4144,41 @@ function updateCloudModalUI() {
     const emailDisp = document.getElementById('cloudUserEmailDisplay');
     const authBtn = document.getElementById('cloudAuthBtn');
     const syncTime = document.getElementById('lastCloudSyncTime');
+    const quotaCard = document.getElementById('cloudQuotaNoticeCard');
+    const activeCard = document.getElementById('cloudActiveInfoCard');
+
+    const isQuota = window.isFirestoreQuotaExceeded && Date.now() < (window.firestoreQuotaExceededUntil || 0);
+    if (quotaCard && activeCard) {
+        if (isQuota) {
+            quotaCard.classList.remove('hidden');
+            activeCard.classList.add('hidden');
+        } else {
+            quotaCard.classList.add('hidden');
+            activeCard.classList.remove('hidden');
+        }
+    }
 
     if (window.firebaseUser) {
         if (window.firebaseUser.isAnonymous) {
-            if (emailDisp) emailDisp.innerHTML = '<span class="text-emerald-400 font-mono text-xs">● Connected (Worldwide Cloud Sync Active)</span>';
+            if (emailDisp) {
+                emailDisp.innerHTML = isQuota 
+                    ? '<span class="text-amber-400 font-mono text-xs">● Daily Quota Limit (Local Storage Safe)</span>'
+                    : '<span class="text-emerald-400 font-mono text-xs">● Connected (Worldwide Cloud Sync Active)</span>';
+            }
             if (authBtn) {
                 authBtn.innerHTML = '<i class="fa-brands fa-google text-brand-500"></i> <span>Sign in with Google</span>';
-                authBtn.className = 'px-4 py-2 bg-brand-600 hover:bg-brand-500 text-surface-950 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-md';
+                authBtn.className = 'px-4 py-2 bg-brand-600 hover:bg-brand-500 text-surface-950 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-md cursor-pointer';
             }
         } else {
             const email = window.firebaseUser.email || window.firebaseUser.displayName || 'Google Account';
-            if (emailDisp) emailDisp.innerHTML = `<span class="text-emerald-400 font-mono text-xs">● Signed In:</span> <span class="text-white font-medium text-xs">${email}</span>`;
+            if (emailDisp) {
+                emailDisp.innerHTML = isQuota 
+                    ? `<span class="text-amber-400 font-mono text-xs">● Signed In (Quota Limit):</span> <span class="text-white font-medium text-xs">${email}</span>`
+                    : `<span class="text-emerald-400 font-mono text-xs">● Signed In:</span> <span class="text-white font-medium text-xs">${email}</span>`;
+            }
             if (authBtn) {
                 authBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket text-rose-400"></i> <span>Sign Out</span>';
-                authBtn.className = 'px-4 py-2 bg-surface-800 hover:bg-rose-900/40 text-rose-300 rounded-xl text-xs font-semibold border border-surface-700 transition-all flex items-center gap-2';
+                authBtn.className = 'px-4 py-2 bg-surface-800 hover:bg-rose-900/40 text-rose-300 rounded-xl text-xs font-semibold border border-surface-700 transition-all flex items-center gap-2 cursor-pointer';
             }
         }
     } else {
@@ -4160,7 +4186,7 @@ function updateCloudModalUI() {
     }
 
     if (syncTime) {
-        syncTime.innerText = 'Last sync: ' + new Date().toLocaleTimeString();
+        syncTime.innerText = isQuota ? 'Status: Local device cache active (Free quota reached)' : ('Last sync: ' + new Date().toLocaleTimeString());
     }
 }
 
@@ -4394,7 +4420,7 @@ function stageDocumentFile(file) {
     reader.readAsDataURL(file);
 }
 
-function saveDocumentItem() {
+async function saveDocumentItem() {
     const titleInput = document.getElementById('modalDocTitleInput');
     const catSelect = document.getElementById('modalDocCategorySelect');
     const dateInput = document.getElementById('modalDocDateInput');
@@ -4416,13 +4442,16 @@ function saveDocumentItem() {
         .filter(t => t.length > 0)
         .map(t => t.startsWith('#') ? t : `#${t}`);
 
+    const docId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    const fileData = modalDocStagedFile ? modalDocStagedFile.data : null;
+
     const newDoc = {
-        id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        id: docId,
         title: title,
         category: catSelect ? catSelect.value : 'identity',
         fileType: modalDocStagedFile ? modalDocStagedFile.type : 'pdf',
         mimeType: modalDocStagedFile ? modalDocStagedFile.mimeType : 'application/pdf',
-        fileData: modalDocStagedFile ? modalDocStagedFile.data : null,
+        fileData: fileData,
         fileSize: modalDocStagedFile ? modalDocStagedFile.size : 124000,
         date: dateInput ? (dateInput.value || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
         tags: tags,
@@ -4431,8 +4460,27 @@ function saveDocumentItem() {
         createdAt: new Date().toISOString()
     };
 
+    if (fileData && window.vaultStorage) {
+        try {
+            await window.vaultStorage.saveFile(docId, fileData);
+        } catch (e) {
+            console.warn("Vault direct save error:", e);
+        }
+    }
+
     db.documents.unshift(newDoc);
-    saveDatabase();
+    await saveDatabase(true);
+
+    // Reset staged file & modal fields
+    modalDocStagedFile = null;
+    if (titleInput) titleInput.value = '';
+    if (tagsInput) tagsInput.value = '';
+    if (notesInput) notesInput.value = '';
+    const fileChip = document.getElementById('modalDocSelectedFileInfo');
+    if (fileChip) fileChip.classList.add('hidden');
+    const fileInput = document.getElementById('docModalFileInput');
+    if (fileInput) fileInput.value = '';
+
     closeModal('documentUploadModal');
     renderDocumentsPage();
     showToast(`Saved "${title}" to Documents Vault`);
@@ -4510,13 +4558,20 @@ function renderDocumentsPage() {
                         </div>
 
                         <!-- Center Media Preview / Icon -->
-                        <div onclick="previewDocumentItem('${d.id}')" class="h-32 w-full rounded-xl bg-surface-950/80 border border-surface-800/80 flex flex-col items-center justify-center p-2 relative overflow-hidden group-hover/dcard:border-emerald-500/30 transition-all cursor-pointer">
-                            ${isImg && d.fileData ? `
+                        <div onclick="previewDocumentItem('${d.id}')" id="doc_card_preview_${d.id}" class="h-32 w-full rounded-xl bg-surface-950/80 border border-surface-800/80 flex flex-col items-center justify-center p-2 relative overflow-hidden group-hover/dcard:border-emerald-500/30 transition-all cursor-pointer">
+                            ${isImg ? (d.fileData ? `
                                 <img src="${d.fileData}" alt="${d.title}" class="w-full h-full object-cover rounded-lg group-hover/dcard:scale-105 transition-transform duration-300">
                                 <div class="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-transparent to-transparent flex items-end p-2 opacity-0 group-hover/dcard:opacity-100 transition-opacity">
                                     <span class="text-[10px] font-mono text-emerald-300 flex items-center gap-1"><i class="fa-solid fa-eye text-[9px]"></i> View Full Image</span>
                                 </div>
                             ` : `
+                                <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center shadow-sm group-hover/dcard:scale-110 transition-transform">
+                                    <i class="fa-solid fa-image text-2xl"></i>
+                                </div>
+                                <span class="text-[10px] font-mono text-slate-400 mt-2 flex items-center gap-1">
+                                    <i class="fa-solid fa-expand text-[9px] text-cyan-400"></i> High-Res Photo
+                                </span>
+                            `) : `
                                 <div class="w-12 h-12 rounded-2xl ${isPdf ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'} flex items-center justify-center shadow-sm group-hover/dcard:scale-110 transition-transform">
                                     <i class="fa-solid ${isPdf ? 'fa-file-pdf' : 'fa-file-shield'} text-2xl"></i>
                                 </div>
@@ -4543,6 +4598,9 @@ function renderDocumentsPage() {
                             <i class="fa-regular fa-eye text-xs"></i> Preview
                         </button>
                         <div class="flex items-center gap-1 opacity-0 group-hover/dcard:opacity-100 transition-opacity duration-200">
+                            <button onclick="openUniversalShare('document', '${d.id}', event)" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Share Options">
+                                <i class="fa-solid fa-share-nodes text-xs"></i>
+                            </button>
                             <button onclick="downloadDocumentItem('${d.id}')" class="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Download File">
                                 <i class="fa-solid fa-download text-xs"></i>
                             </button>
@@ -4556,6 +4614,24 @@ function renderDocumentsPage() {
                     </div>
                 `;
                 gridContainer.appendChild(card);
+
+                // If image binary is not yet in memory, resolve in background and display immediately
+                if (isImg && !d.fileData && window.vaultStorage) {
+                    window.vaultStorage.getFile(d.id).then(url => {
+                        if (url) {
+                            d.fileData = url;
+                            const prevBox = document.getElementById(`doc_card_preview_${d.id}`);
+                            if (prevBox) {
+                                prevBox.innerHTML = `
+                                    <img src="${url}" alt="${d.title}" class="w-full h-full object-cover rounded-lg group-hover/dcard:scale-105 transition-transform duration-300">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-transparent to-transparent flex items-end p-2 opacity-0 group-hover/dcard:opacity-100 transition-opacity">
+                                        <span class="text-[10px] font-mono text-emerald-300 flex items-center gap-1"><i class="fa-solid fa-eye text-[9px]"></i> View Full Image</span>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }).catch(() => {});
+                }
             });
         }
     }
@@ -4591,6 +4667,9 @@ function renderDocumentsPage() {
                     <td class="p-3.5 font-mono text-xs text-slate-400">${d.date || '-'}</td>
                     <td class="p-3.5 text-right">
                         <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openUniversalShare('document', '${d.id}', event)" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Share Options">
+                                <i class="fa-solid fa-share-nodes text-xs"></i>
+                            </button>
                             <button onclick="previewDocumentItem('${d.id}')" class="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Preview">
                                 <i class="fa-solid fa-eye text-xs"></i>
                             </button>
@@ -4634,10 +4713,15 @@ function getDocCategoryBadge(cat) {
     }
 }
 
+let currentPreviewDocId = null;
+
 async function previewDocumentItem(id) {
     if (!Array.isArray(db.documents)) return;
     const doc = db.documents.find(x => x.id === id);
     if (!doc) return;
+
+    currentPreviewDocId = id;
+    window.currentPreviewDocId = id;
 
     const iconEl = document.getElementById('docViewerTypeIcon');
     const titleEl = document.getElementById('docViewerTitle');
@@ -5011,4 +5095,209 @@ function deleteDocumentItem(id) {
     });
 }
 window.deleteDocumentItem = deleteDocumentItem;
+
+// ==========================================
+// UNIVERSAL SHARE ENGINE & DIRECT SHARE CHANNELS
+// ==========================================
+window.currentSharePayload = null;
+
+function formatItemSharePayload(type, id) {
+    let title = 'Executive Vault Item';
+    let subject = 'Shared from Executive Vault';
+    let shareText = '';
+    let excerpt = '';
+    let badgeHtml = '<span class="px-2 py-0.5 rounded-md bg-surface-800 text-slate-300 font-mono text-[9px] uppercase">Item</span>';
+
+    if (type === 'note') {
+        const note = (db.notes || []).find(x => x.id === id);
+        if (note) {
+            title = note.title || 'Untitled Note';
+            subject = `Note: ${title}`;
+            const temp = document.createElement('div');
+            temp.innerHTML = note.body || note.content || '';
+            const plainText = temp.innerText.trim();
+            excerpt = plainText.length > 280 ? plainText.substring(0, 280) + '...' : (plainText || 'No content');
+            
+            shareText = `📌 *${title}*\n📁 Category: ${note.category || 'General'} | 📅 Date: ${note.date || 'Active'}\n\n${plainText}\n\n— Shared securely from Executive Vault`;
+            badgeHtml = `<span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-[9px] uppercase font-bold">Note</span>`;
+        }
+    } else if (type === 'document') {
+        const doc = (db.documents || []).find(x => x.id === id);
+        if (doc) {
+            title = doc.title || 'Document Record';
+            subject = `Document: ${title}`;
+            excerpt = doc.notes || `Category: ${doc.category || 'General'} • Date: ${doc.date || 'Active'}`;
+            const isPdf = doc.fileType === 'pdf' || (doc.mimeType && doc.mimeType.includes('pdf'));
+            const isImg = doc.fileType === 'photo' || (doc.mimeType && doc.mimeType.startsWith('image/'));
+            const fileKind = isPdf ? 'PDF Document' : (isImg ? 'Photo Asset' : 'Secure File');
+
+            shareText = `📄 *Document: ${title}*\n📂 Category: ${(doc.category || 'General').toUpperCase()} | 📎 Type: ${fileKind} | 📅 Date: ${doc.date || 'Active'}${doc.notes ? `\n\n📝 Notes:\n${doc.notes}` : ''}\n\n— Shared securely from Executive Vault`;
+            badgeHtml = `<span class="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono text-[9px] uppercase font-bold">Document</span>`;
+        }
+    } else if (type === 'favorite') {
+        const fav = (db.favorites || []).find(x => x.id === id);
+        if (fav) {
+            if (fav.type === 'quote') {
+                title = `Quote by ${fav.author || 'Anonymous'}`;
+                subject = `Quote: ${fav.author || 'Inspiration'}`;
+                excerpt = `"${fav.content || ''}" — ${fav.author || 'Anonymous'}`;
+                shareText = `💬 *Quote*\n\n"${fav.content || ''}"\n— ${fav.author || 'Anonymous'}${fav.date ? ` (${fav.date})` : ''}\n\n— Shared from Executive Vault`;
+                badgeHtml = `<span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-[9px] uppercase font-bold">Quote</span>`;
+            } else {
+                title = fav.title || 'Photo Memory';
+                subject = `Photo: ${title}`;
+                excerpt = fav.notes || fav.date || 'High-Resolution Vault Photo';
+                const photoSrc = fav.photoUrl ? `\n🖼️ Link: ${fav.photoUrl}` : '';
+                shareText = `📸 *${title}*${photoSrc}${fav.date ? `\n📅 Date: ${fav.date}` : ''}${fav.notes ? `\n📝 Notes: ${fav.notes}` : ''}\n\n— Shared from Executive Vault`;
+                badgeHtml = `<span class="px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono text-[9px] uppercase font-bold">Photo</span>`;
+            }
+        }
+    }
+
+    return { type, id, title, subject, shareText, excerpt, badgeHtml };
+}
+window.formatItemSharePayload = formatItemSharePayload;
+
+function shareItemDirect(type, id, channel, event) {
+    if (event && event.stopPropagation) event.stopPropagation();
+    
+    const payload = formatItemSharePayload(type, id);
+    if (!payload || !payload.shareText) {
+        showToast('Item content not available to share.');
+        return;
+    }
+
+    window.currentSharePayload = payload;
+
+    if (channel === 'whatsapp') {
+        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(payload.shareText)}`;
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+        showToast('Opening WhatsApp...');
+    } else if (channel === 'email') {
+        const mailtoUrl = `mailto:?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.shareText)}`;
+        window.location.href = mailtoUrl;
+        showToast('Opening Email Client...');
+    } else if (channel === 'copy') {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(payload.shareText).then(() => {
+                showToast('Item text copied to clipboard!');
+            }).catch(() => {
+                showToast('Text ready to paste!');
+            });
+        } else {
+            showToast('Text copied!');
+        }
+    } else {
+        openUniversalShare(type, id);
+    }
+}
+window.shareItemDirect = shareItemDirect;
+
+function openUniversalShare(type, id, event) {
+    if (event && event.stopPropagation) event.stopPropagation();
+
+    const payload = formatItemSharePayload(type, id);
+    if (!payload) return;
+
+    window.currentSharePayload = payload;
+
+    const badgeEl = document.getElementById('shareItemTypeBadge');
+    const titleEl = document.getElementById('shareItemTitlePreview');
+    const contentEl = document.getElementById('shareItemContentPreview');
+    const customMsgEl = document.getElementById('shareCustomMessageInput');
+
+    if (badgeEl) badgeEl.innerHTML = payload.badgeHtml;
+    if (titleEl) titleEl.innerText = payload.title;
+    if (contentEl) contentEl.innerText = payload.excerpt;
+    if (customMsgEl) customMsgEl.value = '';
+
+    openModal('universalShareModal');
+}
+window.openUniversalShare = openUniversalShare;
+
+function executeShareWhatsApp() {
+    if (!window.currentSharePayload) return;
+    const customMsg = (document.getElementById('shareCustomMessageInput')?.value || '').trim();
+    let textToSend = window.currentSharePayload.shareText;
+    if (customMsg) {
+        textToSend = `💬 *Note:* ${customMsg}\n\n${textToSend}`;
+    }
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToSend)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    closeModal('universalShareModal');
+    showToast('Opening WhatsApp...');
+}
+window.executeShareWhatsApp = executeShareWhatsApp;
+
+function executeShareEmail() {
+    if (!window.currentSharePayload) return;
+    const customMsg = (document.getElementById('shareCustomMessageInput')?.value || '').trim();
+    let textToSend = window.currentSharePayload.shareText;
+    if (customMsg) {
+        textToSend = `Note from sender: ${customMsg}\n\n--------------------\n\n${textToSend}`;
+    }
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(window.currentSharePayload.subject)}&body=${encodeURIComponent(textToSend)}`;
+    window.location.href = mailtoUrl;
+    closeModal('universalShareModal');
+    showToast('Opening Email Client...');
+}
+window.executeShareEmail = executeShareEmail;
+
+function copyShareModalText() {
+    if (!window.currentSharePayload) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(window.currentSharePayload.shareText).then(() => {
+            showToast('Share content copied to clipboard!');
+            closeModal('universalShareModal');
+        }).catch(() => {
+            showToast('Share content copied!');
+            closeModal('universalShareModal');
+        });
+    } else {
+        showToast('Share content copied!');
+        closeModal('universalShareModal');
+    }
+}
+window.copyShareModalText = copyShareModalText;
+
+// Shortcuts from open viewer modals
+function shareCurrentViewNote(channel) {
+    const idEl = document.getElementById('currentViewNoteId');
+    const id = (idEl && idEl.value) || window.currentViewNoteId;
+    if (!id) {
+        showToast('No note selected to share');
+        return;
+    }
+    if (channel === 'modal') {
+        openUniversalShare('note', id);
+    } else {
+        shareItemDirect('note', id, channel);
+    }
+}
+window.shareCurrentViewNote = shareCurrentViewNote;
+
+function openShareForCurrentViewNote() {
+    shareCurrentViewNote('modal');
+}
+window.openShareForCurrentViewNote = openShareForCurrentViewNote;
+
+function shareCurrentPreviewDoc(channel) {
+    const id = window.currentPreviewDocId;
+    if (!id) {
+        showToast('No document selected to share');
+        return;
+    }
+    if (channel === 'modal') {
+        openUniversalShare('document', id);
+    } else {
+        shareItemDirect('document', id, channel);
+    }
+}
+window.shareCurrentPreviewDoc = shareCurrentPreviewDoc;
+
+function openShareForCurrentPreviewDoc() {
+    shareCurrentPreviewDoc('modal');
+}
+window.openShareForCurrentPreviewDoc = openShareForCurrentPreviewDoc;
+
 

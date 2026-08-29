@@ -418,8 +418,8 @@ function renderAssetLogsTable() {
         <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-amber-400"></i> Live</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-semibold text-amber-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-earth-asia w-5 mr-1"></i> Qatar Assets Valuation</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-slate-300 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">Qatar Offshore Holdings</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 font-bold text-amber-400/80 transition-colors">Auto-Synced (QR ${qatarAssetsTotalQr.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-right font-bold font-mono text-amber-400 flex items-center justify-end h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">₹${qatarAssetsTotalRs.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 font-bold ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-amber-400/80'} transition-colors">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-right font-bold font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-amber-400'} flex items-center justify-end h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center justify-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">
             <button onclick="switchAssetSubTab('qatarvaluation')" class="text-amber-400 hover:text-amber-300 font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-amber-500/40 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
@@ -603,6 +603,13 @@ function renderQatarAssetsTable() {
             totalInr += inrVal;
 
             const iconClass = getQatarCategoryIcon(item.category);
+            const isNegQr = qrVal < 0;
+            const isNegInr = inrVal < 0;
+            const formattedQr = (isNegQr ? '-' : '') + 'QR ' + Math.abs(qrVal).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const formattedInr = (isNegInr ? '-' : '') + '₹' + Math.abs(inrVal).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const qrColorClass = isNegQr ? 'text-rose-400' : 'text-amber-400';
+            const inrColorClass = isNegInr ? 'text-rose-400' : 'text-emerald-400';
+
             const tr = document.createElement('tr');
             tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
             tr.innerHTML = `
@@ -613,9 +620,9 @@ function renderQatarAssetsTable() {
                     ${item.remarks ? `<span class="text-[10px] font-mono text-slate-400 font-normal mt-0.5 truncate max-w-xs">${item.remarks}</span>` : ''}
                 </div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs text-slate-300">${item.category || 'Asset'}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono text-amber-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">QR ${qrVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${qrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedQr}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-mono text-slate-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs">₹${perQr.toFixed(2)}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono text-emerald-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${inrVal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${inrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedInr}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                     <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
                         <button onclick="openQatarAssetModal('${item.id}')" title="Edit" class="text-slate-400 hover:text-amber-400 transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
@@ -632,19 +639,31 @@ function renderQatarAssetsTable() {
     const totalInrEl = document.getElementById('qatarAssetTotalInrVal');
     const countEl = document.getElementById('qatarAssetCountVal');
 
-    if (totalQrEl) totalQrEl.innerText = `QR ${totalQr.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    if (totalInrEl) totalInrEl.innerText = `₹${totalInr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    const totQrIsNeg = totalQr < 0;
+    const totInrIsNeg = totalInr < 0;
+    const totQrText = (totQrIsNeg ? '-' : '') + 'QR ' + Math.abs(totalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const totInrText = (totInrIsNeg ? '-' : '') + '₹' + Math.abs(totalInr).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+    if (totalQrEl) {
+        totalQrEl.innerText = totQrText;
+        totalQrEl.className = totQrIsNeg ? 'text-xl font-bold font-mono text-rose-400' : 'text-xl font-bold font-mono text-amber-400';
+    }
+    if (totalInrEl) {
+        totalInrEl.innerText = totInrText;
+        totalInrEl.className = totInrIsNeg ? 'text-xl font-bold font-mono text-rose-400' : 'text-xl font-bold font-mono text-emerald-400';
+    }
     if (countEl) countEl.innerText = `${sortedList.length} ${sortedList.length === 1 ? 'Holding' : 'Holdings'}`;
 
     // Render footer totals
     const foot = document.getElementById('qatarAssetsTableFoot');
     if (foot) {
+        const avgRate = totalQr !== 0 ? Math.abs(totalInr / totalQr).toFixed(2) : '23.50';
         foot.innerHTML = `
             <tr class="border-t border-surface-800 bg-surface-900/90 font-bold">
                 <td colspan="4" class="py-3.5 px-4 text-right uppercase tracking-widest text-slate-400 text-[10px]">Total Qatar Portfolio Valuation:</td>
-                <td class="py-3.5 px-4 text-right font-mono text-amber-400 text-sm">QR ${totalQr.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td class="py-3.5 px-4 text-right font-mono text-slate-400 text-xs">Avg: ₹${totalQr > 0 ? (totalInr / totalQr).toFixed(2) : '23.50'}</td>
-                <td class="py-3.5 px-4 text-right font-mono text-emerald-400 text-sm">₹${totalInr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="py-3.5 px-4 text-right font-mono ${totQrIsNeg ? 'text-rose-400' : 'text-amber-400'} text-sm">${totQrText}</td>
+                <td class="py-3.5 px-4 text-right font-mono text-slate-400 text-xs">Avg: ₹${avgRate}</td>
+                <td class="py-3.5 px-4 text-right font-mono ${totInrIsNeg ? 'text-rose-400' : 'text-emerald-400'} text-sm">${totInrText}</td>
                 <td></td>
             </tr>
         `;
@@ -679,7 +698,7 @@ function openQatarAssetModal(id = null) {
             }
             if (catEl) catEl.value = item.category || 'Real Estate';
             if (nameEl) nameEl.value = item.assetIdentity || '';
-            if (valQrEl) valQrEl.value = item.valueQr || '';
+            if (valQrEl) valQrEl.value = item.valueQr !== undefined ? item.valueQr : '';
             if (perQrEl) perQrEl.value = item.perQr || '23.50';
             if (remEl) remEl.value = item.remarks || '';
             computeQatarModalInrValue();
@@ -692,7 +711,10 @@ function openQatarAssetModal(id = null) {
         if (nameEl) nameEl.value = '';
         if (valQrEl) valQrEl.value = '';
         if (perQrEl) perQrEl.value = '23.50';
-        if (valRsEl) valRsEl.value = '₹0.00';
+        if (valRsEl) {
+            valRsEl.value = '₹0.00';
+            valRsEl.className = 'w-full p-3 rounded-xl border border-surface-700/80 bg-surface-950 text-emerald-400 font-mono text-xs font-bold cursor-not-allowed';
+        }
         if (remEl) remEl.value = '';
     }
 
@@ -705,7 +727,11 @@ function computeQatarModalInrValue() {
     const inr = valQr * perQr;
     const valRsEl = document.getElementById('qatarAssetValueRsInput');
     if (valRsEl) {
-        valRsEl.value = `₹${inr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        const isNeg = inr < 0;
+        valRsEl.value = `${isNeg ? '-' : ''}₹${Math.abs(inr).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        valRsEl.className = isNeg 
+            ? 'w-full p-3 rounded-xl border border-rose-500/50 bg-surface-950 text-rose-400 font-mono text-xs font-bold cursor-not-allowed'
+            : 'w-full p-3 rounded-xl border border-surface-700/80 bg-surface-950 text-emerald-400 font-mono text-xs font-bold cursor-not-allowed';
     }
 }
 
@@ -726,8 +752,8 @@ function saveQatarAssetDetails() {
         showToast('Please enter an asset identity or name');
         return;
     }
-    if (isNaN(valueQr) || valueQr <= 0) {
-        showToast('Please enter a valid Value in QR greater than 0');
+    if (isNaN(valueQr)) {
+        showToast('Please enter a valid Value in QR (positive or negative amount)');
         return;
     }
 

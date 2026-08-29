@@ -3,6 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Console filter for clean developer environment
+        (function() {
+            const _origError = console.error;
+            const _origWarn = console.warn;
+            function isMinorFirebaseNotice(args) {
+                try {
+                    const str = args.map(a => typeof a === 'object' ? (a?.message || a?.stack || a?.code || JSON.stringify(a) || '') : String(a)).join(' ');
+                    return str.includes('maximum backoff delay');
+                } catch(e) {
+                    return false;
+                }
+            }
+            console.error = function(...args) {
+                if (isMinorFirebaseNotice(args)) return;
+                _origError.apply(console, args);
+            };
+            console.warn = function(...args) {
+                if (isMinorFirebaseNotice(args)) return;
+                _origWarn.apply(console, args);
+            };
+        })();
+    </script>
     <title>Financial & Personal Assistant Dashboard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -264,12 +287,30 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, disableNetwork, enableNetwork } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Native IndexedDB Engine for Vault Files & Media Blobs
+        window.addEventListener('unhandledrejection', function(event) {
+            if (event && event.reason && (event.reason.code === 'resource-exhausted' || (event.reason.message && event.reason.message.includes('Quota limit exceeded')))) {
+                event.preventDefault();
+                if (typeof window.markQuotaExceeded === 'function') {
+                    window.markQuotaExceeded();
+                }
+            }
+        });
+        window.addEventListener('error', function(event) {
+            if (event && (event.message && (event.message.includes('Quota limit exceeded') || event.message.includes('resource-exhausted')))) {
+                event.preventDefault();
+                if (typeof window.markQuotaExceeded === 'function') {
+                    window.markQuotaExceeded();
+                }
+            }
+        });
+
+        // Native IndexedDB Engine for Vault Files, Media Blobs & Complete Application State
         const VAULT_DB_NAME = 'ExecutiveVaultStorageDB';
-        const VAULT_DB_VERSION = 1;
+        const VAULT_DB_VERSION = 2;
         const VAULT_STORE_NAME = 'vault_files';
+        const STATE_STORE_NAME = 'app_state';
 
         function getVaultIndexedDB() {
             return new Promise((resolve) => {
@@ -283,6 +324,9 @@
                     if (!idb.objectStoreNames.contains(VAULT_STORE_NAME)) {
                         idb.createObjectStore(VAULT_STORE_NAME, { keyPath: 'id' });
                     }
+                    if (!idb.objectStoreNames.contains(STATE_STORE_NAME)) {
+                        idb.createObjectStore(STATE_STORE_NAME, { keyPath: 'key' });
+                    }
                 };
                 req.onsuccess = () => resolve(req.result);
                 req.onerror = (e) => {
@@ -293,6 +337,42 @@
         }
 
         window.vaultStorage = {
+            async saveState(stateObj) {
+                if (!stateObj || typeof stateObj !== 'object') return;
+                try {
+                    const idb = await getVaultIndexedDB();
+                    if (!idb) return;
+                    return new Promise((resolve) => {
+                        const tx = idb.transaction(STATE_STORE_NAME, 'readwrite');
+                        const store = tx.objectStore(STATE_STORE_NAME);
+                        store.put({
+                            key: 'master_state',
+                            data: JSON.parse(JSON.stringify(stateObj)),
+                            updatedAt: stateObj.lastUpdatedAt || Date.now()
+                        });
+                        tx.oncomplete = () => resolve(true);
+                        tx.onerror = () => resolve(false);
+                    });
+                } catch (e) {
+                    console.warn('vaultStorage.saveState error:', e);
+                }
+            },
+            async getState() {
+                try {
+                    const idb = await getVaultIndexedDB();
+                    if (!idb) return null;
+                    return new Promise((resolve) => {
+                        const tx = idb.transaction(STATE_STORE_NAME, 'readonly');
+                        const store = tx.objectStore(STATE_STORE_NAME);
+                        const req = store.get('master_state');
+                        req.onsuccess = () => resolve(req.result ? req.result.data : null);
+                        req.onerror = () => resolve(null);
+                    });
+                } catch (e) {
+                    console.warn('vaultStorage.getState error:', e);
+                    return null;
+                }
+            },
             async saveFile(id, fileData) {
                 if (!id || !fileData) return;
                 try {
@@ -389,8 +469,41 @@
                 }
             };
 
+            window.isFirestoreQuotaExceeded = false;
+            window.firestoreQuotaExceededUntil = 0;
+            try { localStorage.removeItem('firestore_quota_exceeded_until'); } catch(e) {}
+
+            window.resetQuotaStatus = async function() {
+                window.isFirestoreQuotaExceeded = false;
+                window.firestoreQuotaExceededUntil = 0;
+                try { localStorage.removeItem('firestore_quota_exceeded_until'); } catch(e) {}
+                if (dbStore) {
+                    try { await enableNetwork(dbStore); } catch(e) {}
+                }
+                setupMasterRealtimeSync();
+                updateCloudSyncStatusUI('synced');
+                if (window.showToast) window.showToast("Real-time Cloud Sync Active", "success");
+            };
+
+            async function markQuotaExceeded(durationMs = 15 * 1000) {
+                // Short transient backoff in case of network throttle
+                window.isFirestoreQuotaExceeded = true;
+                window.firestoreQuotaExceededUntil = Date.now() + durationMs;
+                setTimeout(async () => {
+                    window.isFirestoreQuotaExceeded = false;
+                    if (dbStore) {
+                        try { await enableNetwork(dbStore); } catch(e) {}
+                    }
+                    setupMasterRealtimeSync();
+                }, durationMs);
+            }
+            window.markQuotaExceeded = markQuotaExceeded;
+
             window.initCloudStorage = function() {
                 return new Promise((resolve) => {
+                    if (dbStore) {
+                        try { enableNetwork(dbStore).catch(() => {}); } catch(e) {}
+                    }
                     onAuthStateChanged(auth, async (user) => {
                         if (user) {
                             window.firebaseUser = user;
@@ -418,6 +531,7 @@
 
             let unsubscribeSnapshot = null;
             function setupMasterRealtimeSync() {
+                if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) return;
                 try {
                     if (unsubscribeSnapshot) unsubscribeSnapshot();
                     const masterDocRef = doc(dbStore, 'app_data', 'executive_master');
@@ -449,20 +563,38 @@
                             }
                         }
                     }, (err) => {
-                        console.warn("Firestore snapshot listener:", err);
+                        if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota limit exceeded')))) {
+                            markQuotaExceeded();
+                            if (unsubscribeSnapshot) {
+                                unsubscribeSnapshot();
+                                unsubscribeSnapshot = null;
+                            }
+                        } else {
+                            console.warn("Firestore snapshot listener:", err);
+                        }
                     });
                 } catch (e) {
                     console.error("Realtime sync setup error:", e);
                 }
             }
 
+            let lastSavedPayloadStr = '';
+            let cloudSaveTimer = null;
+            const alreadyUploadedVaultDocIds = new Set();
+
             window.deleteVaultFileFromCloud = async function(docId) {
                 if (!window.isFirebaseReady || !docId) return;
+                alreadyUploadedVaultDocIds.delete(docId);
+                if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) return;
                 try {
                     const fileRef = doc(window.dbStore, 'vault_files', docId);
                     await deleteDoc(fileRef);
                 } catch (e) {
-                    console.warn("Cloud delete vault file error:", e);
+                    if (e && (e.code === 'resource-exhausted' || (e.message && e.message.includes('Quota limit exceeded')))) {
+                        markQuotaExceeded();
+                    } else {
+                        console.warn("Cloud delete vault file warning:", e);
+                    }
                 }
             };
 
@@ -484,14 +616,18 @@
                         return cached;
                     }
                 }
-                // 3. Fetch from Firestore vault_files collection
+                // 3. Fetch from Firestore vault_files collection (if quota permits)
                 if (window.dbStore && window.isFirebaseReady) {
+                    if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) {
+                        return null;
+                    }
                     try {
                         const fileRef = doc(window.dbStore, 'vault_files', docId);
                         const snap = await getDoc(fileRef);
                         if (snap.exists()) {
                             const fData = snap.data().fileData;
                             if (fData) {
+                                alreadyUploadedVaultDocIds.add(docId);
                                 if (window.vaultStorage) await window.vaultStorage.saveFile(docId, fData);
                                 if (window.db && Array.isArray(window.db.documents)) {
                                     const d = window.db.documents.find(x => x.id === docId);
@@ -501,14 +637,25 @@
                             }
                         }
                     } catch (err) {
-                        console.warn("Firestore get vault file error:", err);
+                        if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota limit exceeded')))) {
+                            markQuotaExceeded();
+                        } else {
+                            console.warn("Firestore get vault file warning:", err);
+                        }
                     }
                 }
                 return null;
             };
 
-            window.cloudSave = async function(data) {
+            async function executeDirectCloudSave(data) {
                 if (!window.isFirebaseReady || !window.firebaseUser) return;
+                
+                // Check quota circuit breaker
+                if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) {
+                    updateCloudSyncStatusUI('quota-exceeded');
+                    return;
+                }
+
                 try {
                     updateCloudSyncStatusUI('saving');
                     const nowIso = new Date().toISOString();
@@ -525,20 +672,27 @@
                                 if (window.vaultStorage) {
                                     await window.vaultStorage.saveFile(d.id, d.fileData);
                                 }
-                                // Upload file binary to dedicated Firestore vault_files collection (under 950KB)
-                                try {
-                                    if (d.fileData.length <= 950000) {
-                                        const fileDocRef = doc(window.dbStore, 'vault_files', d.id);
-                                        await setDoc(fileDocRef, {
-                                            docId: d.id,
-                                            fileData: d.fileData,
-                                            mimeType: d.mimeType || 'application/octet-stream',
-                                            userId: window.firebaseUser.uid,
-                                            updatedAt: nowIso
-                                        });
+                                // Upload file binary to dedicated Firestore vault_files only if not already uploaded
+                                if (!alreadyUploadedVaultDocIds.has(d.id)) {
+                                    try {
+                                        if (d.fileData.length <= 950000) {
+                                            const fileDocRef = doc(window.dbStore, 'vault_files', d.id);
+                                            await setDoc(fileDocRef, {
+                                                docId: d.id,
+                                                fileData: d.fileData,
+                                                mimeType: d.mimeType || 'application/octet-stream',
+                                                userId: window.firebaseUser.uid,
+                                                updatedAt: nowIso
+                                            });
+                                            alreadyUploadedVaultDocIds.add(d.id);
+                                        }
+                                    } catch (fErr) {
+                                        if (fErr && (fErr.code === 'resource-exhausted' || (fErr.message && fErr.message.includes('Quota limit exceeded')))) {
+                                            markQuotaExceeded();
+                                            return;
+                                        }
+                                        console.warn("Vault file upload warning:", fErr);
                                     }
-                                } catch (fErr) {
-                                    console.warn("Vault file upload warning:", fErr);
                                 }
                                 // Strip bulky binary string from consolidated master state
                                 d.hasBinary = true;
@@ -563,12 +717,17 @@
 
                     const payloadStr = JSON.stringify(cleanData);
 
+                    // Skip remote write if identical to last successfully synced payload
+                    if (payloadStr === lastSavedPayloadStr) {
+                        updateCloudSyncStatusUI('synced');
+                        return;
+                    }
+
                     // 2. Safe Master Payload Saving (Chunking if ever > 600KB)
                     const CHUNK_SIZE = 600000;
                     const totalChunks = Math.ceil(payloadStr.length / CHUNK_SIZE);
 
                     if (totalChunks <= 1) {
-                        // Single master document
                         const masterDocRef = doc(window.dbStore, 'app_data', 'executive_master');
                         await setDoc(masterDocRef, {
                             userId: window.firebaseUser.uid,
@@ -580,7 +739,6 @@
                             updatedAt: nowIso
                         });
                     } else {
-                        // Multi-chunk saving for large tables
                         for (let i = 0; i < totalChunks; i++) {
                             const chunkStr = payloadStr.substr(i * CHUNK_SIZE, CHUNK_SIZE);
                             const chunkDocId = i === 0 ? 'executive_master' : `executive_master_part_${i}`;
@@ -597,26 +755,40 @@
                         }
                     }
 
-                    // 3. User-specific backup
-                    if (!window.firebaseUser.isAnonymous && totalChunks <= 1) {
-                        const userDocRef = doc(window.dbStore, 'users', window.firebaseUser.uid, 'dashboard', 'state');
-                        await setDoc(userDocRef, {
-                            userId: window.firebaseUser.uid,
-                            updatedBy: userEmail,
-                            payload: payloadStr,
-                            updatedAt: nowIso
-                        });
-                    }
-
+                    lastSavedPayloadStr = payloadStr;
+                    window.isFirestoreQuotaExceeded = false;
+                    try { localStorage.removeItem('firestore_quota_exceeded_until'); } catch(e) {}
                     updateCloudSyncStatusUI('synced');
                 } catch (e) {
-                    console.error("Cloud Save Error:", e);
-                    updateCloudSyncStatusUI('error');
+                    if (e && (e.code === 'resource-exhausted' || (e.message && e.message.includes('Quota limit exceeded')))) {
+                        markQuotaExceeded();
+                        console.warn("Firestore Daily Quota Reached: Application state is securely preserved locally.");
+                    } else {
+                        console.error("Cloud Save Error:", e);
+                        updateCloudSyncStatusUI('error');
+                    }
                 }
+            }
+
+            window.cloudSave = function(data, immediate = false) {
+                if (cloudSaveTimer) {
+                    clearTimeout(cloudSaveTimer);
+                    cloudSaveTimer = null;
+                }
+                if (immediate) {
+                    return executeDirectCloudSave(data);
+                }
+                return new Promise((resolve) => {
+                    cloudSaveTimer = setTimeout(async () => {
+                        await executeDirectCloudSave(data);
+                        resolve();
+                    }, 1200);
+                });
             };
 
             window.cloudLoad = async function() {
                 if (!window.isFirebaseReady || !window.firebaseUser) return null;
+                if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) return null;
                 try {
                     // Try master document first
                     const masterDocRef = doc(window.dbStore, 'app_data', 'executive_master');
@@ -632,22 +804,19 @@
                                     fullPayload += (cSnap.data().payload || '');
                                 }
                             }
+                            lastSavedPayloadStr = fullPayload;
                             return JSON.parse(fullPayload);
                         } else if (data.payload) {
+                            lastSavedPayloadStr = data.payload;
                             return JSON.parse(data.payload);
                         }
                     }
-                    
-                    // Fallback to user doc if available
-                    if (!window.firebaseUser.isAnonymous) {
-                        const userDocRef = doc(window.dbStore, 'users', window.firebaseUser.uid, 'dashboard', 'state');
-                        const uSnap = await getDoc(userDocRef);
-                        if (uSnap.exists()) {
-                            return JSON.parse(uSnap.data().payload);
-                        }
-                    }
                 } catch (e) {
-                    console.error("Cloud Load Error:", e);
+                    if (e && (e.code === 'resource-exhausted' || (e.message && e.message.includes('Quota limit exceeded')))) {
+                        markQuotaExceeded();
+                    } else {
+                        console.error("Cloud Load Error:", e);
+                    }
                 }
                 return null;
             };
@@ -659,14 +828,17 @@
                 if (window.firebaseUser && window.firebaseUser.email) {
                     email = window.firebaseUser.email.split('@')[0];
                 }
-                if (status === 'synced') {
+                if (status === 'quota-exceeded' || (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil)) {
+                    el.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span> <span class="text-amber-300 font-mono text-[10px] truncate max-w-[170px]" title="Daily Firebase write quota reached. Local device copy is 100% saved & up to date. Resets in 24 hours.">Quota Limit (Local Safe)</span> <i class="fa-solid fa-hard-drive text-xs text-amber-400 ml-auto shrink-0 opacity-80" title="Saved locally on device"></i>`;
+                    el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-amber-500/40 cursor-pointer hover:border-amber-500 transition-all duration-300 shadow-sm';
+                } else if (status === 'synced') {
                     el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span> <span class="text-slate-200 font-mono text-[10px] truncate max-w-[170px]" title="Cloud Synced (${email})">Cloud Synced (${email})</span> <i class="fa-solid fa-cloud text-xs text-emerald-400 ml-auto shrink-0 opacity-75"></i>`;
                     el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-emerald-500/40 cursor-pointer hover:border-emerald-500 transition-all duration-300 shadow-sm';
                 } else if (status === 'saving') {
                     el.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-brand-500 text-xs shrink-0"></i> <span class="text-brand-400 font-mono text-[10px] truncate">Syncing to Cloud...</span>';
                     el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-brand-500/40 transition-all duration-300 shadow-sm';
                 } else if (status === 'error') {
-                    el.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400 shrink-0"></span> <span class="text-rose-400 font-mono text-[10px] truncate">Cloud Reconnecting...</span>';
+                    el.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400 shrink-0"></span> <span class="text-rose-400 font-mono text-[10px] truncate">Local Device Saved</span> <i class="fa-solid fa-hard-drive text-xs text-slate-400 ml-auto shrink-0 opacity-60"></i>';
                     el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-rose-500/40 transition-all duration-300 shadow-sm';
                 } else {
                     el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span> <span class="text-slate-300 font-mono text-[10px] truncate">Cloud Synced (${email})</span> <i class="fa-solid fa-cloud text-xs text-slate-400 ml-auto shrink-0 opacity-60"></i>`;

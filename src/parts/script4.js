@@ -52,7 +52,7 @@ function renderNetWorthAnalysis() {
 
     const netWorth = totalAssets - totalLiabilities;
 
-    const formatINR = (val) => '₹' + val.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const formatINR = (val) => (val < 0 ? '-' : '') + '₹' + Math.abs(val).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
     const elTotalAssets = document.getElementById('nwTotalAssets');
     const elTotalLiab = document.getElementById('nwTotalLiabilities');
@@ -156,6 +156,9 @@ function renderNetWorthAnalysis() {
 function renderIndiaOperations() {
     renderShareMarketTable();
     renderOthersTable();
+    if (typeof renderTradingAnalysis === 'function') {
+        renderTradingAnalysis();
+    }
 }
 
 function renderOthersTable() {

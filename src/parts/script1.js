@@ -371,30 +371,48 @@ function sanitizeDatabase(data) {
 }
 window.sanitizeDatabase = sanitizeDatabase;
 
-async function saveDatabase() {
+async function saveDatabase(immediate = false) {
+    const now = Date.now();
+    db.lastUpdatedAt = now;
     sanitizeDatabase(db);
-    // Save to local cache first for zero-latency UI (stripping heavy base64 binaries to protect 5MB localStorage limit)
+
+    // 1. Save to local cache for fast reload
     try {
         const localCopy = JSON.parse(JSON.stringify(db));
+        localCopy.lastUpdatedAt = now;
         if (Array.isArray(localCopy.documents)) {
-            localCopy.documents.forEach(d => {
+            for (let i = 0; i < localCopy.documents.length; i++) {
+                const d = localCopy.documents[i];
                 if (d.fileData && (d.fileData.startsWith('data:') || d.fileData.length > 2000)) {
-                    if (window.vaultStorage) window.vaultStorage.saveFile(d.id, d.fileData);
+                    if (window.vaultStorage) {
+                        await window.vaultStorage.saveFile(d.id, d.fileData);
+                    }
                     d.hasBinary = true;
                     delete d.fileData;
                 }
-            });
+            }
         }
         localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(localCopy));
+        localStorage.setItem('riyas_executive_os_last_updated', String(now));
     } catch (err) {
         console.warn("Local storage cache warning:", err);
     }
-    // Persist to Firebase Firestore Cloud database
+
+    // 2. Persist full state to high-capacity IndexedDB
+    if (window.vaultStorage && typeof window.vaultStorage.saveState === 'function') {
+        try {
+            await window.vaultStorage.saveState(db);
+        } catch (idbErr) {
+            console.warn("IndexedDB state save warning:", idbErr);
+        }
+    }
+
+    // 3. Persist to Firebase Firestore Cloud database (debounced & deduplicated)
     if (window.cloudSave) {
         try {
-            await window.cloudSave(db);
+            await window.cloudSave(db, immediate);
         } catch (e) {
-            console.error("Firebase cloudSave error in saveDatabase:", e);
+            console.warn("Firebase cloudSave warning:", e);
         }
     }
 }
@@ -402,6 +420,8 @@ async function saveDatabase() {
 async function loadDatabase() {
     // 1. Load from local cache immediately for instantaneous rendering
     const local = localStorage.getItem('riyas_executive_os_db_v2');
+    let localTs = parseInt(localStorage.getItem('riyas_executive_os_last_updated') || '0', 10) || 0;
+    
     if (local) {
         try { 
             const parsed = JSON.parse(local);
@@ -413,31 +433,108 @@ async function loadDatabase() {
                 profile: { ...(db.profile || {}), ...(parsed.profile || {}) },
                 preferences: { ...(db.preferences || {}), ...(parsed.preferences || {}) }
             });
+            if (localTs) db.lastUpdatedAt = localTs;
         } catch (e) {
             console.error("Error reading local db cache:", e);
         }
     }
+
+    // 2. Load from IndexedDB to catch changes that exceeded localStorage size
+    if (window.vaultStorage && typeof window.vaultStorage.getState === 'function') {
+        try {
+            const idbState = await window.vaultStorage.getState();
+            if (idbState && typeof idbState === 'object') {
+                const idbTs = idbState.lastUpdatedAt || 0;
+                if (idbTs >= localTs) {
+                    db = sanitizeDatabase({
+                        ...db,
+                        ...idbState,
+                        indiaOps: { ...(db.indiaOps || {}), ...(idbState.indiaOps || {}) },
+                        budget: { ...(db.budget || {}), ...(idbState.budget || {}) },
+                        profile: { ...(db.profile || {}), ...(idbState.profile || {}) },
+                        preferences: { ...(db.preferences || {}), ...(idbState.preferences || {}) }
+                    });
+                    if (idbTs) {
+                        db.lastUpdatedAt = idbTs;
+                        localTs = idbTs;
+                    }
+                }
+            }
+        } catch (idbReadErr) {
+            console.warn("IndexedDB state read warning:", idbReadErr);
+        }
+    }
+
     sanitizeDatabase(db);
+
+    // 3. Hydrate all document binaries from IndexedDB into memory before initial view render
+    if (window.vaultStorage && Array.isArray(db.documents)) {
+        try {
+            await Promise.all(db.documents.map(async (doc) => {
+                if (!doc.fileData) {
+                    const storedBinary = await window.vaultStorage.getFile(doc.id);
+                    if (storedBinary) {
+                        doc.fileData = storedBinary;
+                    }
+                }
+            }));
+        } catch (hydErr) {
+            console.warn("IndexedDB document hydration warning:", hydErr);
+        }
+    }
     
-    // 2. Connect to Firebase and fetch the latest cloud document
+    // 4. Connect to Firebase and fetch the latest cloud document (respecting local freshness)
     if (window.initCloudStorage) {
         try {
             const ok = await window.initCloudStorage();
             if (ok && window.cloudLoad) {
                 const remote = await window.cloudLoad();
                 if (remote && typeof remote === 'object') {
-                    db = sanitizeDatabase({
-                        ...db,
-                        ...remote,
-                        indiaOps: { ...(db.indiaOps || {}), ...(remote.indiaOps || {}) },
-                        budget: { ...(db.budget || {}), ...(remote.budget || {}) },
-                        profile: { ...(db.profile || {}), ...(remote.profile || {}) },
-                        preferences: { ...(db.preferences || {}), ...(remote.preferences || {}) }
-                    });
-                    localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(db));
-                    refreshAllViews();
-                } else if (local) {
-                    // Initial bootstrap: Upload local state to the cloud database
+                    const remoteTs = remote.lastUpdatedAt || 0;
+                    const currentLocalTs = db.lastUpdatedAt || localTs || 0;
+
+                    // Only adopt remote if it is strictly newer than our local state
+                    if (remoteTs > currentLocalTs + 500) {
+                        const inMemoryBinaries = new Map();
+                        if (Array.isArray(db.documents)) {
+                            db.documents.forEach(d => { if (d.fileData) inMemoryBinaries.set(d.id, d.fileData); });
+                        }
+
+                        db = sanitizeDatabase({
+                            ...db,
+                            ...remote,
+                            indiaOps: { ...(db.indiaOps || {}), ...(remote.indiaOps || {}) },
+                            budget: { ...(db.budget || {}), ...(remote.budget || {}) },
+                            profile: { ...(db.profile || {}), ...(remote.profile || {}) },
+                            preferences: { ...(db.preferences || {}), ...(remote.preferences || {}) }
+                        });
+
+                        // Reattach/hydrate binaries
+                        if (Array.isArray(db.documents)) {
+                            await Promise.all(db.documents.map(async (d) => {
+                                if (inMemoryBinaries.has(d.id)) {
+                                    d.fileData = inMemoryBinaries.get(d.id);
+                                } else if (!d.fileData && window.vaultStorage) {
+                                    const b = await window.vaultStorage.getFile(d.id);
+                                    if (b) d.fileData = b;
+                                }
+                            }));
+                        }
+
+                        localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(db));
+                        localStorage.setItem('riyas_executive_os_last_updated', String(remoteTs));
+                        if (window.vaultStorage && typeof window.vaultStorage.saveState === 'function') {
+                            await window.vaultStorage.saveState(db);
+                        }
+                        refreshAllViews();
+                    } else if (currentLocalTs > remoteTs + 500 && !window.isFirestoreQuotaExceeded) {
+                        // Local is newer than cloud; push up our fresh local data
+                        if (window.cloudSave) {
+                            await window.cloudSave(db, true);
+                        }
+                    }
+                } else if (local && !window.isFirestoreQuotaExceeded) {
+                    // Initial bootstrap: Upload local state to the cloud database if remote is empty
                     if (window.cloudSave) {
                         await window.cloudSave(db);
                     }
@@ -450,13 +547,24 @@ async function loadDatabase() {
 }
 
 // Handler for real-time updates from Firebase Firestore
-window.onRemoteStateUpdate = function(remoteDb) {
+window.onRemoteStateUpdate = async function(remoteDb) {
     if (remoteDb && typeof remoteDb === 'object') {
+        const remoteTs = remoteDb.lastUpdatedAt || 0;
+        const currentLocalTs = db.lastUpdatedAt || parseInt(localStorage.getItem('riyas_executive_os_last_updated') || '0', 10) || 0;
+
+        // If local state has newer modifications, do NOT overwrite with stale cloud snapshot!
+        if (remoteTs <= currentLocalTs) {
+            return;
+        }
+
         const prevNotifIds = new Set((db.notifications || []).map(n => n.id));
         const remoteNotifs = Array.isArray(remoteDb.notifications) ? remoteDb.notifications : [];
-        
-        // Detect if brand new unread notifications arrived from cloud
         const hasNewUnreadFromRemote = remoteNotifs.some(n => !n.read && !prevNotifIds.has(n.id));
+
+        const inMemoryBinaries = new Map();
+        if (Array.isArray(db.documents)) {
+            db.documents.forEach(d => { if (d.fileData) inMemoryBinaries.set(d.id, d.fileData); });
+        }
 
         db = sanitizeDatabase({
             ...db,
@@ -466,7 +574,24 @@ window.onRemoteStateUpdate = function(remoteDb) {
             profile: { ...(db.profile || {}), ...(remoteDb.profile || {}) },
             preferences: { ...(db.preferences || {}), ...(remoteDb.preferences || {}) }
         });
+
+        // Hydrate binaries for updated documents
+        if (Array.isArray(db.documents)) {
+            await Promise.all(db.documents.map(async (d) => {
+                if (inMemoryBinaries.has(d.id)) {
+                    d.fileData = inMemoryBinaries.get(d.id);
+                } else if (!d.fileData && window.vaultStorage) {
+                    const b = await window.vaultStorage.getFile(d.id);
+                    if (b) d.fileData = b;
+                }
+            }));
+        }
+
         localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(db));
+        localStorage.setItem('riyas_executive_os_last_updated', String(remoteTs));
+        if (window.vaultStorage && typeof window.vaultStorage.saveState === 'function') {
+            await window.vaultStorage.saveState(db);
+        }
         refreshAllViews();
 
         if (hasNewUnreadFromRemote && typeof playNotificationSound === 'function') {
@@ -808,13 +933,31 @@ window.toggleCompletedSectionCollapse = function(category) {
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 function switchEqSubTab(tabKey) {
+    window.currentEqActiveTab = tabKey;
     document.querySelectorAll('.eq-sub-view').forEach(v => v.classList.add('hidden'));
-    const target = document.getElementById(`eqSubView-${tabKey}`);
-    if(target) target.classList.remove('hidden');
+    
+    if (['options', 'futures', 'mcx', 'equity'].includes(tabKey)) {
+        const target = document.getElementById('eqSubView-trading');
+        if (target) target.classList.remove('hidden');
+        window.currentEqSegment = tabKey;
+        if (typeof renderShareMarketTable === 'function') renderShareMarketTable();
+    } else if (tabKey === 'others') {
+        const target = document.getElementById('eqSubView-others');
+        if (target) target.classList.remove('hidden');
+        if (typeof renderOthersTable === 'function') renderOthersTable();
+    } else if (tabKey === 'analysis') {
+        const target = document.getElementById('eqSubView-analysis');
+        if (target) target.classList.remove('hidden');
+        if (typeof renderTradingAnalysis === 'function') renderTradingAnalysis();
+    }
 
     const tabs = { 
-        trading: { id: 'btnEqSubTrading', icon: 'fa-chart-pie', label: 'Trading Desk' }, 
-        others: { id: 'btnEqSubOthers', icon: 'fa-layer-group', label: 'Others' }
+        options: { id: 'btnEqSubOptions', icon: 'fa-bolt', label: 'Options' },
+        futures: { id: 'btnEqSubFutures', icon: 'fa-arrow-trend-up', label: 'Futures' },
+        mcx: { id: 'btnEqSubMcx', icon: 'fa-coins', label: 'MCX' },
+        equity: { id: 'btnEqSubEquity', icon: 'fa-cubes', label: 'Equity' },
+        others: { id: 'btnEqSubOthers', icon: 'fa-layer-group', label: 'Others' },
+        analysis: { id: 'btnEqSubAnalysis', icon: 'fa-chart-pie', label: 'Analysis' }
     };
 
     Object.keys(tabs).forEach(k => {

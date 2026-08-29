@@ -84,6 +84,37 @@ function deleteOthersEntry(id) {
     });
 }
 
+function formatTradeParticular(str) {
+    if (!str) return '';
+    const trimmed = str.trim();
+    if (!trimmed) return '';
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+}
+window.formatTradeParticular = formatTradeParticular;
+
+function getTradeSegment(sm) {
+    if (sm && sm.segment) return sm.segment.toLowerCase();
+    const scrip = (sm && sm.script ? sm.script : '').toUpperCase();
+    if (scrip.includes('CE') || scrip.includes('PE') || scrip.includes('CALL') || scrip.includes('PUT') || scrip.includes('OPTION') || scrip.includes('OPT')) {
+        return 'options';
+    }
+    if (scrip.includes('FUT') || scrip.includes('FUTURE')) {
+        return 'futures';
+    }
+    if (scrip.includes('CRUDE') || scrip.includes('GOLD') || scrip.includes('SILVER') || scrip.includes('NATGAS') || scrip.includes('NATURAL GAS') || scrip.includes('MCX') || scrip.includes('COPPER') || scrip.includes('ZINC') || scrip.includes('NICKEL') || scrip.includes('LEAD') || scrip.includes('ALUMINIUM') || scrip.includes('COTTON')) {
+        return 'mcx';
+    }
+    return 'equity';
+}
+window.getTradeSegment = getTradeSegment;
+
+const SEGMENT_CONFIG = {
+    options: { title: 'Options Trading Log', icon: 'fa-bolt', color: 'text-brand-400', bg: 'bg-brand-500/10', border: 'border-brand-500/30' },
+    futures: { title: 'Futures Trading Log', icon: 'fa-arrow-trend-up', color: 'text-accent-cyan', bg: 'bg-accent-cyan/10', border: 'border-accent-cyan/30' },
+    mcx: { title: 'MCX Commodity Trading Log', icon: 'fa-coins', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
+    equity: { title: 'Equity Stocks Trading Log', icon: 'fa-cubes', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30' }
+};
+
 function renderShareMarketTable() {
     const body = document.getElementById('shareMarketTableBody');
     if (!body) return;
@@ -93,9 +124,24 @@ function renderShareMarketTable() {
     if (!db.indiaOps) db.indiaOps = {};
     if (!db.indiaOps.shareMarket) db.indiaOps.shareMarket = [];
 
+    const activeSegment = window.currentEqSegment || 'options';
+    const config = SEGMENT_CONFIG[activeSegment] || SEGMENT_CONFIG.options;
+
+    // Update Header
+    const titleTextEl = document.getElementById('tradingTableTitleText');
+    const titleIconEl = document.getElementById('tradingTableIcon');
+    if (titleTextEl) titleTextEl.innerText = config.title;
+    if (titleIconEl) {
+        titleIconEl.className = `fa-solid ${config.icon} ${config.color} text-sm`;
+    }
+
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
-    let filteredList = [...db.indiaOps.shareMarket];
+    // Filter by segment first
+    let segmentFiltered = db.indiaOps.shareMarket.filter(sm => getTradeSegment(sm) === activeSegment);
+
+    // Apply Time Filters
+    let filteredList = [...segmentFiltered];
     if (eqFilterMode === 'monthly') {
         filteredList = filteredList.filter(sm => sm.year === eqFilterYear && sm.month.toLowerCase() === eqFilterMonth.toLowerCase());
     } else if (eqFilterMode === 'yearly') {
@@ -108,9 +154,15 @@ function renderShareMarketTable() {
         return monthNames.indexOf(a.month) - monthNames.indexOf(b.month);
     });
 
+    const countBadge = document.getElementById('tradingTableCountBadge');
+    if (countBadge) {
+        countBadge.innerText = `${sortedList.length} Trade${sortedList.length === 1 ? '' : 's'}`;
+    }
+
     if (sortedList.length === 0) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="9" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-chart-pie text-2xl mb-2 block opacity-40"></i> No equity positions found for ${eqFilterMonth} ${eqFilterYear}. Click "+ Log Trade" above to add one.</td>`;
+        const filterStr = eqFilterMode === 'monthly' ? ` for ${eqFilterMonth} ${eqFilterYear}` : (eqFilterMode === 'yearly' ? ` for Year ${eqFilterYear}` : '');
+        tr.innerHTML = `<td colspan="9" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid ${config.icon} text-2xl mb-2 block opacity-40"></i> No ${activeSegment.toUpperCase()} trades found${filterStr}. Click "+ Log Trade" above to add one.</td>`;
         body.appendChild(tr);
     }
 
@@ -130,7 +182,7 @@ function renderShareMarketTable() {
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${sm.year || '2026'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-mono text-xs">${sm.month || 'February'}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]"><span class="uppercase font-bold text-accent-cyan tracking-wide">${sm.script}</span>${sm.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${sm.notes}">(${sm.notes})</span>` : ''}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]"><span class="font-bold text-accent-cyan tracking-wide">${formatTradeParticular(sm.script)}</span>${sm.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${sm.notes}">(${sm.notes})</span>` : ''}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-medium text-slate-300">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div></td>
@@ -149,12 +201,16 @@ function renderShareMarketTable() {
         body.appendChild(tr);
     });
 
+    const tradeCount = sortedList.length;
+    const avgInvested = tradeCount > 0 ? (totalInvested / tradeCount) : 0;
+    const profitPctOnAvg = avgInvested > 0 ? (totalPnl / avgInvested) * 100 : 0;
+
     // Mobile Cards View
     const mobileContainer = document.getElementById('shareMarketMobileCards');
     if (mobileContainer) {
         mobileContainer.innerHTML = '';
-        if (sortedList.length === 0) {
-            mobileContainer.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs font-light"><i class="fa-solid fa-chart-line text-2xl mb-2 block opacity-40"></i> No equity positions found. Click "+ Log Trade" to record one.</div>`;
+        if (tradeCount === 0) {
+            mobileContainer.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs font-light"><i class="fa-solid ${config.icon} text-2xl mb-2 block opacity-40"></i> No ${activeSegment.toUpperCase()} trades recorded. Click "+ Log Trade" to add one.</div>`;
         } else {
             sortedList.forEach(sm => {
                 const inv = parseFloat(sm.invested) || 0;
@@ -169,7 +225,7 @@ function renderShareMarketTable() {
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <h5 class="font-bold text-white text-sm tracking-wide uppercase">${sm.script}</h5>
+                            <h5 class="font-bold text-white text-sm tracking-wide">${formatTradeParticular(sm.script)}</h5>
                             <span class="font-mono text-[10px] uppercase tracking-widest text-slate-500 px-2 py-0.5 rounded border border-surface-700 bg-surface-800">${sm.month || 'February'} ${sm.year || '2026'}</span>
                         </div>
                         <div class="flex items-center gap-2">
@@ -194,24 +250,47 @@ function renderShareMarketTable() {
                 `;
                 mobileContainer.appendChild(card);
             });
+
+            // Summary Card on Mobile
+            const summaryCard = document.createElement('div');
+            summaryCard.className = 'p-4 bg-surface-950/80 border-t-2 border-brand-500/30 flex flex-col gap-2.5';
+            summaryCard.innerHTML = `
+                <div class="grid grid-cols-3 gap-2 pt-1">
+                    <div class="flex flex-col">
+                        <span class="font-mono text-xs font-bold text-slate-200">₹${avgInvested.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="flex flex-col items-center text-center">
+                        <span class="font-mono text-xs font-bold ${totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalPnl >= 0 ? '+' : ''}₹${totalPnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="flex flex-col items-end text-right">
+                        <span class="font-mono text-xs font-bold ${profitPctOnAvg >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${profitPctOnAvg >= 0 ? '+' : ''}${profitPctOnAvg.toFixed(2)}%</span>
+                    </div>
+                </div>
+            `;
+            mobileContainer.appendChild(summaryCard);
         }
     }
 
     const foot = document.getElementById('shareMarketTableFoot');
     if (foot) {
-        const totalPnlPct = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
         foot.className = 'font-mono text-xs bg-surface-900/80 border-none';
         foot.innerHTML = `
             <tr>
-                <td colspan="4" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Period Totals:</td>
+                <td colspan="4" class="py-4 pr-4 pl-4 border-none"></td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
-                    <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border border-slate-500/30 text-base font-mono tracking-wider font-bold text-slate-300">₹${totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                    <div class="flex flex-col items-end">
+                        <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border border-slate-500/30 text-sm sm:text-base font-mono tracking-wider font-bold text-slate-300">₹${avgInvested.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
                 </td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
-                    <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${totalPnl>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-base font-mono tracking-wider font-bold">${totalPnl >= 0 ? '+' : ''}₹${totalPnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                    <div class="flex flex-col items-end">
+                        <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${totalPnl>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-sm sm:text-base font-mono tracking-wider font-bold">${totalPnl >= 0 ? '+' : ''}₹${totalPnl.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
                 </td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
-                    <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${totalPnlPct>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-base font-mono tracking-wider font-bold">${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%</span>
+                    <div class="flex flex-col items-end">
+                        <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${profitPctOnAvg>=0?'border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] text-emerald-400':'border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-rose-400'} text-sm sm:text-base font-mono tracking-wider font-bold">${profitPctOnAvg >= 0 ? '+' : ''}${profitPctOnAvg.toFixed(2)}%</span>
+                    </div>
                 </td>
                 <td class="border-none"></td>
                 <td class="border-none"></td>
@@ -224,11 +303,15 @@ function openShareMarketModal(id = null) {
     const idField = document.getElementById('shareTradeId');
     if (idField) idField.value = id || '';
     
+    const activeSeg = window.currentEqSegment || 'options';
+    const segInput = document.getElementById('shareSegmentInput');
+
     if (id) {
         const sm = db.indiaOps.shareMarket.find(x => x.id === id);
         if (sm) {
             const titleEl = document.getElementById('shareTradeModalTitle');
-            if (titleEl) titleEl.innerText = 'Edit Equity Trade';
+            if (titleEl) titleEl.innerText = 'Edit Trade Record';
+            if (segInput) segInput.value = sm.segment || getTradeSegment(sm);
             if (document.getElementById('shareYearInput')) document.getElementById('shareYearInput').value = sm.year || '2026';
             if (document.getElementById('shareMonthInput')) document.getElementById('shareMonthInput').value = sm.month || 'February';
             if (document.getElementById('shareParticularsInput')) document.getElementById('shareParticularsInput').value = sm.script || '';
@@ -241,7 +324,9 @@ function openShareMarketModal(id = null) {
         }
     } else {
         const titleEl = document.getElementById('shareTradeModalTitle');
-        if (titleEl) titleEl.innerText = 'Log Equities Trade';
+        const segName = activeSeg.charAt(0).toUpperCase() + activeSeg.slice(1);
+        if (titleEl) titleEl.innerText = `Log ${segName} Trade`;
+        if (segInput) segInput.value = activeSeg;
         if (document.getElementById('shareYearInput')) document.getElementById('shareYearInput').value = eqFilterYear || '2026';
         if (document.getElementById('shareMonthInput')) document.getElementById('shareMonthInput').value = eqFilterMonth || 'February';
         if (document.getElementById('shareParticularsInput')) document.getElementById('shareParticularsInput').value = '';
@@ -256,9 +341,10 @@ window.openShareTradeModal = openShareMarketModal;
 function saveShareTrade() {
     const idField = document.getElementById('shareTradeId');
     const id = idField ? idField.value : '';
+    const segment = (document.getElementById('shareSegmentInput') ? document.getElementById('shareSegmentInput').value : '') || (window.currentEqSegment || 'options');
     const year = document.getElementById('shareYearInput') ? document.getElementById('shareYearInput').value : (eqFilterYear || '2026');
     const month = document.getElementById('shareMonthInput') ? document.getElementById('shareMonthInput').value : (eqFilterMonth || 'February');
-    const script = (document.getElementById('shareParticularsInput') ? document.getElementById('shareParticularsInput').value.trim() : '') || 'SCRIPT';
+    const script = (document.getElementById('shareParticularsInput') ? document.getElementById('shareParticularsInput').value.trim() : '') || 'Trade Position';
     const invested = parseFloat(document.getElementById('shareCapitalInput') ? document.getElementById('shareCapitalInput').value : 0) || 0;
     const pnl = parseFloat(document.getElementById('sharePnlInput') ? document.getElementById('sharePnlInput').value : 0) || 0;
     const current = invested + pnl;
@@ -270,6 +356,7 @@ function saveShareTrade() {
     if (id) {
         const sm = db.indiaOps.shareMarket.find(x => x.id === id);
         if (sm) {
+            sm.segment = segment;
             sm.year = year;
             sm.month = month;
             sm.script = script;
@@ -280,6 +367,7 @@ function saveShareTrade() {
     } else {
         db.indiaOps.shareMarket.push({
             id: Date.now().toString(),
+            segment,
             year,
             month,
             script,
@@ -291,20 +379,21 @@ function saveShareTrade() {
 
     saveDatabase();
     renderShareMarketTable();
+    if (typeof renderTradingAnalysis === 'function') renderTradingAnalysis();
     closeModal('shareTradeModal');
-    showToast('Equity trade recorded successfully');
+    showToast('Trade record saved successfully');
 }
 window.saveShareMarketDetails = saveShareTrade;
 
 function deleteShareMarketRow(id) {
-    requireConfirmation('Delete this equity position?', () => {
+    requireConfirmation('Delete this trading position?', () => {
         if (!db.indiaOps || !db.indiaOps.shareMarket) return;
         const item = db.indiaOps.shareMarket.find(x => x.id === id);
         const idx = db.indiaOps.shareMarket.findIndex(x => x.id === id);
         if (item && typeof recordDeletion === 'function') {
             recordDeletion({
                 type: 'equity',
-                label: `Equity Position: ${item.scriptName || item.stockName || 'Stock Position'}`,
+                label: `Trade Position: ${item.script || item.scriptName || 'Trading Entry'}`,
                 data: JSON.parse(JSON.stringify(item)),
                 originalIndex: idx
             });
@@ -312,6 +401,525 @@ function deleteShareMarketRow(id) {
         db.indiaOps.shareMarket = db.indiaOps.shareMarket.filter(x => x.id !== id);
         saveDatabase();
         renderShareMarketTable();
+        if (typeof renderTradingAnalysis === 'function') renderTradingAnalysis();
+    });
+}
+
+/* ==========================================================================
+   QUANTITATIVE TRADING ANALYSIS MODULE
+   ========================================================================== */
+window.tradingMonthlyChartInstance = null;
+window.tradingSegmentChartInstance = null;
+
+function renderTradingAnalysis() {
+    if (!db.indiaOps || !db.indiaOps.shareMarket) {
+        db.indiaOps = db.indiaOps || {};
+        db.indiaOps.shareMarket = [];
+    }
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const allTrades = [...db.indiaOps.shareMarket];
+
+    // Filter by time filters if active
+    let filteredTrades = [...allTrades];
+    let filterLabel = "All Time Quantitative Performance";
+    if (eqFilterMode === 'monthly') {
+        filteredTrades = filteredTrades.filter(t => t.year === eqFilterYear && t.month?.toLowerCase() === eqFilterMonth?.toLowerCase());
+        filterLabel = `${eqFilterMonth} ${eqFilterYear} Period Analysis`;
+    } else if (eqFilterMode === 'yearly') {
+        filteredTrades = filteredTrades.filter(t => t.year === eqFilterYear);
+        filterLabel = `Year ${eqFilterYear} Annual Analysis`;
+    }
+
+    const filterBadgeEl = document.getElementById('analysisFilterLabel');
+    if (filterBadgeEl) filterBadgeEl.innerText = filterLabel;
+
+    // KPI Metrics calculation
+    let totalInvested = 0;
+    let totalPnl = 0;
+    let winCount = 0;
+    let lossCount = 0;
+    let beCount = 0;
+    let grossWins = 0;
+    let grossLosses = 0;
+    let bestTradePnl = -Infinity;
+    let bestTradeScript = 'None';
+
+    filteredTrades.forEach(t => {
+        const inv = parseFloat(t.invested) || 0;
+        const cur = parseFloat(t.current) || 0;
+        const pnl = cur - inv;
+        totalInvested += inv;
+        totalPnl += pnl;
+
+        if (pnl > 0) {
+            winCount++;
+            grossWins += pnl;
+            if (pnl > bestTradePnl) {
+                bestTradePnl = pnl;
+                bestTradeScript = formatTradeParticular(t.script);
+            }
+        } else if (pnl < 0) {
+            lossCount++;
+            grossLosses += Math.abs(pnl);
+        } else {
+            beCount++;
+        }
+    });
+
+    const totalTrades = filteredTrades.length;
+    const winRate = totalTrades > 0 ? (winCount / totalTrades) * 100 : 0;
+    const avgCapital = totalTrades > 0 ? (totalInvested / totalTrades) : 0;
+    const pnlRoi = avgCapital > 0 ? (totalPnl / avgCapital) * 100 : 0;
+    const avgWin = winCount > 0 ? (grossWins / winCount) : 0;
+    const avgLoss = lossCount > 0 ? (grossLosses / lossCount) : 0;
+    const profitFactor = grossLosses > 0 ? (grossWins / grossLosses) : (grossWins > 0 ? 99.9 : 0);
+
+    // Update KPI Stat Elements
+    const netPnlEl = document.getElementById('anStatNetPnl');
+    const pnlRoiEl = document.getElementById('anStatPnlRoi');
+    if (netPnlEl) {
+        netPnlEl.innerText = (totalPnl >= 0 ? '+' : '') + '₹' + totalPnl.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        netPnlEl.className = `text-base sm:text-lg font-bold font-mono ${totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+    }
+    if (pnlRoiEl) {
+        pnlRoiEl.innerText = `${pnlRoi >= 0 ? '+' : ''}${pnlRoi.toFixed(2)}% on Avg Cap`;
+    }
+
+    const winRateEl = document.getElementById('anStatWinRate');
+    const winCountEl = document.getElementById('anStatWinCount');
+    if (winRateEl) {
+        winRateEl.innerText = `${winRate.toFixed(1)}%`;
+        winRateEl.className = `text-base sm:text-lg font-bold font-mono ${winRate >= 50 ? 'text-emerald-400' : 'text-amber-400'}`;
+    }
+    if (winCountEl) {
+        winCountEl.innerText = `${winCount}W • ${lossCount}L ${beCount > 0 ? `• ${beCount}BE` : ''}`;
+    }
+
+    const avgCapEl = document.getElementById('anStatAvgCap');
+    const totalTradesEl = document.getElementById('anStatTotalTrades');
+    if (avgCapEl) avgCapEl.innerText = `₹${avgCapital.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (totalTradesEl) totalTradesEl.innerText = `Across ${totalTrades} Trade${totalTrades === 1 ? '' : 's'}`;
+
+    const pfEl = document.getElementById('anStatProfitFactor');
+    const payoffEl = document.getElementById('anStatPayoffRatio');
+    if (pfEl) {
+        pfEl.innerText = grossLosses === 0 && grossWins > 0 ? 'Max (No Loss)' : `${profitFactor.toFixed(2)}x`;
+        pfEl.className = `text-base sm:text-lg font-bold font-mono ${profitFactor >= 1.5 ? 'text-emerald-400' : (profitFactor >= 1 ? 'text-brand-400' : 'text-rose-400')}`;
+    }
+    if (payoffEl) {
+        payoffEl.innerText = `Gross: +₹${Math.round(grossWins).toLocaleString('en-IN')} / -₹${Math.round(grossLosses).toLocaleString('en-IN')}`;
+    }
+
+    const avgWinLossEl = document.getElementById('anStatAvgWinLoss');
+    const riskRewardEl = document.getElementById('anStatRiskReward');
+    if (avgWinLossEl) {
+        avgWinLossEl.innerText = `+₹${Math.round(avgWin).toLocaleString('en-IN')} / -₹${Math.round(avgLoss).toLocaleString('en-IN')}`;
+    }
+    if (riskRewardEl) {
+        const rr = avgLoss > 0 ? (avgWin / avgLoss).toFixed(2) + ':1' : '-';
+        riskRewardEl.innerText = `Win/Loss Ratio: ${rr}`;
+    }
+
+    const bestTradeEl = document.getElementById('anStatBestTrade');
+    const bestTradeScriptEl = document.getElementById('anStatBestTradeScript');
+    if (bestTradeEl) {
+        bestTradeEl.innerText = bestTradePnl > -Infinity ? `+₹${bestTradePnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '₹0.00';
+    }
+    if (bestTradeScriptEl) {
+        bestTradeScriptEl.innerText = bestTradeScript !== 'None' ? bestTradeScript : 'No winning trades yet';
+    }
+
+    // Chart 1: Monthly Realized P&L & Trajectory Curve
+    renderMonthlyTrajectoryChart(allTrades);
+
+    // Chart 2: Segment Attribution Donut Chart
+    renderSegmentShareChart(filteredTrades);
+
+    // Table 1: Segment Matrix
+    renderSegmentPerformanceMatrix(filteredTrades);
+
+    // Table 2: Chronological Monthly Matrix
+    renderChronologicalMonthlyMatrix(allTrades);
+}
+window.renderTradingAnalysis = renderTradingAnalysis;
+
+function renderMonthlyTrajectoryChart(tradesList) {
+    const canvas = document.getElementById('tradingMonthlyPnlChartCanvas');
+    if (!canvas) return;
+
+    if (window.tradingMonthlyChartInstance) {
+        window.tradingMonthlyChartInstance.destroy();
+        window.tradingMonthlyChartInstance = null;
+    }
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthlyMap = {};
+
+    tradesList.forEach(t => {
+        const y = t.year || '2026';
+        const m = t.month || 'February';
+        const key = `${y}-${String(monthNames.indexOf(m) + 1).padStart(2, '0')}`;
+        const label = `${m.slice(0, 3)} '${y.slice(2)}`;
+
+        if (!monthlyMap[key]) {
+            monthlyMap[key] = { label, year: y, month: m, pnl: 0, capital: 0, trades: 0 };
+        }
+        const inv = parseFloat(t.invested) || 0;
+        const cur = parseFloat(t.current) || 0;
+        monthlyMap[key].pnl += (cur - inv);
+        monthlyMap[key].capital += inv;
+        monthlyMap[key].trades += 1;
+    });
+
+    const sortedKeys = Object.keys(monthlyMap).sort();
+    
+    // If no trades, default to current months
+    let labels = [];
+    let pnlData = [];
+    let barColors = [];
+    let cumPnlData = [];
+    let cumTotal = 0;
+
+    if (sortedKeys.length === 0) {
+        labels = ['Jan \'26', 'Feb \'26', 'Mar \'26'];
+        pnlData = [0, 0, 0];
+        barColors = ['rgba(0,255,157,0.3)', 'rgba(0,255,157,0.3)', 'rgba(0,255,157,0.3)'];
+        cumPnlData = [0, 0, 0];
+    } else {
+        sortedKeys.forEach(k => {
+            const item = monthlyMap[k];
+            labels.push(item.label);
+            pnlData.push(item.pnl);
+            barColors.push(item.pnl >= 0 ? '#34D399' : '#F43F5E');
+            cumTotal += item.pnl;
+            cumPnlData.push(cumTotal);
+        });
+    }
+
+    const ctx = canvas.getContext('2d');
+    window.tradingMonthlyChartInstance = new Chart(ctx, {
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'Cumulative P&L (Equity Curve)',
+                    data: cumPnlData,
+                    borderColor: '#C9A46B',
+                    backgroundColor: 'rgba(201,164,107,0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#C9A46B',
+                    pointBorderColor: '#0A140F',
+                    pointBorderWidth: 2,
+                    yAxisID: 'y1',
+                    order: 1
+                },
+                {
+                    type: 'bar',
+                    label: 'Net Monthly Realized P&L',
+                    data: pnlData,
+                    backgroundColor: barColors,
+                    borderRadius: 6,
+                    borderWidth: 0,
+                    yAxisID: 'y',
+                    order: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#94A3B8',
+                        font: { family: 'JetBrains Mono', size: 10 },
+                        usePointStyle: true,
+                        boxWidth: 8
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(10, 20, 15, 0.95)',
+                    titleColor: '#FFFFFF',
+                    bodyColor: '#E2E8F0',
+                    borderColor: 'rgba(201, 164, 107, 0.3)',
+                    borderWidth: 1,
+                    padding: 10,
+                    titleFont: { family: 'Inter', size: 12, weight: 'bold' },
+                    bodyFont: { family: 'JetBrains Mono', size: 11 },
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.raw || 0;
+                            return `${context.dataset.label}: ₹${val.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                    ticks: { color: '#64748B', font: { family: 'JetBrains Mono', size: 10 } }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                    ticks: {
+                        color: '#64748B',
+                        font: { family: 'JetBrains Mono', size: 10 },
+                        callback: (v) => '₹' + (v >= 1000 || v <= -1000 ? (v / 1000).toFixed(0) + 'k' : v)
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: false,
+                    position: 'right',
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+}
+
+function renderSegmentShareChart(tradesList) {
+    const canvas = document.getElementById('tradingSegmentShareChartCanvas');
+    const legendEl = document.getElementById('tradingSegmentLegend');
+    if (!canvas) return;
+
+    if (window.tradingSegmentChartInstance) {
+        window.tradingSegmentChartInstance.destroy();
+        window.tradingSegmentChartInstance = null;
+    }
+
+    const segStats = {
+        options: { label: 'Options', trades: 0, pnl: 0, capital: 0, color: '#C9A46B', icon: 'fa-bolt' },
+        futures: { label: 'Futures', trades: 0, pnl: 0, capital: 0, color: '#00F0FF', icon: 'fa-arrow-trend-up' },
+        mcx: { label: 'MCX', trades: 0, pnl: 0, capital: 0, color: '#FBBF24', icon: 'fa-coins' },
+        equity: { label: 'Equity', trades: 0, pnl: 0, capital: 0, color: '#A855F7', icon: 'fa-cubes' }
+    };
+
+    tradesList.forEach(t => {
+        const seg = getTradeSegment(t);
+        const target = segStats[seg] || segStats.equity;
+        const inv = parseFloat(t.invested) || 0;
+        const cur = parseFloat(t.current) || 0;
+        target.trades += 1;
+        target.capital += inv;
+        target.pnl += (cur - inv);
+    });
+
+    const segments = ['options', 'futures', 'mcx', 'equity'];
+    const tradeCounts = segments.map(s => segStats[s].trades);
+    const colors = segments.map(s => segStats[s].color);
+
+    const hasData = tradeCounts.some(c => c > 0);
+    const chartData = hasData ? tradeCounts : [1, 1, 1, 1];
+    const chartColors = hasData ? colors : ['#334155', '#475569', '#64748B', '#1E293B'];
+
+    const ctx = canvas.getContext('2d');
+    window.tradingSegmentChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: segments.map(s => segStats[s].label),
+            datasets: [{
+                data: chartData,
+                backgroundColor: chartColors,
+                borderColor: '#0A140F',
+                borderWidth: 3,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '72%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(10, 20, 15, 0.95)',
+                    titleColor: '#FFFFFF',
+                    bodyColor: '#E2E8F0',
+                    borderColor: 'rgba(201, 164, 107, 0.3)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const segKey = segments[context.dataIndex];
+                            const s = segStats[segKey];
+                            return `${s.label}: ${s.trades} trades | Net: ${s.pnl >= 0 ? '+' : ''}₹${s.pnl.toLocaleString('en-IN')}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Populate Custom Segment Legend
+    if (legendEl) {
+        legendEl.innerHTML = '';
+        segments.forEach(s => {
+            const st = segStats[s];
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between p-2 rounded-lg bg-surface-900/60 border border-surface-800/80';
+            item.innerHTML = `
+                <div class="flex items-center gap-1.5 truncate">
+                    <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${st.color}"></span>
+                    <span class="text-slate-300 font-medium text-[10px]">${st.label}</span>
+                </div>
+                <div class="text-right">
+                    <span class="font-bold font-mono text-[10px] ${st.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${st.pnl >= 0 ? '+' : ''}₹${Math.round(st.pnl).toLocaleString('en-IN')}</span>
+                </div>
+            `;
+            legendEl.appendChild(item);
+        });
+    }
+}
+
+function renderSegmentPerformanceMatrix(tradesList) {
+    const body = document.getElementById('tradingSegmentMatrixBody');
+    if (!body) return;
+    body.innerHTML = '';
+
+    const segments = [
+        { key: 'options', name: 'Options Trading', icon: 'fa-bolt', color: 'text-brand-400', badgeClass: 'bg-brand-500/10 text-brand-400 border-brand-500/20' },
+        { key: 'futures', name: 'Futures Trading', icon: 'fa-arrow-trend-up', color: 'text-accent-cyan', badgeClass: 'bg-accent-cyan/10 text-accent-cyan border-accent-cyan/20' },
+        { key: 'mcx', name: 'MCX Commodity', icon: 'fa-coins', color: 'text-amber-400', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+        { key: 'equity', name: 'Cash Equities', icon: 'fa-cubes', color: 'text-purple-400', badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20' }
+    ];
+
+    let totalAllTrades = 0, totalAllWins = 0, totalAllLosses = 0, totalAllCapital = 0, totalAllPnl = 0;
+
+    segments.forEach(seg => {
+        const segTrades = tradesList.filter(t => getTradeSegment(t) === seg.key);
+        let segCap = 0, segPnl = 0, segWins = 0, segLosses = 0;
+
+        segTrades.forEach(t => {
+            const inv = parseFloat(t.invested) || 0;
+            const cur = parseFloat(t.current) || 0;
+            const pnl = cur - inv;
+            segCap += inv;
+            segPnl += pnl;
+            if (pnl > 0) segWins++;
+            else if (pnl < 0) segLosses++;
+        });
+
+        const count = segTrades.length;
+        const winRate = count > 0 ? (segWins / count) * 100 : 0;
+        const avgCap = count > 0 ? (segCap / count) : 0;
+        const pnlPct = avgCap > 0 ? (segPnl / avgCap) * 100 : 0;
+
+        totalAllTrades += count;
+        totalAllWins += segWins;
+        totalAllLosses += segLosses;
+        totalAllCapital += segCap;
+        totalAllPnl += segPnl;
+
+        const statusBadge = count === 0 
+            ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono text-slate-500 bg-surface-900 border border-surface-800">No Trades</span>`
+            : (segPnl >= 0 
+                ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Profitable</span>`
+                : `<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">Drawdown</span>`);
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-surface-800/30 transition-colors';
+        tr.innerHTML = `
+            <td class="py-3 px-4 flex items-center gap-2.5">
+                <div class="w-6 h-6 rounded-lg ${seg.badgeClass} flex items-center justify-center text-xs">
+                    <i class="fa-solid ${seg.icon}"></i>
+                </div>
+                <span class="font-bold text-white tracking-wide">${seg.name}</span>
+            </td>
+            <td class="py-3 px-4 text-center font-mono text-xs text-slate-300">${count}</td>
+            <td class="py-3 px-4 text-center font-mono text-xs text-slate-400">${segWins}W / ${segLosses}L</td>
+            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-slate-300'} font-bold">${count > 0 ? winRate.toFixed(1) + '%' : '-'}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">₹${avgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${segPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${segPnl >= 0 ? '+' : ''}₹${segPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${pnlPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${count > 0 ? (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%' : '-'}</td>
+            <td class="py-3 px-4 text-center">${statusBadge}</td>
+        `;
+        body.appendChild(tr);
+    });
+
+    // Summary Total Row
+    const totalAvgCap = totalAllTrades > 0 ? (totalAllCapital / totalAllTrades) : 0;
+    const totalAllWinRate = totalAllTrades > 0 ? (totalAllWins / totalAllTrades) * 100 : 0;
+    const totalAllPct = totalAvgCap > 0 ? (totalAllPnl / totalAvgCap) * 100 : 0;
+
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'bg-surface-900/90 font-mono text-xs border-t-2 border-brand-500/30 font-bold';
+    totalTr.innerHTML = `
+        <td class="py-3.5 px-4 text-brand-400 uppercase tracking-widest">Total Combined Portfolio</td>
+        <td class="py-3.5 px-4 text-center text-white">${totalAllTrades}</td>
+        <td class="py-3.5 px-4 text-center text-slate-300">${totalAllWins}W / ${totalAllLosses}L</td>
+        <td class="py-3.5 px-4 text-center text-emerald-400">${totalAllTrades > 0 ? totalAllWinRate.toFixed(1) + '%' : '-'}</td>
+        <td class="py-3.5 px-4 text-right text-slate-200">₹${totalAvgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        <td class="py-3.5 px-4 text-right ${totalAllPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalAllPnl >= 0 ? '+' : ''}₹${totalAllPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        <td class="py-3.5 px-4 text-right ${totalAllPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${totalAllTrades > 0 ? (totalAllPct >= 0 ? '+' : '') + totalAllPct.toFixed(2) + '%' : '-'}</td>
+        <td class="py-3.5 px-4 text-center"><span class="px-2 py-0.5 rounded text-[9px] bg-brand-500/10 text-brand-400 border border-brand-500/30">Aggregated</span></td>
+    `;
+    body.appendChild(totalTr);
+}
+
+function renderChronologicalMonthlyMatrix(tradesList) {
+    const body = document.getElementById('tradingMonthlyMatrixBody');
+    if (!body) return;
+    body.innerHTML = '';
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthlyMap = {};
+
+    tradesList.forEach(t => {
+        const y = t.year || '2026';
+        const m = t.month || 'February';
+        const key = `${y}-${String(monthNames.indexOf(m) + 1).padStart(2, '0')}`;
+        if (!monthlyMap[key]) {
+            monthlyMap[key] = { year: y, month: m, trades: 0, wins: 0, capital: 0, pnl: 0 };
+        }
+        const inv = parseFloat(t.invested) || 0;
+        const cur = parseFloat(t.current) || 0;
+        const pnl = cur - inv;
+        monthlyMap[key].trades += 1;
+        monthlyMap[key].capital += inv;
+        monthlyMap[key].pnl += pnl;
+        if (pnl > 0) monthlyMap[key].wins += 1;
+    });
+
+    const sortedKeys = Object.keys(monthlyMap).sort().reverse(); // Newest first
+
+    if (sortedKeys.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="6" class="p-6 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-calendar-days text-xl mb-1.5 block opacity-40"></i> No monthly trading history recorded yet.</td>`;
+        body.appendChild(tr);
+        return;
+    }
+
+    sortedKeys.forEach(k => {
+        const item = monthlyMap[k];
+        const winRate = item.trades > 0 ? (item.wins / item.trades) * 100 : 0;
+        const avgCap = item.trades > 0 ? (item.capital / item.trades) : 0;
+        const yieldPct = avgCap > 0 ? (item.pnl / avgCap) * 100 : 0;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-surface-800/30 transition-colors';
+        tr.innerHTML = `
+            <td class="py-3 px-4 font-bold text-white font-mono text-xs">${item.month} ${item.year}</td>
+            <td class="py-3 px-4 text-center font-mono text-xs text-slate-300">${item.trades}</td>
+            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-amber-400'} font-bold">${winRate.toFixed(1)}%</td>
+            <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">₹${avgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl >= 0 ? '+' : ''}₹${item.pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${yieldPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${yieldPct >= 0 ? '+' : ''}${yieldPct.toFixed(2)}%</td>
+        `;
+        body.appendChild(tr);
     });
 }
 
@@ -686,6 +1294,9 @@ function renderFavoriteCompactCard(item) {
                     
                     <!-- Quick action buttons on hover -->
                     <div class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onclick="event.stopPropagation()">
+                        <button onclick="openUniversalShare('favorite', '${item.id}', event);" class="w-6 h-6 rounded-lg bg-surface-950/90 hover:bg-surface-800 text-slate-300 hover:text-brand-400 flex items-center justify-center transition-colors shadow" title="Share Options">
+                            <i class="fa-solid fa-share-nodes text-[10px]"></i>
+                        </button>
                         <button onclick="openFavoriteModal('${item.id}', 'photo');" class="w-6 h-6 rounded-lg bg-surface-950/90 hover:bg-surface-800 text-slate-300 hover:text-cyan-300 flex items-center justify-center transition-colors shadow" title="Edit">
                             <i class="fa-solid fa-pen text-[10px]"></i>
                         </button>
@@ -711,6 +1322,9 @@ function renderFavoriteCompactCard(item) {
                         <i class="fa-solid fa-quote-left"></i>
                     </span>
                     <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                        <button onclick="openUniversalShare('favorite', '${item.id}', event)" class="w-6 h-6 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-brand-400 flex items-center justify-center transition-colors" title="Share Options">
+                            <i class="fa-solid fa-share-nodes text-[10px]"></i>
+                        </button>
                         <button onclick="copyFavoriteText('${item.id}')" class="w-6 h-6 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors" title="Copy">
                             <i class="fa-regular fa-copy text-[10px]"></i>
                         </button>
@@ -759,6 +1373,9 @@ function renderFavoriteListRow(item) {
                 </div>
                 
                 <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
+                    <button onclick="openUniversalShare('favorite', '${item.id}', event)" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-brand-400 rounded-xl text-xs transition-colors cursor-pointer" title="Share Options">
+                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                    </button>
                     <button onclick="openFavoritePhotoLightbox('${item.id}')" class="px-2.5 py-1.5 bg-surface-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 rounded-xl text-xs font-mono transition-colors flex items-center gap-1 cursor-pointer">
                         <i class="fa-solid fa-eye text-xs"></i> <span class="hidden sm:inline">View</span>
                     </button>
@@ -790,6 +1407,9 @@ function renderFavoriteListRow(item) {
                 
                 <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
                     <span class="text-[10px] font-mono text-slate-500 hidden md:inline mr-1">${dateFormatted}</span>
+                    <button onclick="openUniversalShare('favorite', '${item.id}', event)" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-brand-400 rounded-xl text-xs transition-colors cursor-pointer" title="Share Options">
+                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                    </button>
                     <button onclick="copyFavoriteText('${item.id}')" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white rounded-xl text-xs transition-colors cursor-pointer" title="Copy">
                         <i class="fa-regular fa-copy text-xs"></i>
                     </button>
@@ -1036,10 +1656,16 @@ function copyFavoriteText(id) {
 }
 window.copyFavoriteText = copyFavoriteText;
 
+let currentLightboxFavId = null;
+let currentQuoteViewFavId = null;
+
 function openFavoritePhotoLightbox(id) {
     if (!db.favorites) return;
     const item = db.favorites.find(x => x.id === id);
     if (!item) return;
+
+    currentLightboxFavId = id;
+    window.currentLightboxFavId = id;
 
     const img = document.getElementById('lightboxFavPhotoImg');
     const title = document.getElementById('lightboxFavPhotoTitle');
@@ -1073,10 +1699,29 @@ function openFavoritePhotoLightbox(id) {
 }
 window.openFavoritePhotoLightbox = openFavoritePhotoLightbox;
 
+function shareFavoriteFromLightbox(channel) {
+    if (!currentLightboxFavId) return;
+    if (typeof shareItemDirect === 'function') {
+        shareItemDirect('favorite', currentLightboxFavId, channel);
+    }
+}
+window.shareFavoriteFromLightbox = shareFavoriteFromLightbox;
+
+function openShareForCurrentLightboxFav() {
+    if (!currentLightboxFavId) return;
+    if (typeof openUniversalShare === 'function') {
+        openUniversalShare('favorite', currentLightboxFavId);
+    }
+}
+window.openShareForCurrentLightboxFav = openShareForCurrentLightboxFav;
+
 function openFavoriteQuoteView(id) {
     if (!db.favorites) return;
     const item = db.favorites.find(x => x.id === id);
     if (!item) return;
+
+    currentQuoteViewFavId = id;
+    window.currentQuoteViewFavId = id;
 
     const contentEl = document.getElementById('viewFavQuoteContent');
     const authorEl = document.getElementById('viewFavQuoteAuthor');
@@ -1108,6 +1753,22 @@ function openFavoriteQuoteView(id) {
     openModal('favoriteQuoteViewModal');
 }
 window.openFavoriteQuoteView = openFavoriteQuoteView;
+
+function shareFavoriteFromQuoteView(channel) {
+    if (!currentQuoteViewFavId) return;
+    if (typeof shareItemDirect === 'function') {
+        shareItemDirect('favorite', currentQuoteViewFavId, channel);
+    }
+}
+window.shareFavoriteFromQuoteView = shareFavoriteFromQuoteView;
+
+function openShareForCurrentQuoteViewFav() {
+    if (!currentQuoteViewFavId) return;
+    if (typeof openUniversalShare === 'function') {
+        openUniversalShare('favorite', currentQuoteViewFavId);
+    }
+}
+window.openShareForCurrentQuoteViewFav = openShareForCurrentQuoteViewFav;
 
 
 

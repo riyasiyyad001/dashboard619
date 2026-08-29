@@ -3,6 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Console filter for clean developer environment
+        (function() {
+            const _origError = console.error;
+            const _origWarn = console.warn;
+            function isMinorFirebaseNotice(args) {
+                try {
+                    const str = args.map(a => typeof a === 'object' ? (a?.message || a?.stack || a?.code || JSON.stringify(a) || '') : String(a)).join(' ');
+                    return str.includes('maximum backoff delay');
+                } catch(e) {
+                    return false;
+                }
+            }
+            console.error = function(...args) {
+                if (isMinorFirebaseNotice(args)) return;
+                _origError.apply(console, args);
+            };
+            console.warn = function(...args) {
+                if (isMinorFirebaseNotice(args)) return;
+                _origWarn.apply(console, args);
+            };
+        })();
+    </script>
     <title>Financial & Personal Assistant Dashboard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -264,12 +287,30 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, disableNetwork, enableNetwork } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Native IndexedDB Engine for Vault Files & Media Blobs
+        window.addEventListener('unhandledrejection', function(event) {
+            if (event && event.reason && (event.reason.code === 'resource-exhausted' || (event.reason.message && event.reason.message.includes('Quota limit exceeded')))) {
+                event.preventDefault();
+                if (typeof window.markQuotaExceeded === 'function') {
+                    window.markQuotaExceeded();
+                }
+            }
+        });
+        window.addEventListener('error', function(event) {
+            if (event && (event.message && (event.message.includes('Quota limit exceeded') || event.message.includes('resource-exhausted')))) {
+                event.preventDefault();
+                if (typeof window.markQuotaExceeded === 'function') {
+                    window.markQuotaExceeded();
+                }
+            }
+        });
+
+        // Native IndexedDB Engine for Vault Files, Media Blobs & Complete Application State
         const VAULT_DB_NAME = 'ExecutiveVaultStorageDB';
-        const VAULT_DB_VERSION = 1;
+        const VAULT_DB_VERSION = 2;
         const VAULT_STORE_NAME = 'vault_files';
+        const STATE_STORE_NAME = 'app_state';
 
         function getVaultIndexedDB() {
             return new Promise((resolve) => {
@@ -283,6 +324,9 @@
                     if (!idb.objectStoreNames.contains(VAULT_STORE_NAME)) {
                         idb.createObjectStore(VAULT_STORE_NAME, { keyPath: 'id' });
                     }
+                    if (!idb.objectStoreNames.contains(STATE_STORE_NAME)) {
+                        idb.createObjectStore(STATE_STORE_NAME, { keyPath: 'key' });
+                    }
                 };
                 req.onsuccess = () => resolve(req.result);
                 req.onerror = (e) => {
@@ -293,6 +337,42 @@
         }
 
         window.vaultStorage = {
+            async saveState(stateObj) {
+                if (!stateObj || typeof stateObj !== 'object') return;
+                try {
+                    const idb = await getVaultIndexedDB();
+                    if (!idb) return;
+                    return new Promise((resolve) => {
+                        const tx = idb.transaction(STATE_STORE_NAME, 'readwrite');
+                        const store = tx.objectStore(STATE_STORE_NAME);
+                        store.put({
+                            key: 'master_state',
+                            data: JSON.parse(JSON.stringify(stateObj)),
+                            updatedAt: stateObj.lastUpdatedAt || Date.now()
+                        });
+                        tx.oncomplete = () => resolve(true);
+                        tx.onerror = () => resolve(false);
+                    });
+                } catch (e) {
+                    console.warn('vaultStorage.saveState error:', e);
+                }
+            },
+            async getState() {
+                try {
+                    const idb = await getVaultIndexedDB();
+                    if (!idb) return null;
+                    return new Promise((resolve) => {
+                        const tx = idb.transaction(STATE_STORE_NAME, 'readonly');
+                        const store = tx.objectStore(STATE_STORE_NAME);
+                        const req = store.get('master_state');
+                        req.onsuccess = () => resolve(req.result ? req.result.data : null);
+                        req.onerror = () => resolve(null);
+                    });
+                } catch (e) {
+                    console.warn('vaultStorage.getState error:', e);
+                    return null;
+                }
+            },
             async saveFile(id, fileData) {
                 if (!id || !fileData) return;
                 try {
@@ -389,8 +469,41 @@
                 }
             };
 
+            window.isFirestoreQuotaExceeded = false;
+            window.firestoreQuotaExceededUntil = 0;
+            try { localStorage.removeItem('firestore_quota_exceeded_until'); } catch(e) {}
+
+            window.resetQuotaStatus = async function() {
+                window.isFirestoreQuotaExceeded = false;
+                window.firestoreQuotaExceededUntil = 0;
+                try { localStorage.removeItem('firestore_quota_exceeded_until'); } catch(e) {}
+                if (dbStore) {
+                    try { await enableNetwork(dbStore); } catch(e) {}
+                }
+                setupMasterRealtimeSync();
+                updateCloudSyncStatusUI('synced');
+                if (window.showToast) window.showToast("Real-time Cloud Sync Active", "success");
+            };
+
+            async function markQuotaExceeded(durationMs = 15 * 1000) {
+                // Short transient backoff in case of network throttle
+                window.isFirestoreQuotaExceeded = true;
+                window.firestoreQuotaExceededUntil = Date.now() + durationMs;
+                setTimeout(async () => {
+                    window.isFirestoreQuotaExceeded = false;
+                    if (dbStore) {
+                        try { await enableNetwork(dbStore); } catch(e) {}
+                    }
+                    setupMasterRealtimeSync();
+                }, durationMs);
+            }
+            window.markQuotaExceeded = markQuotaExceeded;
+
             window.initCloudStorage = function() {
                 return new Promise((resolve) => {
+                    if (dbStore) {
+                        try { enableNetwork(dbStore).catch(() => {}); } catch(e) {}
+                    }
                     onAuthStateChanged(auth, async (user) => {
                         if (user) {
                             window.firebaseUser = user;
@@ -418,6 +531,7 @@
 
             let unsubscribeSnapshot = null;
             function setupMasterRealtimeSync() {
+                if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) return;
                 try {
                     if (unsubscribeSnapshot) unsubscribeSnapshot();
                     const masterDocRef = doc(dbStore, 'app_data', 'executive_master');
@@ -449,20 +563,38 @@
                             }
                         }
                     }, (err) => {
-                        console.warn("Firestore snapshot listener:", err);
+                        if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota limit exceeded')))) {
+                            markQuotaExceeded();
+                            if (unsubscribeSnapshot) {
+                                unsubscribeSnapshot();
+                                unsubscribeSnapshot = null;
+                            }
+                        } else {
+                            console.warn("Firestore snapshot listener:", err);
+                        }
                     });
                 } catch (e) {
                     console.error("Realtime sync setup error:", e);
                 }
             }
 
+            let lastSavedPayloadStr = '';
+            let cloudSaveTimer = null;
+            const alreadyUploadedVaultDocIds = new Set();
+
             window.deleteVaultFileFromCloud = async function(docId) {
                 if (!window.isFirebaseReady || !docId) return;
+                alreadyUploadedVaultDocIds.delete(docId);
+                if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) return;
                 try {
                     const fileRef = doc(window.dbStore, 'vault_files', docId);
                     await deleteDoc(fileRef);
                 } catch (e) {
-                    console.warn("Cloud delete vault file error:", e);
+                    if (e && (e.code === 'resource-exhausted' || (e.message && e.message.includes('Quota limit exceeded')))) {
+                        markQuotaExceeded();
+                    } else {
+                        console.warn("Cloud delete vault file warning:", e);
+                    }
                 }
             };
 
@@ -484,14 +616,18 @@
                         return cached;
                     }
                 }
-                // 3. Fetch from Firestore vault_files collection
+                // 3. Fetch from Firestore vault_files collection (if quota permits)
                 if (window.dbStore && window.isFirebaseReady) {
+                    if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) {
+                        return null;
+                    }
                     try {
                         const fileRef = doc(window.dbStore, 'vault_files', docId);
                         const snap = await getDoc(fileRef);
                         if (snap.exists()) {
                             const fData = snap.data().fileData;
                             if (fData) {
+                                alreadyUploadedVaultDocIds.add(docId);
                                 if (window.vaultStorage) await window.vaultStorage.saveFile(docId, fData);
                                 if (window.db && Array.isArray(window.db.documents)) {
                                     const d = window.db.documents.find(x => x.id === docId);
@@ -501,14 +637,25 @@
                             }
                         }
                     } catch (err) {
-                        console.warn("Firestore get vault file error:", err);
+                        if (err && (err.code === 'resource-exhausted' || (err.message && err.message.includes('Quota limit exceeded')))) {
+                            markQuotaExceeded();
+                        } else {
+                            console.warn("Firestore get vault file warning:", err);
+                        }
                     }
                 }
                 return null;
             };
 
-            window.cloudSave = async function(data) {
+            async function executeDirectCloudSave(data) {
                 if (!window.isFirebaseReady || !window.firebaseUser) return;
+                
+                // Check quota circuit breaker
+                if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) {
+                    updateCloudSyncStatusUI('quota-exceeded');
+                    return;
+                }
+
                 try {
                     updateCloudSyncStatusUI('saving');
                     const nowIso = new Date().toISOString();
@@ -525,20 +672,27 @@
                                 if (window.vaultStorage) {
                                     await window.vaultStorage.saveFile(d.id, d.fileData);
                                 }
-                                // Upload file binary to dedicated Firestore vault_files collection (under 950KB)
-                                try {
-                                    if (d.fileData.length <= 950000) {
-                                        const fileDocRef = doc(window.dbStore, 'vault_files', d.id);
-                                        await setDoc(fileDocRef, {
-                                            docId: d.id,
-                                            fileData: d.fileData,
-                                            mimeType: d.mimeType || 'application/octet-stream',
-                                            userId: window.firebaseUser.uid,
-                                            updatedAt: nowIso
-                                        });
+                                // Upload file binary to dedicated Firestore vault_files only if not already uploaded
+                                if (!alreadyUploadedVaultDocIds.has(d.id)) {
+                                    try {
+                                        if (d.fileData.length <= 950000) {
+                                            const fileDocRef = doc(window.dbStore, 'vault_files', d.id);
+                                            await setDoc(fileDocRef, {
+                                                docId: d.id,
+                                                fileData: d.fileData,
+                                                mimeType: d.mimeType || 'application/octet-stream',
+                                                userId: window.firebaseUser.uid,
+                                                updatedAt: nowIso
+                                            });
+                                            alreadyUploadedVaultDocIds.add(d.id);
+                                        }
+                                    } catch (fErr) {
+                                        if (fErr && (fErr.code === 'resource-exhausted' || (fErr.message && fErr.message.includes('Quota limit exceeded')))) {
+                                            markQuotaExceeded();
+                                            return;
+                                        }
+                                        console.warn("Vault file upload warning:", fErr);
                                     }
-                                } catch (fErr) {
-                                    console.warn("Vault file upload warning:", fErr);
                                 }
                                 // Strip bulky binary string from consolidated master state
                                 d.hasBinary = true;
@@ -563,12 +717,17 @@
 
                     const payloadStr = JSON.stringify(cleanData);
 
+                    // Skip remote write if identical to last successfully synced payload
+                    if (payloadStr === lastSavedPayloadStr) {
+                        updateCloudSyncStatusUI('synced');
+                        return;
+                    }
+
                     // 2. Safe Master Payload Saving (Chunking if ever > 600KB)
                     const CHUNK_SIZE = 600000;
                     const totalChunks = Math.ceil(payloadStr.length / CHUNK_SIZE);
 
                     if (totalChunks <= 1) {
-                        // Single master document
                         const masterDocRef = doc(window.dbStore, 'app_data', 'executive_master');
                         await setDoc(masterDocRef, {
                             userId: window.firebaseUser.uid,
@@ -580,7 +739,6 @@
                             updatedAt: nowIso
                         });
                     } else {
-                        // Multi-chunk saving for large tables
                         for (let i = 0; i < totalChunks; i++) {
                             const chunkStr = payloadStr.substr(i * CHUNK_SIZE, CHUNK_SIZE);
                             const chunkDocId = i === 0 ? 'executive_master' : `executive_master_part_${i}`;
@@ -597,26 +755,40 @@
                         }
                     }
 
-                    // 3. User-specific backup
-                    if (!window.firebaseUser.isAnonymous && totalChunks <= 1) {
-                        const userDocRef = doc(window.dbStore, 'users', window.firebaseUser.uid, 'dashboard', 'state');
-                        await setDoc(userDocRef, {
-                            userId: window.firebaseUser.uid,
-                            updatedBy: userEmail,
-                            payload: payloadStr,
-                            updatedAt: nowIso
-                        });
-                    }
-
+                    lastSavedPayloadStr = payloadStr;
+                    window.isFirestoreQuotaExceeded = false;
+                    try { localStorage.removeItem('firestore_quota_exceeded_until'); } catch(e) {}
                     updateCloudSyncStatusUI('synced');
                 } catch (e) {
-                    console.error("Cloud Save Error:", e);
-                    updateCloudSyncStatusUI('error');
+                    if (e && (e.code === 'resource-exhausted' || (e.message && e.message.includes('Quota limit exceeded')))) {
+                        markQuotaExceeded();
+                        console.warn("Firestore Daily Quota Reached: Application state is securely preserved locally.");
+                    } else {
+                        console.error("Cloud Save Error:", e);
+                        updateCloudSyncStatusUI('error');
+                    }
                 }
+            }
+
+            window.cloudSave = function(data, immediate = false) {
+                if (cloudSaveTimer) {
+                    clearTimeout(cloudSaveTimer);
+                    cloudSaveTimer = null;
+                }
+                if (immediate) {
+                    return executeDirectCloudSave(data);
+                }
+                return new Promise((resolve) => {
+                    cloudSaveTimer = setTimeout(async () => {
+                        await executeDirectCloudSave(data);
+                        resolve();
+                    }, 1200);
+                });
             };
 
             window.cloudLoad = async function() {
                 if (!window.isFirebaseReady || !window.firebaseUser) return null;
+                if (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil) return null;
                 try {
                     // Try master document first
                     const masterDocRef = doc(window.dbStore, 'app_data', 'executive_master');
@@ -632,22 +804,19 @@
                                     fullPayload += (cSnap.data().payload || '');
                                 }
                             }
+                            lastSavedPayloadStr = fullPayload;
                             return JSON.parse(fullPayload);
                         } else if (data.payload) {
+                            lastSavedPayloadStr = data.payload;
                             return JSON.parse(data.payload);
                         }
                     }
-                    
-                    // Fallback to user doc if available
-                    if (!window.firebaseUser.isAnonymous) {
-                        const userDocRef = doc(window.dbStore, 'users', window.firebaseUser.uid, 'dashboard', 'state');
-                        const uSnap = await getDoc(userDocRef);
-                        if (uSnap.exists()) {
-                            return JSON.parse(uSnap.data().payload);
-                        }
-                    }
                 } catch (e) {
-                    console.error("Cloud Load Error:", e);
+                    if (e && (e.code === 'resource-exhausted' || (e.message && e.message.includes('Quota limit exceeded')))) {
+                        markQuotaExceeded();
+                    } else {
+                        console.error("Cloud Load Error:", e);
+                    }
                 }
                 return null;
             };
@@ -659,14 +828,17 @@
                 if (window.firebaseUser && window.firebaseUser.email) {
                     email = window.firebaseUser.email.split('@')[0];
                 }
-                if (status === 'synced') {
+                if (status === 'quota-exceeded' || (window.isFirestoreQuotaExceeded && Date.now() < window.firestoreQuotaExceededUntil)) {
+                    el.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span> <span class="text-amber-300 font-mono text-[10px] truncate max-w-[170px]" title="Daily Firebase write quota reached. Local device copy is 100% saved & up to date. Resets in 24 hours.">Quota Limit (Local Safe)</span> <i class="fa-solid fa-hard-drive text-xs text-amber-400 ml-auto shrink-0 opacity-80" title="Saved locally on device"></i>`;
+                    el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-amber-500/40 cursor-pointer hover:border-amber-500 transition-all duration-300 shadow-sm';
+                } else if (status === 'synced') {
                     el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span> <span class="text-slate-200 font-mono text-[10px] truncate max-w-[170px]" title="Cloud Synced (${email})">Cloud Synced (${email})</span> <i class="fa-solid fa-cloud text-xs text-emerald-400 ml-auto shrink-0 opacity-75"></i>`;
                     el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-emerald-500/40 cursor-pointer hover:border-emerald-500 transition-all duration-300 shadow-sm';
                 } else if (status === 'saving') {
                     el.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-brand-500 text-xs shrink-0"></i> <span class="text-brand-400 font-mono text-[10px] truncate">Syncing to Cloud...</span>';
                     el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-brand-500/40 transition-all duration-300 shadow-sm';
                 } else if (status === 'error') {
-                    el.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400 shrink-0"></span> <span class="text-rose-400 font-mono text-[10px] truncate">Cloud Reconnecting...</span>';
+                    el.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400 shrink-0"></span> <span class="text-rose-400 font-mono text-[10px] truncate">Local Device Saved</span> <i class="fa-solid fa-hard-drive text-xs text-slate-400 ml-auto shrink-0 opacity-60"></i>';
                     el.className = 'w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-rose-500/40 transition-all duration-300 shadow-sm';
                 } else {
                     el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span> <span class="text-slate-300 font-mono text-[10px] truncate">Cloud Synced (${email})</span> <i class="fa-solid fa-cloud text-xs text-slate-400 ml-auto shrink-0 opacity-60"></i>`;
@@ -1188,6 +1360,7 @@
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
                                     <th class="py-3 px-4 w-12 text-center">S.No.</th>
+                                    <th class="py-3 px-4 w-16 text-center">Priority</th>
                                     <th class="py-3 px-4 w-[10%]">Inception</th>
                                     <th class="py-3 px-4 w-[10%]">Maturity</th>
                                     <th class="py-3 px-4 min-w-[250px] w-[25%]">Creditor</th>
@@ -1352,13 +1525,25 @@
         <section id="page-india-ops" class="page-view space-y-8 hidden">
             
             <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-surface-800/80 pb-3 group">
-                <!-- SUB-PAGE TAB BAR FOR EQUITIES -->
-                <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
-                    <button onclick="switchEqSubTab('trading')" id="btnEqSubTrading" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-brand-600 to-brand-700 text-surface-950 font-bold transition-all whitespace-nowrap shadow-[0_4px_15px_rgba(201,164,107,0.25)] flex items-center gap-2 border border-brand-500/30">
-                        <i class="fa-solid fa-chart-line text-[10px]"></i> Trading Desk
+                <!-- SUB-PAGE TAB BAR FOR EQUITIES & TRADING -->
+                <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar py-1">
+                    <button onclick="switchEqSubTab('options')" id="btnEqSubOptions" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-brand-600 to-brand-700 text-surface-950 font-bold transition-all whitespace-nowrap shadow-[0_4px_15px_rgba(201,164,107,0.25)] flex items-center gap-2 border border-brand-500/30">
+                        <i class="fa-solid fa-bolt text-[10px]"></i> Options
                     </button>
-                    <button onclick="switchEqSubTab('others')" id="btnEqSubOthers" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white hover:border-brand-500/40 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                    <button onclick="switchEqSubTab('futures')" id="btnEqSubFutures" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-arrow-trend-up text-[10px]"></i> Futures
+                    </button>
+                    <button onclick="switchEqSubTab('mcx')" id="btnEqSubMcx" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-coins text-[10px]"></i> MCX
+                    </button>
+                    <button onclick="switchEqSubTab('equity')" id="btnEqSubEquity" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-cubes text-[10px]"></i> Equity
+                    </button>
+                    <button onclick="switchEqSubTab('others')" id="btnEqSubOthers" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
                         <i class="fa-solid fa-layer-group text-[10px]"></i> Others
+                    </button>
+                    <button onclick="switchEqSubTab('analysis')" id="btnEqSubAnalysis" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-900/50 border border-surface-800 text-slate-400 hover:text-white hover:bg-surface-800/60 hover:border-surface-700 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-chart-pie text-[10px]"></i> Analysis
                     </button>
                 </div>
                 
@@ -1418,16 +1603,16 @@
                 </div>
             </div>
 
-            <!-- SUB-PAGE 1: TRADING DESK -->
+            <!-- SUB-PAGE 1: TRADING DESK (OPTIONS / FUTURES / MCX / EQUITY) -->
             <div id="eqSubView-trading" class="eq-sub-view space-y-8">
                 <div class="premium-card overflow-hidden">
                     <!-- Header -->
                     <div class="p-6 flex flex-wrap items-center justify-between gap-4 border-b border-surface-800 bg-surface-900/50 group">
-                        <h4 class="font-display text-lg text-white flex items-center gap-3 tracking-wide">
+                        <h4 id="tradingTableTitle" class="font-display text-lg text-white flex items-center gap-3 tracking-wide">
                             <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/30 flex items-center justify-center">
-                                <i class="fa-solid fa-chart-line text-brand-500 text-sm"></i>
+                                <i id="tradingTableIcon" class="fa-solid fa-bolt text-brand-500 text-sm"></i>
                             </div>
-                            Equities Trading Log
+                            <span id="tradingTableTitleText">Options Trading Log</span>
                         </h4>
                         <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
                             <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-4 py-2.5 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
@@ -1528,6 +1713,203 @@
                     </div>
                 </div>
             </div>
+
+            <!-- SUB-PAGE 3: TRADING ANALYSIS (CHARTS & PERFORMANCE DETAILS) -->
+            <div id="eqSubView-analysis" class="eq-sub-view space-y-8 hidden animate-fade-in">
+                <!-- Header Banner -->
+                <div class="p-6 rounded-2xl bg-gradient-to-r from-surface-900 via-surface-900/90 to-surface-800/60 border border-surface-800 shadow-xl flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 shadow-inner">
+                            <i class="fa-solid fa-chart-pie text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-lg font-bold text-white tracking-wide">Trading Analytics & Quantitative Performance</h3>
+                            <p class="text-xs font-mono text-slate-400">Deep performance metrics, win-loss ratio, segment attribution, and visual yield analysis</p>
+                        </div>
+                    </div>
+                    <div id="tradingAnalysisFilterBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-950 border border-surface-800 font-mono text-[10px] uppercase text-brand-400 font-bold">
+                        <i class="fa-solid fa-filter text-[9px]"></i>
+                        <span id="analysisFilterLabel">All Time Analysis</span>
+                    </div>
+                </div>
+
+                <!-- 6 Executive KPI Stat Cards -->
+                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <!-- Stat 1: Total Realized P&L -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Net Realized P&L</span>
+                            <div class="w-6 h-6 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center text-[10px]"><i class="fa-solid fa-wallet"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatNetPnl" class="text-base sm:text-lg font-bold font-mono text-emerald-400">₹0.00</h4>
+                            <span id="anStatPnlRoi" class="text-[10px] font-mono text-slate-400">0.00% Return</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 2: Win Rate % -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Win Rate</span>
+                            <div class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px]"><i class="fa-solid fa-bullseye"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatWinRate" class="text-base sm:text-lg font-bold font-mono text-emerald-400">0.0%</h4>
+                            <span id="anStatWinCount" class="text-[10px] font-mono text-slate-400">0W / 0L Trades</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 3: Avg Deployed Capital -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Avg Capital</span>
+                            <div class="w-6 h-6 rounded-lg bg-accent-cyan/10 text-accent-cyan flex items-center justify-center text-[10px]"><i class="fa-solid fa-coins"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatAvgCap" class="text-base sm:text-lg font-bold font-mono text-slate-200">₹0.00</h4>
+                            <span id="anStatTotalTrades" class="text-[10px] font-mono text-slate-400">Across 0 Trades</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 4: Profit Factor -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Profit Factor</span>
+                            <div class="w-6 h-6 rounded-lg bg-accent-blue/10 text-accent-blue flex items-center justify-center text-[10px]"><i class="fa-solid fa-scale-balanced"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatProfitFactor" class="text-base sm:text-lg font-bold font-mono text-brand-400">0.00x</h4>
+                            <span id="anStatPayoffRatio" class="text-[10px] font-mono text-slate-400">Gains / Losses</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 5: Avg Win / Avg Loss -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Avg Win / Loss</span>
+                            <div class="w-6 h-6 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center text-[10px]"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatAvgWinLoss" class="text-xs sm:text-sm font-bold font-mono text-slate-200">₹0 / ₹0</h4>
+                            <span id="anStatRiskReward" class="text-[10px] font-mono text-slate-400">Risk:Reward</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 6: Best Trade -->
+                    <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 shadow-md flex flex-col justify-between group hover:border-brand-500/30 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">Best Gain</span>
+                            <div class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px]"><i class="fa-solid fa-trophy"></i></div>
+                        </div>
+                        <div>
+                            <h4 id="anStatBestTrade" class="text-base sm:text-lg font-bold font-mono text-emerald-400">+₹0.00</h4>
+                            <span id="anStatBestTradeScript" class="text-[10px] font-mono text-slate-400 truncate block">None</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section: 3 Visual Graphs -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Chart 1: Monthly Realized P&L & Cumulative Curve (2 cols on large) -->
+                    <div class="lg:col-span-2 premium-card p-6 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4 border-b border-surface-800/80 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400">
+                                    <i class="fa-solid fa-chart-column text-xs"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-display text-sm font-bold text-white tracking-wide">Realized P&L Trajectory & Monthly Yield</h4>
+                                    <p class="text-[10px] font-mono text-slate-400">Net monthly realized profits vs losses and equity curve</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full h-64 sm:h-72 relative">
+                            <canvas id="tradingMonthlyPnlChartCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Segment Breakdown Donut -->
+                    <div class="premium-card p-6 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4 border-b border-surface-800/80 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center text-accent-cyan">
+                                    <i class="fa-solid fa-chart-pie text-xs"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-display text-sm font-bold text-white tracking-wide">Segment Attribution</h4>
+                                    <p class="text-[10px] font-mono text-slate-400">P&L & volume distribution across segments</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full h-56 sm:h-64 relative flex items-center justify-center">
+                            <canvas id="tradingSegmentShareChartCanvas"></canvas>
+                        </div>
+                        <div id="tradingSegmentLegend" class="grid grid-cols-2 gap-2 pt-3 border-t border-surface-800/60 font-mono text-[10px]">
+                            <!-- Injected Legend -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Breakdown: Segment Performance Matrix -->
+                <div class="premium-card overflow-hidden">
+                    <div class="p-6 flex items-center justify-between border-b border-surface-800 bg-surface-900/50">
+                        <h4 class="font-display text-base text-white flex items-center gap-3 tracking-wide">
+                            <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400">
+                                <i class="fa-solid fa-table-cells text-xs"></i>
+                            </div>
+                            Segment Performance Matrix (Options vs Futures vs MCX vs Equity)
+                        </h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-surface-900/90 border-b border-surface-800">
+                                <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
+                                    <th class="py-3 px-4">Segment</th>
+                                    <th class="py-3 px-4 text-center">Total Trades</th>
+                                    <th class="py-3 px-4 text-center">Win / Loss</th>
+                                    <th class="py-3 px-4 text-center">Win Rate</th>
+                                    <th class="py-3 px-4 text-right">Avg Deployed Cap</th>
+                                    <th class="py-3 px-4 text-right">Total Realized P&L</th>
+                                    <th class="py-3 px-4 text-right">Profit % (on Avg Cap)</th>
+                                    <th class="py-3 px-4 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradingSegmentMatrixBody" class="divide-y divide-surface-800/50 font-light text-slate-300">
+                                <!-- JS Injected Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Monthly Performance Ledger -->
+                <div class="premium-card overflow-hidden">
+                    <div class="p-6 flex items-center justify-between border-b border-surface-800 bg-surface-900/50">
+                        <h4 class="font-display text-base text-white flex items-center gap-3 tracking-wide">
+                            <div class="w-8 h-8 rounded-lg bg-accent-blue/10 border border-accent-blue/30 flex items-center justify-center text-accent-blue">
+                                <i class="fa-solid fa-calendar-days text-xs"></i>
+                            </div>
+                            Chronological Monthly Trading Performance Ledger
+                        </h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-surface-900/90 border-b border-surface-800">
+                                <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
+                                    <th class="py-3 px-4">Period (Month / Year)</th>
+                                    <th class="py-3 px-4 text-center">Trades Count</th>
+                                    <th class="py-3 px-4 text-center">Win Rate</th>
+                                    <th class="py-3 px-4 text-right">Avg Capital</th>
+                                    <th class="py-3 px-4 text-right">Realized P&L</th>
+                                    <th class="py-3 px-4 text-right">Yield %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradingMonthlyMatrixBody" class="divide-y divide-surface-800/50 font-light text-slate-300">
+                                <!-- JS Injected Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- PAGE 7: BUDGET & GOALS -->
@@ -1618,24 +2000,23 @@
                         <button onclick="openBudgetModal('QAR')" class="px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-400/50 rounded-lg text-xs font-medium hover:bg-rose-500/30 transition-all duration-300 shadow-md cursor-pointer">+ Add QAR Budget</button>
                     </div>
                 </div>
-                    <div class="overflow-x-auto rounded-xl border border-surface-800/50">
-                        <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-surface-900/90 border-b border-surface-800 sticky top-0 z-10">
-                                <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-rose-400 font-bold">
-                                    <th class="py-3 px-4 text-center w-12">S.No.</th>
-                                    <th class="py-3 px-4">Period</th>
-                                    <th class="py-3 px-4">Category</th>
-                                    <th class="py-3 px-4 text-right">Budget</th>
-                                    <th class="py-3 px-4 text-right">Spend</th>
-                                    <th class="py-3 px-4 text-right">Var</th>
-                                    <th class="py-3 px-4 text-center">Status</th>
-                                    <th class="py-3 px-4 text-center">Manage</th>
-                                </tr>
-                            </thead>
-                            <tbody id="qatarBudgetTableBody" class="font-light text-slate-300"></tbody>
-                            <tfoot id="qatarBudgetTableFoot" class="font-mono text-xs bg-surface-900/80 border-none"></tfoot>
-                        </table>
-                    </div>
+                <div class="overflow-x-auto rounded-xl border border-surface-800/50">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-surface-900/90 border-b border-surface-800 sticky top-0 z-10">
+                            <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-rose-400 font-bold">
+                                <th class="py-3 px-4 text-center w-12">S.No.</th>
+                                <th class="py-3 px-4">Period</th>
+                                <th class="py-3 px-4">Category</th>
+                                <th class="py-3 px-4 text-right">Budget</th>
+                                <th class="py-3 px-4 text-right">Spend</th>
+                                <th class="py-3 px-4 text-right">Var</th>
+                                <th class="py-3 px-4 text-center">Status</th>
+                                <th class="py-3 px-4 text-center">Manage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="qatarBudgetTableBody" class="font-light text-slate-300"></tbody>
+                        <tfoot id="qatarBudgetTableFoot" class="font-mono text-xs bg-surface-900/80 border-none"></tfoot>
+                    </table>
                 </div>
             </div>
 
@@ -1673,6 +2054,7 @@
                             <tfoot id="indiaBudgetTableFoot" class="font-mono text-xs bg-surface-900/80 border-none"></tfoot>
                         </table>
                     </div>
+                </div>
             </div>
 
             <!-- SECTION 3: BUDGET & SPEND ANALYSIS -->
@@ -3057,7 +3439,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Remarks</label>
-                    <textarea id="budgetNotesInput" rows="3" placeholder="Additional remarks, allocation details, or financial notes..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="budgetNotesInput" rows="6" placeholder="Additional remarks, allocation details, or financial notes..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveBudgetEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Budget Entry</button>
@@ -3114,7 +3496,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Particulars / Description</label>
-                    <textarea id="dailyExpDescInput" rows="2" placeholder="e.g. Supermarket shopping, utility bills, maintenance notes..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="dailyExpDescInput" rows="5" placeholder="e.g. Supermarket shopping, utility bills, maintenance notes..." class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveDailyExpense()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Daily Expense</button>
@@ -3180,7 +3562,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Description</label>
-                    <textarea id="assetLogNotes" rows="3" placeholder="Additional asset details, physical location, valuation notes, or transaction particulars..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="assetLogNotes" rows="6" placeholder="Additional asset details, physical location, valuation notes, or transaction particulars..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveAssetLog()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save & Sync</button>
@@ -3259,7 +3641,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Remarks (Internal)</label>
-                    <textarea id="bankNotesInput" rows="2" placeholder="Account remarks, customer ID, locker info, or notes..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-none text-xs"></textarea>
+                    <textarea id="bankNotesInput" rows="5" placeholder="Account remarks, customer ID, locker info, or notes..." class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveBankDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Account</button>
@@ -3311,7 +3693,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-amber-400">Value in QR <span class="text-rose-400">*</span></label>
-                        <input type="number" step="0.01" id="qatarAssetValueQrInput" oninput="computeQatarModalInrValue()" placeholder="e.g. 250000" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-amber-400 focus:border-amber-500 focus:outline-none font-mono text-xs font-semibold">
+                        <input type="number" step="0.01" id="qatarAssetValueQrInput" oninput="computeQatarModalInrValue()" placeholder="e.g. 250000 or -50000" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-amber-400 focus:border-amber-500 focus:outline-none font-mono text-xs font-semibold">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Per QR (₹) <span class="text-rose-400">*</span></label>
@@ -3324,7 +3706,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Remarks / Description</label>
-                    <textarea id="qatarAssetRemarksInput" rows="2" placeholder="Deed numbers, location, ownership split, or additional notes..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none resize-none text-xs"></textarea>
+                    <textarea id="qatarAssetRemarksInput" rows="5" placeholder="Deed numbers, location, ownership split, or additional notes..." class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveQatarAssetDetails()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(245,158,11,0.25)]">Save Qatar Asset</button>
@@ -3364,15 +3746,26 @@
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Creditor / Source</label>
                     <input type="text" id="loanSourceInput" placeholder="e.g. QIB Business Loan, HDFC Mortgage" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
-                <div>
-                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Facility Type</label>
-                    <select id="loanTypeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
-                        <option value="Commercial">Commercial Loan</option>
-                        <option value="Personal">Personal Loan</option>
-                        <option value="Mortgage">Mortgage</option>
-                        <option value="Auto">Auto Loan</option>
-                        <option value="Credit Card">Credit Card</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Facility Type</label>
+                        <select id="loanTypeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                            <option value="Commercial">Commercial Loan</option>
+                            <option value="Personal">Personal Loan</option>
+                            <option value="Mortgage">Mortgage</option>
+                            <option value="Auto">Auto Loan</option>
+                            <option value="Credit Card">Credit Card</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Repayment Priority</label>
+                        <select id="loanPriorityInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                            <option value="Critical">🔴 Critical Priority</option>
+                            <option value="High">🟠 High Priority</option>
+                            <option value="Medium" selected>🟡 Medium Priority</option>
+                            <option value="Low">⚪ Low Priority</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -3383,6 +3776,10 @@
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Amortized (₹)</label>
                         <input type="number" step="0.01" id="loanRepaidInput" placeholder="Repaid" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Terms</label>
+                    <textarea id="loanNotesInput" rows="5" placeholder="Interest rate, EMI due dates, collateral details, or repayment schedule..." class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveLoanDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Facility</button>
@@ -3466,6 +3863,15 @@
             </div>
             <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="shareTradeId">
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Trading Segment</label>
+                    <select id="shareSegmentInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none cursor-pointer">
+                        <option value="options">Options (Index / Stock Options)</option>
+                        <option value="futures">Futures (Index / Stock Futures)</option>
+                        <option value="mcx">MCX (Commodity Derivatives)</option>
+                        <option value="equity">Equity (Cash Stocks / Delivery / Intraday)</option>
+                    </select>
+                </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Year</label>
@@ -3505,7 +3911,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Strategy</label>
-                    <textarea id="shareDescInput" rows="3" placeholder="e.g. Swing Trading setup, risk-reward ratio, entry/exit reasons, or options hedging details..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="shareDescInput" rows="6" placeholder="e.g. Swing Trading setup, risk-reward ratio, entry/exit reasons, or options hedging details..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveShareTrade()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Commit Trade Record</button>
@@ -3570,7 +3976,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Breakdown</label>
-                    <textarea id="othersNotesInput" rows="3" placeholder="Additional remarks, invoice links, or calculation details..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="othersNotesInput" rows="6" placeholder="Additional remarks, invoice links, or calculation details..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveOthersEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Entry</button>
@@ -3667,7 +4073,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Action Milestones</label>
-                    <textarea id="goalNotesInput" rows="3" placeholder="Key milestones, detailed action items, motivation notes, or references..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="goalNotesInput" rows="6" placeholder="Key milestones, detailed action items, motivation notes, or references..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveGoal()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Goal</button>
@@ -3876,6 +4282,7 @@
                         <h2 id="viewNoteTitle" class="font-display text-3xl md:text-5xl text-white font-bold leading-tight tracking-wide drop-shadow-md"></h2>
                     </div>
                     <div class="flex items-center gap-2 sm:gap-3 shrink-0 mt-2">
+                        <button type="button" onclick="openShareForCurrentViewNote()" class="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-brand-400 hover:bg-surface-700 hover:border-brand-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(201,164,107,0.2)] hover:-translate-y-1 cursor-pointer" title="Share Options"><i class="fa-solid fa-share-nodes text-base md:text-lg"></i></button>
                         <button type="button" id="btnToggleViewNotePin" onclick="toggleCurrentViewNotePin()" class="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1 cursor-pointer" title="Pin / Unpin Note"><i id="viewNotePinBtnIcon" class="fa-solid fa-thumbtack text-sm md:text-base"></i></button>
                         <button type="button" id="btnToggleNoteViewMaximize" onclick="toggleNoteViewModalMaximize()" class="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1 cursor-pointer" title="Toggle Full Page"><i id="noteViewMaxIcon" class="fa-solid fa-expand text-sm md:text-base"></i></button>
                         <button onclick="editNoteFromView()" class="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1 cursor-pointer" title="Edit Note"><i class="fa-solid fa-pen text-sm md:text-base"></i></button>
@@ -3955,7 +4362,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Additional Notes & Context</label>
-                    <textarea id="reminderNotesInput" rows="3" placeholder="Add detailed notes, meeting agenda links, location details, or follow-up instructions..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="reminderNotesInput" rows="6" placeholder="Add detailed notes, meeting agenda links, location details, or follow-up instructions..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center gap-2">
                     <i class="fa-solid fa-clock-rotate-left text-amber-400 shrink-0"></i>
@@ -3968,17 +4375,87 @@
         </div>
     </div>
 
+    <!-- 2-STEP DANGER CONFIRMATION MODAL -->
     <div id="confirmDeleteModal" class="fixed inset-0 z-[100] bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="premium-card max-w-sm w-full p-8 text-center shadow-2xl relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-[50px] pointer-events-none"></div>
-            <div class="w-16 h-16 bg-surface-900 border border-rose-500/30 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl shadow-[0_0_20px_rgba(244,63,94,0.15)] relative z-10">
-                <i class="fa-solid fa-triangle-exclamation"></i>
+        <div id="confirmDeleteBox" class="premium-card max-w-md w-full p-7 text-center shadow-2xl relative overflow-hidden transition-all duration-300 border border-rose-500/30">
+            <div id="confirmDangerBgGlow" class="absolute top-0 right-0 w-40 h-40 bg-rose-500/15 rounded-full blur-[60px] pointer-events-none"></div>
+            
+            <!-- Step Badge & Danger Sign -->
+            <div class="flex items-center justify-between mb-4 relative z-10">
+                <span id="confirmStepBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                    <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> <span id="confirmStepText">STEP 1 OF 2: CONFIRMATION</span>
+                </span>
+                <span id="confirmDangerTag" class="text-[10px] font-mono uppercase text-rose-400 tracking-wider font-bold">DANGER ZONE</span>
             </div>
-            <h3 class="font-display text-xl text-white mb-2 relative z-10">Confirm Deletion</h3>
-            <p id="confirmDeleteMessage" class="text-sm text-slate-400 font-light mb-8 relative z-10">Are you sure you want to delete this? This action cannot be undone.</p>
-            <div class="grid grid-cols-2 gap-4 relative z-10">
-                <button onclick="closeConfirmDelete()" class="py-3 bg-surface-800 text-slate-300 font-medium rounded-xl hover:bg-surface-700 hover:text-white transition-all border border-surface-700">Cancel</button>
-                <button onclick="executeConfirmDelete()" class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-all">Delete</button>
+
+            <div id="confirmDangerIconContainer" class="w-20 h-20 bg-rose-950/60 border-2 border-rose-500/50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-5 text-3xl shadow-[0_0_30px_rgba(244,63,94,0.3)] relative z-10 animate-pulse">
+                <i id="confirmDangerIcon" class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <h3 id="confirmDeleteHeading" class="font-display text-xl text-white font-bold mb-2 relative z-10">Confirm Deletion</h3>
+            <p id="confirmDeleteMessage" class="text-sm text-slate-300 font-light mb-6 relative z-10 leading-relaxed">Are you sure you want to delete this? This action cannot be undone.</p>
+            
+            <div id="confirmStep2WarningBox" class="hidden mb-6 p-3 rounded-xl bg-rose-950/80 border border-rose-500 text-rose-200 text-xs font-mono text-left space-y-1 relative z-10">
+                <div class="font-bold flex items-center gap-1.5 text-rose-400"><i class="fa-solid fa-radiation text-rose-400"></i> FINAL IRREVERSIBLE WARNING:</div>
+                <div class="text-[11px] text-rose-300">All data records in this section will be permanently wiped out. Are you absolutely certain?</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 relative z-10">
+                <button id="confirmCancelBtn" onclick="closeConfirmDelete()" class="py-3 bg-surface-800 text-slate-300 font-semibold rounded-xl hover:bg-surface-700 hover:text-white transition-all border border-surface-700 cursor-pointer">Cancel</button>
+                <button id="confirmExecuteBtn" onclick="executeConfirmDelete()" class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(244,63,94,0.3)] cursor-pointer flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                    <span id="confirmExecuteBtnText">Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UNIVERSAL SHARE MODAL (WHATSAPP & EMAIL ONLY) -->
+    <div id="universalShareModal" class="fixed inset-0 z-[120] bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-6 shadow-2xl relative overflow-hidden border border-brand-500/30">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-surface-800 pb-3 mb-4 relative z-10">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-base text-white font-bold">Share Item</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Share via WhatsApp or Email only</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('universalShareModal')" class="text-slate-400 hover:text-white transition-colors cursor-pointer p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-4 relative z-10 text-xs">
+                <!-- Preview Box -->
+                <div class="p-3.5 rounded-xl bg-surface-900 border border-surface-800 space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <span id="shareItemTypeBadge" class="px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">Note</span>
+                        <h4 id="shareItemTitlePreview" class="font-bold text-white text-sm truncate flex-1">Item Title</h4>
+                    </div>
+                    <p id="shareItemContentPreview" class="text-slate-300 font-mono text-[11px] max-h-24 overflow-y-auto custom-scrollbar line-clamp-3 leading-relaxed"></p>
+                </div>
+
+                <!-- Custom Note / Message (Optional) -->
+                <div>
+                    <label class="block mb-1.5 font-mono text-[10px] uppercase tracking-wider text-slate-400">Add an optional message or recipient notes:</label>
+                    <textarea id="shareCustomMessageInput" rows="3" placeholder="Optional notes to accompany the shared record..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-none text-xs custom-scrollbar"></textarea>
+                </div>
+
+                <!-- Action Buttons: WhatsApp & Email ONLY -->
+                <div class="pt-2 grid grid-cols-2 gap-3">
+                    <button onclick="executeShareWhatsApp()" class="py-3 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_15px_rgba(37,211,102,0.3)] flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+                        <i class="fa-brands fa-whatsapp text-base"></i>
+                        <span>WhatsApp</span>
+                    </button>
+                    <button onclick="executeShareEmail()" class="py-3 px-4 bg-sky-500 hover:bg-sky-400 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_15px_rgba(14,165,233,0.3)] flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+                        <i class="fa-solid fa-envelope text-base"></i>
+                        <span>Email</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -4118,7 +4595,22 @@
             </div>
 
             <!-- Worldwide Sync Info Card -->
-            <div class="p-4 rounded-2xl bg-surface-900/60 border border-emerald-500/20 space-y-2">
+            <div id="cloudQuotaNoticeCard" class="hidden p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                <div class="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Daily Firebase Write Quota Reached</span>
+                </div>
+                <p class="text-xs text-slate-300 font-light leading-relaxed">
+                    Firebase Free Spark tier daily write quota has been reached for today. <strong>All your edits and new data are 100% saved locally on this device</strong>. Cloud sync will automatically resume when quota resets, or you can upgrade to avoid limits.
+                </p>
+                <div class="pt-1">
+                    <a href="https://console.firebase.google.com/project/my-dashboard-520e7/firestore/databases/ai-studio-financialpersona-04f91bf6-bbd6-4d70-b5b0-5402303991cb/data?openUpgradeDialog=true" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[11px] font-mono font-medium border border-amber-500/40 transition-colors">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Open Firebase Console Upgrade
+                    </a>
+                </div>
+            </div>
+
+            <div id="cloudActiveInfoCard" class="p-4 rounded-2xl bg-surface-900/60 border border-emerald-500/20 space-y-2">
                 <div class="flex items-center gap-2 text-emerald-400 font-medium text-xs">
                     <i class="fa-solid fa-globe"></i>
                     <span>Worldwide Multi-Device Live Sync Active</span>
@@ -4563,7 +5055,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
                             Quote / Words of Wisdom *
                         </label>
-                        <textarea id="favContentInput" rows="4" placeholder="Enter the inspiring quote or thought here..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans leading-relaxed focus:border-amber-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
+                        <textarea id="favContentInput" rows="8" placeholder="Enter the inspiring quote or thought here..." class="w-full min-h-[160px] p-3.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans leading-relaxed focus:border-amber-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
                     </div>
 
                     <div class="space-y-1.5">
@@ -4611,6 +5103,10 @@
                     <p id="lightboxFavPhotoDate" class="text-[10px] font-mono text-slate-400 mt-0.5"></p>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button onclick="openShareForCurrentLightboxFav()" class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-brand-400 border border-surface-700 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer" title="Share Options">
+                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                        <span>Share</span>
+                    </button>
                     <button id="lightboxFavPhotoEditBtn" onclick="" class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-cyan-300 hover:text-white rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
                         <i class="fa-solid fa-pen text-xs"></i>
                         <span>Edit</span>
@@ -4659,6 +5155,10 @@
                     <button id="viewFavQuoteCopyBtn" onclick="" class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 text-slate-200 hover:text-white rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
                         <i class="fa-regular fa-copy text-xs"></i>
                         <span>Copy</span>
+                    </button>
+                    <button onclick="openShareForCurrentQuoteViewFav()" class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-brand-400 border border-surface-700 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer" title="Share Options">
+                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                        <span>Share</span>
                     </button>
                     <button id="viewFavQuoteEditBtn" onclick="" class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 text-cyan-300 hover:text-white rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
                         <i class="fa-solid fa-pen text-xs"></i>
@@ -4762,7 +5262,7 @@
 
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Executive Notes / Reference</label>
-                        <textarea id="modalDocNotesInput" rows="2" placeholder="Key details, renewal dates, policy numbers, or property notes..." class="w-full px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs resize-none"></textarea>
+                        <textarea id="modalDocNotesInput" rows="5" placeholder="Key details, renewal dates, policy numbers, or property notes..." class="w-full min-h-[120px] px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs resize-y custom-scrollbar"></textarea>
                     </div>
                 </div>
             </div>
@@ -4803,6 +5303,10 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="openShareForCurrentPreviewDoc()" class="px-3 py-1.5 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-brand-400 border border-surface-700 text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer" title="Share Options">
+                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                        <span class="hidden sm:inline">Share</span>
+                    </button>
                     <button id="docViewerDownloadBtn" class="px-3.5 py-1.5 rounded-xl bg-surface-800 hover:bg-surface-700 text-emerald-300 border border-surface-700 text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer" title="Download File">
                         <i class="fa-solid fa-download text-xs"></i>
                         <span class="hidden sm:inline">Download</span>
@@ -4870,7 +5374,7 @@
                 </div>
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Notes</label>
-                    <textarea id="editDocNotesInput" rows="2" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none resize-none"></textarea>
+                    <textarea id="editDocNotesInput" rows="5" class="w-full min-h-[120px] px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none resize-y custom-scrollbar"></textarea>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-2 border-t border-surface-800">

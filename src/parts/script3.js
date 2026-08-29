@@ -159,13 +159,64 @@ function deleteBankRow(id) {
     });
 }
 
+function getLoanPriorityWeight(priority) {
+    const p = (priority || 'Medium').toLowerCase().trim();
+    if (p === 'critical' || p === 'urgent') return 4;
+    if (p === 'high') return 3;
+    if (p === 'medium' || p === 'normal') return 2;
+    if (p === 'low') return 1;
+    return 2;
+}
+window.getLoanPriorityWeight = getLoanPriorityWeight;
+
+function getLoanPriorityBadge(priority) {
+    const p = (priority || 'Medium').toLowerCase().trim();
+    if (p === 'critical' || p === 'urgent') {
+        return '<span class="w-6 h-6 rounded-md border border-rose-500/50 bg-rose-500/20 text-rose-400 inline-flex items-center justify-center shadow-[0_0_8px_rgba(244,63,94,0.25)] transition-transform cursor-pointer" title="Critical Priority (Click to cycle)"><i class="fa-solid fa-angles-up text-[10px]"></i></span>';
+    }
+    if (p === 'high') {
+        return '<span class="w-6 h-6 rounded-md border border-amber-500/50 bg-amber-500/20 text-amber-400 inline-flex items-center justify-center transition-transform cursor-pointer" title="High Priority (Click to cycle)"><i class="fa-solid fa-angle-up text-[11px] font-bold"></i></span>';
+    }
+    if (p === 'low') {
+        return '<span class="w-6 h-6 rounded-md border border-slate-700 bg-surface-900 text-slate-400 inline-flex items-center justify-center transition-transform cursor-pointer" title="Low Priority (Click to cycle)"><i class="fa-solid fa-angle-down text-[10px]"></i></span>';
+    }
+    return '<span class="w-6 h-6 rounded-md border border-brand-500/40 bg-brand-500/15 text-brand-400 inline-flex items-center justify-center transition-transform cursor-pointer" title="Medium Priority (Click to cycle)"><i class="fa-solid fa-minus text-[10px]"></i></span>';
+}
+window.getLoanPriorityBadge = getLoanPriorityBadge;
+
+function cycleLoanPriority(loanId, e) {
+    if (e) e.stopPropagation();
+    if (!db.loans) return;
+    const l = db.loans.find(x => x.id === loanId);
+    if (!l) return;
+    const current = (l.priority || 'Medium').toLowerCase().trim();
+    let next = 'Medium';
+    if (current === 'critical' || current === 'urgent') next = 'High';
+    else if (current === 'high') next = 'Medium';
+    else if (current === 'medium' || current === 'normal') next = 'Low';
+    else if (current === 'low') next = 'Critical';
+    l.priority = next;
+    saveDatabase();
+    renderLoansTable();
+    showToast(`Priority set to ${next}`);
+}
+window.cycleLoanPriority = cycleLoanPriority;
+
 function renderLoansTable() {
     const body = document.getElementById('loansTableBody');
     if(!body) return;
     body.innerHTML = '';
     let totalAmount = 0, totalRepaid = 0, totalOutstanding = 0;
 
+    if (!Array.isArray(db.loans)) db.loans = [];
+
+    // Priority-based sorting (Milestone style): Critical > High > Medium > Low, then by date
     const sortedLoans = [...db.loans].sort((a, b) => {
+        const weightA = getLoanPriorityWeight(a.priority || 'Medium');
+        const weightB = getLoanPriorityWeight(b.priority || 'Medium');
+        if (weightB !== weightA) {
+            return weightB - weightA;
+        }
         const dateA = a.startDate ? (a.startDate.includes('-') ? a.startDate : a.startDate.split('/').reverse().join('-')) : '';
         const dateB = b.startDate ? (b.startDate.includes('-') ? b.startDate : b.startDate.split('/').reverse().join('-')) : '';
         return new Date(dateA) - new Date(dateB);
@@ -181,17 +232,18 @@ function renderLoansTable() {
         tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
+            <td class="py-px px-1"><div class="px-2 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-16" onclick="cycleLoanPriority('${l.id}', event)">${getLoanPriorityBadge(l.priority || 'Medium')}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-mono text-xs bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(l.startDate)}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-mono text-xs bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(l.endDate)}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-medium bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[250px] w-full">${l.source}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-medium bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[250px] w-full">${l.source}${l.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${l.notes}">(${l.notes})</span>` : ''}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${l.type}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${rep.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-rose-400 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${outstanding.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
-                    <button onclick="openLoanModal('${l.id}')" class="text-slate-500 hover:text-brand-500"><i class="fa-solid fa-pen"></i></button>
-                    <button onclick="deleteLoanRow('${l.id}')" class="text-slate-500 hover:text-rose-500"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="openLoanModal('${l.id}')" class="text-slate-500 hover:text-brand-500 cursor-pointer"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteLoanRow('${l.id}')" class="text-slate-500 hover:text-rose-500 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div></td>
         `;
@@ -203,7 +255,7 @@ function renderLoansTable() {
         foot.className = 'font-mono text-xs bg-surface-900/80 border-none';
         foot.innerHTML = `
             <tr>
-                <td colspan="5" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Liabilities:</td>
+                <td colspan="6" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Liabilities:</td>
                 <td class="p-4 text-right align-middle text-brand-500 text-sm font-bold border-none">₹${totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                 <td class="p-4 text-right align-middle text-emerald-400 text-sm font-bold border-none">₹${totalRepaid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
@@ -234,8 +286,10 @@ function openLoanModal(id = null) {
             }
             if (document.getElementById('loanSourceInput')) document.getElementById('loanSourceInput').value = l.source || '';
             if (document.getElementById('loanTypeInput')) document.getElementById('loanTypeInput').value = l.type || 'Commercial';
+            if (document.getElementById('loanPriorityInput')) document.getElementById('loanPriorityInput').value = l.priority || 'Medium';
             if (document.getElementById('loanAmountInput')) document.getElementById('loanAmountInput').value = l.amount || '';
             if (document.getElementById('loanRepaidInput')) document.getElementById('loanRepaidInput').value = l.repaid || '0';
+            if (document.getElementById('loanNotesInput')) document.getElementById('loanNotesInput').value = l.notes || '';
         }
     } else {
         if (titleEl) titleEl.innerText = 'Add Credit Facility';
@@ -245,8 +299,10 @@ function openLoanModal(id = null) {
         if (eInput && eInput._flatpickr) eInput._flatpickr.clear();
         if (document.getElementById('loanSourceInput')) document.getElementById('loanSourceInput').value = '';
         if (document.getElementById('loanTypeInput')) document.getElementById('loanTypeInput').value = 'Commercial';
+        if (document.getElementById('loanPriorityInput')) document.getElementById('loanPriorityInput').value = 'Medium';
         if (document.getElementById('loanAmountInput')) document.getElementById('loanAmountInput').value = '';
         if (document.getElementById('loanRepaidInput')) document.getElementById('loanRepaidInput').value = '0';
+        if (document.getElementById('loanNotesInput')) document.getElementById('loanNotesInput').value = '';
     }
     openModal('loanModal');
 }
@@ -266,14 +322,25 @@ function saveLoanDetails() {
     }
     const source = document.getElementById('loanSourceInput').value || 'Creditor';
     const type = document.getElementById('loanTypeInput').value;
+    const priority = document.getElementById('loanPriorityInput')?.value || 'Medium';
     const amount = parseFloat(document.getElementById('loanAmountInput').value) || 0;
     const repaid = parseFloat(document.getElementById('loanRepaidInput').value) || 0;
+    const notes = document.getElementById('loanNotesInput')?.value?.trim() || '';
 
     if (id) {
         const l = db.loans.find(x => x.id === id);
-        if (l) { l.startDate = startDate; l.endDate = endDate; l.source = source; l.type = type; l.amount = amount; l.repaid = repaid; }
+        if (l) { 
+            l.startDate = startDate; 
+            l.endDate = endDate; 
+            l.source = source; 
+            l.type = type; 
+            l.priority = priority; 
+            l.amount = amount; 
+            l.repaid = repaid; 
+            l.notes = notes; 
+        }
     } else {
-        db.loans.push({ id: Date.now().toString(), startDate, endDate, source, type, amount, repaid });
+        db.loans.push({ id: Date.now().toString(), startDate, endDate, source, type, priority, amount, repaid, notes });
     }
 
     saveDatabase();
