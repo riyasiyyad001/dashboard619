@@ -536,3 +536,579 @@ function toggleTradeNotesFullscreen() {
     }
 }
 window.toggleTradeNotesFullscreen = toggleTradeNotesFullscreen;
+
+/* ==========================================================================
+   FAVORITES MODULE (PHOTOS & QUOTES)
+   ========================================================================== */
+
+let favCurrentFilter = 'photo'; // Default to 'photo' (All is removed)
+let favViewMode = 'grid'; // 'grid' (compact icons) or 'list'
+
+function setFavoriteFilter(filter) {
+    favCurrentFilter = (filter === 'quote') ? 'quote' : 'photo';
+    
+    // Update Filter Buttons styling (photo, quote)
+    const filters = ['photo', 'quote'];
+    filters.forEach(f => {
+        const btn = document.getElementById(`btnFavFilter-${f}`);
+        if (!btn) return;
+        if (f === favCurrentFilter) {
+            const activeColors = {
+                photo: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+                quote: 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+            };
+            btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-mono font-medium ${activeColors[f]} border transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-sm`;
+        } else {
+            btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer border border-transparent flex items-center gap-1.5 shrink-0';
+        }
+    });
+
+    renderFavoritesPage();
+}
+window.setFavoriteFilter = setFavoriteFilter;
+
+function setFavoriteViewMode(mode) {
+    favViewMode = mode;
+    const btnGrid = document.getElementById('btnFavViewGrid');
+    const btnList = document.getElementById('btnFavViewList');
+
+    if (btnGrid && btnList) {
+        if (mode === 'grid') {
+            btnGrid.className = 'px-2.5 py-1 rounded-lg text-xs font-mono transition-all bg-surface-800 text-cyan-300 shadow-sm cursor-pointer flex items-center gap-1';
+            btnList.className = 'px-2.5 py-1 rounded-lg text-xs font-mono transition-all text-slate-400 hover:text-white cursor-pointer flex items-center gap-1';
+        } else {
+            btnGrid.className = 'px-2.5 py-1 rounded-lg text-xs font-mono transition-all text-slate-400 hover:text-white cursor-pointer flex items-center gap-1';
+            btnList.className = 'px-2.5 py-1 rounded-lg text-xs font-mono transition-all bg-surface-800 text-cyan-300 shadow-sm cursor-pointer flex items-center gap-1';
+        }
+    }
+
+    renderFavoritesPage();
+}
+window.setFavoriteViewMode = setFavoriteViewMode;
+
+function clearFavoriteSearch() {
+    const searchInput = document.getElementById('favSearchInput');
+    if (searchInput) searchInput.value = '';
+    renderFavoritesPage();
+}
+window.clearFavoriteSearch = clearFavoriteSearch;
+
+function renderFavoritesPage() {
+    if (!db.favorites) db.favorites = [];
+
+    const quoteCount = db.favorites.filter(x => x.type === 'quote').length;
+    const photoCount = db.favorites.filter(x => x.type === 'photo').length;
+
+    // Update Filter Tab Pill Counts
+    const cntPhoto = document.getElementById('cntFavFilterPhoto');
+    const cntQuote = document.getElementById('cntFavFilterQuote');
+
+    if (cntPhoto) cntPhoto.innerText = photoCount;
+    if (cntQuote) cntQuote.innerText = quoteCount;
+
+    // Search query
+    const searchInput = document.getElementById('favSearchInput');
+    const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    // Filter Items by active category
+    let items = db.favorites.filter(item => {
+        if (favCurrentFilter === 'quote' && item.type !== 'quote') return false;
+        if (favCurrentFilter === 'photo' && item.type !== 'photo') return false;
+
+        if (searchQuery) {
+            const titleMatch = (item.title || '').toLowerCase().includes(searchQuery);
+            const contentMatch = (item.content || '').toLowerCase().includes(searchQuery);
+            const authorMatch = (item.author || '').toLowerCase().includes(searchQuery);
+            if (!titleMatch && !contentMatch && !authorMatch) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    // Sort newest first
+    items.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    const container = document.getElementById('favoritesContainer');
+    if (!container) return;
+
+    // Update container layout class for grid (compact icons) vs list
+    if (favViewMode === 'grid') {
+        container.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4';
+    } else {
+        container.className = 'flex flex-col space-y-2.5';
+    }
+
+    if (items.length === 0) {
+        container.className = 'w-full';
+        const typeLabels = { photo: 'photos', quote: 'quotes' };
+        const typeBtnLabels = { photo: 'Photo', quote: 'Quote' };
+        container.innerHTML = `
+            <div class="py-14 px-4 text-center bg-surface-900/30 border border-surface-800/80 rounded-3xl w-full">
+                <div class="w-12 h-12 rounded-2xl bg-surface-800 border border-surface-700 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa-solid fa-folder-open text-lg"></i>
+                </div>
+                <h4 class="text-white font-display text-base font-bold">No ${typeLabels[favCurrentFilter] || 'items'} found</h4>
+                <p class="text-slate-400 font-mono text-xs max-w-sm mx-auto mt-1 mb-5">
+                    ${searchQuery ? 'No items match your search keyword.' : `Add your favorite ${typeLabels[favCurrentFilter] || 'items'} to access them quickly.`}
+                </p>
+                <div class="flex items-center justify-center">
+                    <button onclick="openFavoriteModal(null, favCurrentFilter)" class="px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-amber-500/20 hover:bg-surface-700 border border-brand-500/40 text-brand-300 rounded-xl text-xs font-mono transition-all flex items-center gap-2 cursor-pointer shadow-sm active:scale-95">
+                        <i class="fa-solid fa-plus text-xs"></i> Add ${typeBtnLabels[favCurrentFilter] || 'Favorite'}
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    if (favViewMode === 'grid') {
+        container.innerHTML = items.map(item => renderFavoriteCompactCard(item)).join('');
+    } else {
+        container.innerHTML = items.map(item => renderFavoriteListRow(item)).join('');
+    }
+}
+window.renderFavoritesPage = renderFavoritesPage;
+
+// COMPACT ICON / GRID CARD (Small Icons / Tiles)
+function renderFavoriteCompactCard(item) {
+    const dateFormatted = item.date || (item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '');
+
+    if (item.type === 'photo') {
+        const photoSrc = item.photoUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80';
+        return `
+            <div class="group relative rounded-2xl border border-surface-800 hover:border-cyan-500/60 bg-surface-900/80 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 flex flex-col justify-between cursor-pointer" onclick="openFavoritePhotoLightbox('${item.id}')">
+                <!-- Compact Image Thumbnail -->
+                <div class="relative aspect-square w-full overflow-hidden bg-surface-950">
+                    <img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(item.title || 'Photo')}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.src='https://placehold.co/400x400/0A140F/00FF9D?text=Photo'">
+                    <div class="absolute inset-0 bg-gradient-to-t from-surface-950/90 via-surface-950/20 to-transparent"></div>
+                    
+                    <!-- Quick action buttons on hover -->
+                    <div class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onclick="event.stopPropagation()">
+                        <button onclick="openFavoriteModal('${item.id}', 'photo');" class="w-6 h-6 rounded-lg bg-surface-950/90 hover:bg-surface-800 text-slate-300 hover:text-cyan-300 flex items-center justify-center transition-colors shadow" title="Edit">
+                            <i class="fa-solid fa-pen text-[10px]"></i>
+                        </button>
+                        <button onclick="deleteFavorite('${item.id}');" class="w-6 h-6 rounded-lg bg-surface-950/90 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition-colors shadow" title="Delete">
+                            <i class="fa-solid fa-trash-can text-[10px]"></i>
+                        </button>
+                    </div>
+
+                    <!-- Type Tag Bottom Left -->
+                    <div class="absolute bottom-2 left-2 right-2">
+                        <p class="text-xs font-semibold text-white truncate group-hover:text-cyan-300 transition-colors">${escapeHtml(item.title || 'Photo Memory')}</p>
+                        ${dateFormatted ? `<p class="text-[9px] font-mono text-slate-400 truncate">${dateFormatted}</p>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        // Quote Card
+        return `
+            <div class="group relative rounded-2xl border border-surface-800 hover:border-amber-500/60 bg-surface-900/80 p-3.5 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 flex flex-col justify-between cursor-pointer aspect-square" onclick="openFavoriteQuoteView('${item.id}')">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-[10px] border border-amber-500/20">
+                        <i class="fa-solid fa-quote-left"></i>
+                    </span>
+                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                        <button onclick="copyFavoriteText('${item.id}')" class="w-6 h-6 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors" title="Copy">
+                            <i class="fa-regular fa-copy text-[10px]"></i>
+                        </button>
+                        <button onclick="openFavoriteModal('${item.id}', 'quote')" class="w-6 h-6 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-cyan-300 flex items-center justify-center transition-colors" title="Edit">
+                            <i class="fa-solid fa-pen text-[10px]"></i>
+                        </button>
+                        <button onclick="deleteFavorite('${item.id}')" class="w-6 h-6 rounded-lg bg-surface-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center transition-colors" title="Delete">
+                            <i class="fa-solid fa-trash-can text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Snippet -->
+                <p class="text-xs font-sans italic text-slate-200 line-clamp-3 leading-snug my-1 group-hover:text-amber-200 transition-colors">
+                    "${escapeHtml(item.content)}"
+                </p>
+
+                <div class="pt-1.5 border-t border-surface-800/60 flex items-center justify-between gap-1 text-[10px]">
+                    <span class="text-amber-400 font-medium truncate font-sans">
+                        — ${escapeHtml(item.author || 'Anonymous')}
+                    </span>
+                    ${dateFormatted ? `<span class="font-mono text-slate-500 text-[9px] shrink-0">${dateFormatted}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }
+}
+
+// LIST VIEW ROW
+function renderFavoriteListRow(item) {
+    const dateFormatted = item.date || (item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '');
+
+    if (item.type === 'photo') {
+        const photoSrc = item.photoUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80';
+        return `
+            <div class="group flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-2xl border border-surface-800 hover:border-cyan-500/50 bg-surface-900/70 transition-all hover:bg-surface-900 cursor-pointer" onclick="openFavoritePhotoLightbox('${item.id}')">
+                <div class="flex items-center gap-3 min-w-0">
+                    <img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(item.title || 'Photo')}" class="w-12 h-12 rounded-xl object-cover border border-surface-700 shrink-0" onerror="this.src='https://placehold.co/100x100/0A140F/00FF9D?text=Photo'">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 text-[10px] font-mono border border-cyan-500/20">Photo</span>
+                            <h4 class="text-xs sm:text-sm font-semibold text-white truncate group-hover:text-cyan-300 transition-colors">${escapeHtml(item.title || 'Photo Memory')}</h4>
+                        </div>
+                        <p class="text-[10px] font-mono text-slate-400 mt-0.5">${dateFormatted}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
+                    <button onclick="openFavoritePhotoLightbox('${item.id}')" class="px-2.5 py-1.5 bg-surface-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 rounded-xl text-xs font-mono transition-colors flex items-center gap-1 cursor-pointer">
+                        <i class="fa-solid fa-eye text-xs"></i> <span class="hidden sm:inline">View</span>
+                    </button>
+                    <button onclick="openFavoriteModal('${item.id}', 'photo');" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-cyan-300 rounded-xl text-xs transition-colors cursor-pointer" title="Edit">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                    </button>
+                    <button onclick="deleteFavorite('${item.id}');" class="p-1.5 bg-surface-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-xl text-xs transition-colors cursor-pointer" title="Delete">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        // Quote row
+        return `
+            <div class="group flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-2xl border border-surface-800 hover:border-amber-500/50 bg-surface-900/70 transition-all hover:bg-surface-900 cursor-pointer" onclick="openFavoriteQuoteView('${item.id}')">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 text-sm">
+                        <i class="fa-solid fa-quote-left"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[10px] font-mono border border-amber-500/20">Quote</span>
+                            <span class="text-xs font-bold text-amber-300 font-sans truncate">— ${escapeHtml(item.author || 'Anonymous')}</span>
+                        </div>
+                        <p class="text-xs italic text-slate-200 truncate mt-0.5 font-sans group-hover:text-amber-200">"${escapeHtml(item.content)}"</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
+                    <span class="text-[10px] font-mono text-slate-500 hidden md:inline mr-1">${dateFormatted}</span>
+                    <button onclick="copyFavoriteText('${item.id}')" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white rounded-xl text-xs transition-colors cursor-pointer" title="Copy">
+                        <i class="fa-regular fa-copy text-xs"></i>
+                    </button>
+                    <button onclick="openFavoriteQuoteView('${item.id}');" class="px-2.5 py-1.5 bg-surface-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 rounded-xl text-xs font-mono transition-colors flex items-center gap-1 cursor-pointer">
+                        <i class="fa-solid fa-book-open text-xs"></i> <span class="hidden sm:inline">Read</span>
+                    </button>
+                    <button onclick="openFavoriteModal('${item.id}', 'quote');" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-cyan-300 rounded-xl text-xs transition-colors cursor-pointer" title="Edit">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                    </button>
+                    <button onclick="deleteFavorite('${item.id}');" class="p-1.5 bg-surface-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-xl text-xs transition-colors cursor-pointer" title="Delete">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function openFavoriteModal(id = null, defaultType = 'photo') {
+    const editIdEl = document.getElementById('favEditId');
+    const modalTitleEl = document.getElementById('favoriteModalTitle');
+    const saveBtnText = document.getElementById('favSaveBtnText');
+
+    const cleanDefaultType = (defaultType === 'quote') ? 'quote' : 'photo';
+
+    if (id) {
+        const item = (db.favorites || []).find(x => x.id === id);
+        if (item) {
+            if (editIdEl) editIdEl.value = item.id;
+            if (modalTitleEl) modalTitleEl.innerText = 'Edit Favorite';
+            if (saveBtnText) saveBtnText.innerText = 'Save Changes';
+
+            setFavoriteModalType(item.type === 'quote' ? 'quote' : 'photo');
+
+            if (document.getElementById('favPhotoCaptionInput')) document.getElementById('favPhotoCaptionInput').value = item.title || '';
+            if (document.getElementById('favPhotoUrlInput')) document.getElementById('favPhotoUrlInput').value = item.photoUrl || '';
+            if (document.getElementById('favContentInput')) document.getElementById('favContentInput').value = item.content || '';
+            if (document.getElementById('favAuthorInput')) document.getElementById('favAuthorInput').value = item.author || '';
+
+            if (item.type === 'photo' && item.photoUrl) {
+                previewFavoritePhoto(item.photoUrl);
+            }
+        }
+    } else {
+        if (editIdEl) editIdEl.value = '';
+        const titles = { photo: 'Add Photo', quote: 'Add Quote' };
+        if (modalTitleEl) modalTitleEl.innerText = titles[cleanDefaultType] || 'Add Favorite';
+        if (saveBtnText) saveBtnText.innerText = 'Save';
+
+        setFavoriteModalType(cleanDefaultType);
+
+        if (document.getElementById('favPhotoCaptionInput')) document.getElementById('favPhotoCaptionInput').value = '';
+        if (document.getElementById('favPhotoUrlInput')) document.getElementById('favPhotoUrlInput').value = '';
+        if (document.getElementById('favContentInput')) document.getElementById('favContentInput').value = '';
+        if (document.getElementById('favAuthorInput')) document.getElementById('favAuthorInput').value = '';
+        clearFavoritePhotoPreview();
+    }
+
+    openModal('favoriteModal');
+}
+window.openFavoriteModal = openFavoriteModal;
+
+function setFavoriteModalType(type) {
+    const targetType = (type === 'quote') ? 'quote' : 'photo';
+    const typeInput = document.getElementById('favEditType');
+    if (typeInput) typeInput.value = targetType;
+
+    const tabPhoto = document.getElementById('favTabPhoto');
+    const tabQuote = document.getElementById('favTabQuote');
+    const photoContainer = document.getElementById('favPhotoContainer');
+    const quoteContainer = document.getElementById('favQuoteContainer');
+    const modalIcon = document.getElementById('favModalHeaderIcon');
+
+    // Reset tabs
+    if (tabPhoto) tabPhoto.className = 'py-2 px-2.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+    if (tabQuote) tabQuote.className = 'py-2 px-2.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+
+    if (photoContainer) photoContainer.classList.add('hidden');
+    if (quoteContainer) quoteContainer.classList.add('hidden');
+
+    if (targetType === 'photo') {
+        if (tabPhoto) tabPhoto.className = 'py-2 px-2.5 rounded-xl text-xs font-mono font-medium transition-all flex items-center justify-center gap-1.5 bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm cursor-pointer';
+        if (photoContainer) photoContainer.classList.remove('hidden');
+        if (modalIcon) modalIcon.innerHTML = '<i class="fa-solid fa-camera text-sm text-cyan-400"></i>';
+    } else {
+        if (tabQuote) tabQuote.className = 'py-2 px-2.5 rounded-xl text-xs font-mono font-medium transition-all flex items-center justify-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm cursor-pointer';
+        if (quoteContainer) quoteContainer.classList.remove('hidden');
+        if (modalIcon) modalIcon.innerHTML = '<i class="fa-solid fa-quote-left text-sm text-amber-400"></i>';
+    }
+}
+window.setFavoriteModalType = setFavoriteModalType;
+
+function previewFavoritePhoto(urlOverride = null) {
+    const urlInput = document.getElementById('favPhotoUrlInput');
+    const previewBox = document.getElementById('favPhotoPreviewBox');
+    const previewImg = document.getElementById('favPhotoPreviewImg');
+
+    const url = urlOverride || (urlInput ? urlInput.value.trim() : '');
+    if (url && previewBox && previewImg) {
+        previewImg.src = url;
+        previewBox.classList.remove('hidden');
+    }
+}
+window.previewFavoritePhoto = previewFavoritePhoto;
+
+function clearFavoritePhotoPreview() {
+    const urlInput = document.getElementById('favPhotoUrlInput');
+    const previewBox = document.getElementById('favPhotoPreviewBox');
+    const previewImg = document.getElementById('favPhotoPreviewImg');
+    const fileName = document.getElementById('favFileName');
+
+    if (urlInput) urlInput.value = '';
+    if (previewBox) previewBox.classList.add('hidden');
+    if (previewImg) previewImg.src = '';
+    if (fileName) fileName.innerText = '';
+}
+window.clearFavoritePhotoPreview = clearFavoritePhotoPreview;
+
+function handleFavoriteFileUpload(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const fileNameEl = document.getElementById('favFileName');
+    if (fileNameEl) fileNameEl.innerText = file.name;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result;
+        const urlInput = document.getElementById('favPhotoUrlInput');
+        if (urlInput) urlInput.value = base64;
+        previewFavoritePhoto(base64);
+    };
+    reader.readAsDataURL(file);
+}
+window.handleFavoriteFileUpload = handleFavoriteFileUpload;
+
+function saveFavoriteItem() {
+    const id = document.getElementById('favEditId').value;
+    const type = document.getElementById('favEditType').value || 'photo';
+
+    if (!db.favorites) db.favorites = [];
+
+    if (type === 'photo') {
+        const photoUrl = (document.getElementById('favPhotoUrlInput').value || '').trim();
+        const caption = (document.getElementById('favPhotoCaptionInput').value || '').trim();
+
+        if (!photoUrl) {
+            showToast('Please upload an image file or enter an image URL.');
+            return;
+        }
+
+        if (id) {
+            const item = db.favorites.find(x => x.id === id);
+            if (item) {
+                item.type = 'photo';
+                item.title = caption || 'Photo Memory';
+                item.photoUrl = photoUrl;
+                showToast('Photo updated successfully');
+            }
+        } else {
+            const newItem = {
+                id: 'fav_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                type: 'photo',
+                title: caption || 'Photo Memory',
+                photoUrl: photoUrl,
+                createdAt: new Date().toISOString(),
+                date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+            };
+            db.favorites.unshift(newItem);
+            showToast('Photo added to favorites');
+        }
+    } else {
+        // Quote
+        const content = (document.getElementById('favContentInput').value || '').trim();
+        const author = (document.getElementById('favAuthorInput').value || '').trim();
+
+        if (!content) {
+            showToast('Please enter the quote text.');
+            return;
+        }
+
+        if (id) {
+            const item = db.favorites.find(x => x.id === id);
+            if (item) {
+                item.type = 'quote';
+                item.content = content;
+                item.author = author || 'Anonymous';
+                showToast('Quote updated successfully');
+            }
+        } else {
+            const newItem = {
+                id: 'fav_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                type: 'quote',
+                content: content,
+                author: author || 'Anonymous',
+                createdAt: new Date().toISOString(),
+                date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+            };
+            db.favorites.unshift(newItem);
+            showToast('Quote added to favorites');
+        }
+    }
+
+    saveDatabase();
+    closeModal('favoriteModal');
+    renderFavoritesPage();
+}
+window.saveFavoriteItem = saveFavoriteItem;
+
+function deleteFavorite(id) {
+    if (!db.favorites) return;
+    const index = db.favorites.findIndex(x => x.id === id);
+    if (index === -1) return;
+
+    const deletedItem = db.favorites[index];
+
+    if (typeof pushUndoDelete === 'function') {
+        pushUndoDelete('favorite', deletedItem, index);
+    }
+
+    db.favorites.splice(index, 1);
+    saveDatabase();
+    renderFavoritesPage();
+    showToast('Item deleted from favorites', true);
+}
+window.deleteFavorite = deleteFavorite;
+
+function copyFavoriteText(id) {
+    if (!db.favorites) return;
+    const item = db.favorites.find(x => x.id === id);
+    if (!item) return;
+
+    let textToCopy = `"${item.content}"\n— ${item.author || 'Anonymous'}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showToast('Quote copied to clipboard!');
+        }).catch(() => {
+            showToast('Quote copied!');
+        });
+    } else {
+        showToast('Quote copied!');
+    }
+}
+window.copyFavoriteText = copyFavoriteText;
+
+function openFavoritePhotoLightbox(id) {
+    if (!db.favorites) return;
+    const item = db.favorites.find(x => x.id === id);
+    if (!item) return;
+
+    const img = document.getElementById('lightboxFavPhotoImg');
+    const title = document.getElementById('lightboxFavPhotoTitle');
+    const date = document.getElementById('lightboxFavPhotoDate');
+    const download = document.getElementById('lightboxFavPhotoDownload');
+    const deleteBtn = document.getElementById('lightboxFavPhotoDeleteBtn');
+    const editBtn = document.getElementById('lightboxFavPhotoEditBtn');
+
+    const photoSrc = item.photoUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+
+    if (img) img.src = photoSrc;
+    if (title) title.innerText = item.title || 'Photo Memory';
+    if (date) date.innerText = item.date || (item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '');
+    if (download) {
+        download.href = photoSrc;
+    }
+    if (deleteBtn) {
+        deleteBtn.onclick = () => {
+            deleteFavorite(item.id);
+            closeModal('favoritePhotoLightboxModal');
+        };
+    }
+    if (editBtn) {
+        editBtn.onclick = () => {
+            closeModal('favoritePhotoLightboxModal');
+            openFavoriteModal(item.id, 'photo');
+        };
+    }
+
+    openModal('favoritePhotoLightboxModal');
+}
+window.openFavoritePhotoLightbox = openFavoritePhotoLightbox;
+
+function openFavoriteQuoteView(id) {
+    if (!db.favorites) return;
+    const item = db.favorites.find(x => x.id === id);
+    if (!item) return;
+
+    const contentEl = document.getElementById('viewFavQuoteContent');
+    const authorEl = document.getElementById('viewFavQuoteAuthor');
+    const dateEl = document.getElementById('viewFavQuoteDate');
+    const copyBtn = document.getElementById('viewFavQuoteCopyBtn');
+    const editBtn = document.getElementById('viewFavQuoteEditBtn');
+    const deleteBtn = document.getElementById('viewFavQuoteDeleteBtn');
+
+    if (contentEl) contentEl.innerText = `"${item.content || ''}"`;
+    if (authorEl) authorEl.innerText = `— ${item.author || 'Anonymous'}`;
+    if (dateEl) dateEl.innerText = item.date || (item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '');
+
+    if (copyBtn) {
+        copyBtn.onclick = () => copyFavoriteText(item.id);
+    }
+    if (editBtn) {
+        editBtn.onclick = () => {
+            closeModal('favoriteQuoteViewModal');
+            openFavoriteModal(item.id, 'quote');
+        };
+    }
+    if (deleteBtn) {
+        deleteBtn.onclick = () => {
+            deleteFavorite(item.id);
+            closeModal('favoriteQuoteViewModal');
+        };
+    }
+
+    openModal('favoriteQuoteViewModal');
+}
+window.openFavoriteQuoteView = openFavoriteQuoteView;
+
+
+
+

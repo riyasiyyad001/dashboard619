@@ -23,9 +23,11 @@ let navPages = [
     { id: 'assets', title: 'Portfolio', icon: 'fa-building-columns', color: 'text-accent-blue' },
     { id: 'india-ops', title: 'Equities', icon: 'fa-chart-pie', color: 'text-accent-cyan' },
     { id: 'budget', title: 'Budgets', icon: 'fa-scale-balanced', color: 'text-rose-400' },
-    { id: 'goals', title: 'Milestone', icon: 'fa-bullseye', color: 'text-brand-500' },
-    { id: 'notes', title: 'Notes', icon: 'fa-book-bookmark', color: 'text-amber-400' },
+    { id: 'goals', title: 'Milestones', icon: 'fa-bullseye', color: 'text-brand-500' },
+    { id: 'documents', title: 'Documents', icon: 'fa-folder-open', color: 'text-emerald-400' },
     { id: 'reminders', title: 'Reminders', icon: 'fa-bell', color: 'text-indigo-400' },
+    { id: 'favorites', title: 'Favorites', icon: 'fa-star', color: 'text-amber-400' },
+    { id: 'notes', title: 'Notes', icon: 'fa-book-bookmark', color: 'text-amber-400' },
     { id: 'graphs', title: 'Intelligence', icon: 'fa-microchip', color: 'text-accent-plum' }
 ];
 
@@ -34,7 +36,12 @@ let db = {
     passcodeHint: 'Default PIN is 1234',
     profile: {
         name: 'RIYAS MADATHIL',
-        phone: '0091-7559803371, 00974-55003371',
+        contact1: '',
+        contact2: '',
+        whatsapp: '',
+        gmail: '',
+        facebook: '',
+        instagram: '',
         photo: 'https://placehold.co/150x150/0284c7/ffffff?text=RM',
         address: 'Madathil House, Calicut, Kerala, India - 673001 | Villa 42, Al Rayyan, Doha, Qatar'
     },
@@ -70,6 +77,17 @@ let db = {
         eqFilterYear: new Date().getFullYear().toString()
     }
 };
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+window.escapeHtml = escapeHtml;
 
 function formatToDDMMYYYY(d) {
     if (!d) return '-';
@@ -140,6 +158,7 @@ function sanitizeDatabase(data) {
     if (!Array.isArray(data.bankCards)) data.bankCards = [];
     if (!Array.isArray(data.loans)) data.loans = [];
     if (!Array.isArray(data.assetMutualFunds)) data.assetMutualFunds = [];
+    if (!Array.isArray(data.qatarAssets)) data.qatarAssets = [];
     
     if (!data.indiaOps || typeof data.indiaOps !== 'object') data.indiaOps = {};
     if (!Array.isArray(data.indiaOps.shareMarket)) data.indiaOps.shareMarket = [];
@@ -155,14 +174,191 @@ function sanitizeDatabase(data) {
     if (!Array.isArray(data.notes)) data.notes = [];
     if (!Array.isArray(data.reminders)) data.reminders = [];
     if (!Array.isArray(data.notifications)) data.notifications = [];
+    if (!Array.isArray(data.documents)) {
+        data.documents = [
+            {
+                id: 'doc_seed_1',
+                title: 'Passport - Republic of India',
+                category: 'identity',
+                fileType: 'pdf',
+                mimeType: 'application/pdf',
+                fileSize: 184320,
+                date: '2026-08-20',
+                tags: ['#Passport', '#Identity', '#Travel'],
+                notes: 'Valid until 2032. Registered at Calicut Regional Passport Office.',
+                isConfidential: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'doc_seed_2',
+                title: 'Qatar Executive Residency Permit (QID)',
+                category: 'identity',
+                fileType: 'photo',
+                mimeType: 'image/jpeg',
+                fileData: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80',
+                fileSize: 98304,
+                date: '2026-08-15',
+                tags: ['#QID', '#Doha', '#Residency'],
+                notes: 'QID Residency permit documentation - Al Rayyan zone.',
+                isConfidential: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'doc_seed_3',
+                title: 'Villa 42 Property Deed & Registry Agreement',
+                category: 'legal',
+                fileType: 'pdf',
+                mimeType: 'application/pdf',
+                fileSize: 458752,
+                date: '2026-08-10',
+                tags: ['#Property', '#Deed', '#AlRayyan', '#RealEstate'],
+                notes: 'Executive property title deed & registered agreement copy.',
+                isConfidential: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'doc_seed_4',
+                title: 'Annual Tax Audit & Returns Report FY25-26',
+                category: 'financial',
+                fileType: 'pdf',
+                mimeType: 'application/pdf',
+                fileSize: 327680,
+                date: '2026-08-01',
+                tags: ['#Tax', '#Audit', '#Compliance', '#CA'],
+                notes: 'Certified CA tax computation & compliance acknowledgment.',
+                isConfidential: false,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'doc_seed_5',
+                title: 'Calicut Ancestral Land Deed & Survey Boundary Map',
+                category: 'legal',
+                fileType: 'photo',
+                mimeType: 'image/jpeg',
+                fileData: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=800&q=80',
+                fileSize: 614400,
+                date: '2026-07-28',
+                tags: ['#Land', '#Calicut', '#Survey', '#Madathil'],
+                notes: 'Revenue survey boundary map & ownership registry documentation.',
+                isConfidential: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'doc_seed_6',
+                title: 'Executive Sanctuary & Villa Architectural Blueprint',
+                category: 'personal',
+                fileType: 'photo',
+                mimeType: 'image/jpeg',
+                fileData: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+                fileSize: 524288,
+                date: '2026-07-15',
+                tags: ['#Sanctuary', '#Architecture', '#Retreat'],
+                notes: 'Architectural blueprint & master site plan for the private sanctuary.',
+                isConfidential: false,
+                createdAt: new Date().toISOString()
+            }
+        ];
+    }
+    if (!Array.isArray(data.favorites)) {
+        data.favorites = [
+            {
+                id: 'fav_seed_1',
+                type: 'quote',
+                title: 'Executive Creed',
+                content: 'Set a highest goal, make a plan, work harder & harder for it, evaluate the update daily, and gradually will get the result.',
+                author: 'Riyas Madathil',
+                category: 'Determination',
+                accentColor: 'rose',
+                isPinned: true,
+                createdAt: new Date().toISOString(),
+                date: '2026-08-25',
+                tags: ['#Creed', '#Determination', '#Execution']
+            },
+            {
+                id: 'fav_seed_2',
+                type: 'quote',
+                title: 'Action & Momentum',
+                content: 'The secret of getting ahead is getting started. The secret of getting started is breaking your complex overwhelming tasks into small manageable tasks.',
+                author: 'Mark Twain',
+                category: 'Leadership',
+                accentColor: 'gold',
+                isPinned: true,
+                createdAt: new Date().toISOString(),
+                date: '2026-08-25',
+                tags: ['#Leadership', '#Focus', '#Productivity']
+            },
+            {
+                id: 'fav_seed_3',
+                type: 'note',
+                title: '3 Golden Rules of Wealth & Capital',
+                content: '1. Never lose principal capital.\n2. Reinvest dividends and cashflow into appreciating assets.\n3. Keep 6 months of operational liquidity at all times.',
+                author: 'Riyas M.',
+                category: 'Wealth',
+                accentColor: 'emerald',
+                isPinned: false,
+                createdAt: new Date().toISOString(),
+                date: '2026-08-25',
+                tags: ['#Wealth', '#Strategy', '#Discipline']
+            },
+            {
+                id: 'fav_seed_4',
+                type: 'photo',
+                title: 'Executive Vision & Sanctuary',
+                content: 'Serenity, focus and strategic clarity for long-term compounding.',
+                photoUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+                category: 'Memories',
+                accentColor: 'cyan',
+                isPinned: false,
+                createdAt: new Date().toISOString(),
+                date: '2026-08-25',
+                tags: ['#Sanctum', '#Vision', '#Retreat']
+            },
+            {
+                id: 'fav_seed_5',
+                type: 'quote',
+                title: 'Resilience & Courage',
+                content: 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
+                author: 'Winston Churchill',
+                category: 'Mindset',
+                accentColor: 'indigo',
+                isPinned: false,
+                createdAt: new Date().toISOString(),
+                date: '2026-08-25',
+                tags: ['#Resilience', '#Courage']
+            }
+        ];
+    }
 
     if (!data.profile || typeof data.profile !== 'object') {
         data.profile = {
             name: 'RIYAS MADATHIL',
-            phone: '0091-7559803371, 00974-55003371',
+            contact1: '',
+            contact2: '',
+            whatsapp: '',
+            gmail: '',
+            facebook: '',
+            instagram: '',
             photo: 'https://placehold.co/150x150/0284c7/ffffff?text=RM',
             address: 'Madathil House, Calicut, Kerala, India - 673001 | Villa 42, Al Rayyan, Doha, Qatar'
         };
+    }
+    if (data.profile) {
+        if (data.profile.contact1 === undefined) data.profile.contact1 = '';
+        if (data.profile.contact2 === undefined) data.profile.contact2 = '';
+        if (data.profile.whatsapp === undefined) data.profile.whatsapp = '';
+        if (data.profile.gmail === undefined) data.profile.gmail = '';
+        if (data.profile.facebook === undefined) data.profile.facebook = '';
+        if (data.profile.instagram === undefined) data.profile.instagram = '';
+        if (!data.profile.principlesTitle) data.profile.principlesTitle = 'Determine to Overcome';
+        if (!Array.isArray(data.profile.principles)) {
+            data.profile.principles = [
+                'Set a highest goal',
+                'Make a plan',
+                'Work harder & harder for it',
+                'Evaluate the update daily',
+                'Gradually will get the result'
+            ];
+        }
     }
     if (!data.preferences || typeof data.preferences !== 'object') data.preferences = {};
     if (!data.vault || typeof data.vault !== 'object') data.vault = { documents: [], captures: [] };
@@ -177,8 +373,22 @@ window.sanitizeDatabase = sanitizeDatabase;
 
 async function saveDatabase() {
     sanitizeDatabase(db);
-    // Save to local cache first for zero-latency UI
-    localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(db));
+    // Save to local cache first for zero-latency UI (stripping heavy base64 binaries to protect 5MB localStorage limit)
+    try {
+        const localCopy = JSON.parse(JSON.stringify(db));
+        if (Array.isArray(localCopy.documents)) {
+            localCopy.documents.forEach(d => {
+                if (d.fileData && (d.fileData.startsWith('data:') || d.fileData.length > 2000)) {
+                    if (window.vaultStorage) window.vaultStorage.saveFile(d.id, d.fileData);
+                    d.hasBinary = true;
+                    delete d.fileData;
+                }
+            });
+        }
+        localStorage.setItem('riyas_executive_os_db_v2', JSON.stringify(localCopy));
+    } catch (err) {
+        console.warn("Local storage cache warning:", err);
+    }
     // Persist to Firebase Firestore Cloud database
     if (window.cloudSave) {
         try {
@@ -268,15 +478,18 @@ window.onRemoteStateUpdate = function(remoteDb) {
 window.onload = async function() {
     await loadDatabase();
     
-    // Unlock Web Audio context on first user interaction
+    // Unlock Web Audio context on user interactions
     const unlockAudio = () => {
         if (typeof getAudioContext === 'function') {
-            getAudioContext();
+            const ctx = getAudioContext();
+            if (ctx && ctx.state === 'suspended') {
+                ctx.resume().catch(() => {});
+            }
         }
     };
-    window.addEventListener('click', unlockAudio, { once: true });
-    window.addEventListener('touchstart', unlockAudio, { once: true });
-    window.addEventListener('keydown', unlockAudio, { once: true });
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
 
     // Initialize flatpickr on date inputs
     flatpickr(".custom-datepicker", {
@@ -365,6 +578,7 @@ function refreshAllViews() {
     renderBankAccountsTable();
     renderLoansTable();
     renderAssetMutualFundsTable();
+    if (typeof renderQatarAssetsTable === 'function') renderQatarAssetsTable();
     renderNetWorthAnalysis();
     renderIndiaOperations();
     renderBudgetsAndGoals();
@@ -373,6 +587,8 @@ function refreshAllViews() {
     renderRemindersTable();
     renderNotifications();
     renderGrowthChart();
+    if (typeof renderFinancialIntelligencePage === 'function') renderFinancialIntelligencePage();
+    if (typeof renderFavoritesPage === 'function') renderFavoritesPage();
     renderHomeProfile();
     applyBgCustomization();
     if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
@@ -624,10 +840,10 @@ function renderNavTabs() {
         const btn = document.createElement('button');
         const isActive = activePageId === p.id;
         
-        btn.className = `w-full px-5 py-4 rounded-2xl flex items-center gap-4 transition-all duration-500 text-sm tracking-[0.15em] uppercase group ${
+        btn.className = `w-full px-5 py-4 rounded-2xl flex items-center gap-4 transition-all duration-300 text-sm tracking-[0.15em] uppercase group ${
             isActive 
-            ? 'bg-surface-800/90 border border-surface-700 shadow-lg text-white font-bold backdrop-blur-md' 
-            : 'bg-surface-900/30 text-slate-400 border border-surface-800/60 hover:bg-surface-800/60 hover:text-white hover:border-surface-700/80 shadow-sm'
+            ? 'nav-tab-active' 
+            : 'nav-tab-inactive'
         }`;
         btn.onclick = () => switchPage(p.id);
         
@@ -648,17 +864,152 @@ function switchPage(pageId) {
         target.classList.remove('hidden');
     }
     renderNavTabs();
+
+    if (pageId === 'graphs') {
+        if (typeof renderFinancialIntelligencePage === 'function') renderFinancialIntelligencePage();
+    } else if (pageId === 'documents') {
+        if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+    } else if (pageId === 'favorites') {
+        if (typeof renderFavoritesPage === 'function') renderFavoritesPage();
+    } else if (pageId === 'assets') {
+        if (typeof renderAssetLogsTable === 'function') renderAssetLogsTable();
+        if (typeof renderBankAccountsTable === 'function') renderBankAccountsTable();
+        if (typeof renderLoansTable === 'function') renderLoansTable();
+        if (typeof renderAssetMutualFundsTable === 'function') renderAssetMutualFundsTable();
+        if (typeof renderQatarAssetsTable === 'function') renderQatarAssetsTable();
+        if (typeof renderNetWorthAnalysis === 'function') renderNetWorthAnalysis();
+    } else if (pageId === 'india-ops') {
+        if (typeof renderIndiaOperations === 'function') renderIndiaOperations();
+    } else if (pageId === 'budget') {
+        if (typeof renderBudgetsAndGoals === 'function') renderBudgetsAndGoals();
+    } else if (pageId === 'goals') {
+        if (typeof renderGoalsTable === 'function') renderGoalsTable();
+    } else if (pageId === 'notes') {
+        if (typeof renderNotesList === 'function') renderNotesList();
+    } else if (pageId === 'reminders') {
+        if (typeof renderRemindersTable === 'function') renderRemindersTable();
+    } else if (pageId === 'home') {
+        if (typeof renderHomeProfile === 'function') renderHomeProfile();
+    }
 }
 
 function saveHomeProfile() {
+    if (!db.profile) db.profile = {};
     const nameEl = document.getElementById('homeProfileName');
-    const phoneEl = document.getElementById('homeProfilePhone');
-    if (nameEl) db.profile.name = nameEl.innerText;
-    if (phoneEl) db.profile.phone = phoneEl.innerText;
+    const subtitleEl = document.getElementById('homeProfileSubtitle');
+    const hqBadgeEl = document.getElementById('homeHeadquartersBadge');
+    const protocolPillEl = document.getElementById('homeProtocolPillText');
+
+    if (nameEl) db.profile.name = nameEl.innerText.trim();
+    if (subtitleEl) db.profile.subtitle = subtitleEl.innerText.trim();
+    if (hqBadgeEl) db.profile.headquartersBadge = hqBadgeEl.innerText.trim();
+    if (protocolPillEl) db.profile.protocolPillText = protocolPillEl.innerText.trim();
+
     saveDatabase();
 }
 
+function saveHomeContacts() {
+    if (!db.profile) db.profile = {};
+    const c1El = document.getElementById('homeProfileContact1');
+    const c2El = document.getElementById('homeProfileContact2');
+    const waEl = document.getElementById('homeProfileWhatsapp');
+    const gmEl = document.getElementById('homeProfileGmail');
+    const fbEl = document.getElementById('homeProfileFacebook');
+    const igEl = document.getElementById('homeProfileInstagram');
+
+    if (c1El) db.profile.contact1 = c1El.innerText.trim();
+    if (c2El) db.profile.contact2 = c2El.innerText.trim();
+    if (waEl) db.profile.whatsapp = waEl.innerText.trim();
+    if (gmEl) db.profile.gmail = gmEl.innerText.trim();
+    if (fbEl) db.profile.facebook = fbEl.innerText.trim();
+    if (igEl) db.profile.instagram = igEl.innerText.trim();
+
+    updateContactLinks();
+    saveDatabase();
+}
+window.saveHomeContacts = saveHomeContacts;
+
+function updateContactLinks() {
+    if (!db.profile) return;
+    
+    // Contact 1 link
+    const c1Link = document.getElementById('homeProfileContact1Link');
+    if (c1Link) {
+        const val = (db.profile.contact1 || '').trim();
+        if (val) {
+            c1Link.href = val.startsWith('http') ? val : `tel:${val.replace(/[^0-9+]/g, '')}`;
+            c1Link.classList.remove('hidden');
+        } else {
+            c1Link.classList.add('hidden');
+        }
+    }
+
+    // Contact 2 link
+    const c2Link = document.getElementById('homeProfileContact2Link');
+    if (c2Link) {
+        const val = (db.profile.contact2 || '').trim();
+        if (val) {
+            c2Link.href = val.startsWith('http') ? val : `tel:${val.replace(/[^0-9+]/g, '')}`;
+            c2Link.classList.remove('hidden');
+        } else {
+            c2Link.classList.add('hidden');
+        }
+    }
+
+    // WhatsApp link
+    const waLink = document.getElementById('homeProfileWhatsappLink');
+    if (waLink) {
+        const val = (db.profile.whatsapp || '').trim();
+        if (val) {
+            waLink.href = val.startsWith('http') ? val : `https://wa.me/${val.replace(/[^0-9]/g, '')}`;
+            waLink.classList.remove('hidden');
+        } else {
+            waLink.classList.add('hidden');
+        }
+    }
+
+    // Gmail link
+    const gmLink = document.getElementById('homeProfileGmailLink');
+    if (gmLink) {
+        const val = (db.profile.gmail || '').trim();
+        if (val) {
+            gmLink.href = val.startsWith('mailto:') || val.startsWith('http') ? val : `mailto:${val}`;
+            gmLink.classList.remove('hidden');
+        } else {
+            gmLink.classList.add('hidden');
+        }
+    }
+
+    // Facebook link
+    const fbLink = document.getElementById('homeProfileFacebookLink');
+    if (fbLink) {
+        const val = (db.profile.facebook || '').trim();
+        if (val) {
+            fbLink.href = val.startsWith('http') ? val : (val.startsWith('facebook.com') ? `https://${val}` : `https://facebook.com/${val.replace(/^@/, '')}`);
+            fbLink.classList.remove('hidden');
+        } else {
+            fbLink.classList.add('hidden');
+        }
+    }
+
+    // Instagram link
+    const igLink = document.getElementById('homeProfileInstagramLink');
+    if (igLink) {
+        const val = (db.profile.instagram || '').trim();
+        if (val) {
+            igLink.href = val.startsWith('http') ? val : (val.startsWith('instagram.com') ? `https://${val}` : `https://instagram.com/${val.replace(/^@/, '')}`);
+            igLink.classList.remove('hidden');
+        } else {
+            igLink.classList.add('hidden');
+        }
+    }
+}
+window.updateContactLinks = updateContactLinks;
+
+let isDeletingPrinciple = false;
+
 function saveHomePrinciples() {
+    if (isDeletingPrinciple) return;
     const titleEl = document.getElementById('homePrinciplesTitle');
     const items = [];
     document.querySelectorAll('.home-principle-text').forEach(el => {
@@ -674,19 +1025,120 @@ function saveHomePrinciples() {
     saveDatabase();
 }
 
+function renderHomePhoto() {
+    const photoContainer = document.getElementById('homeOvalBgPhoto');
+    const glowContainer = document.getElementById('homeOvalSpreadGlow');
+    const emptyState = document.getElementById('homeOvalEmptyState');
+    const photoActions = document.getElementById('homeOvalPhotoActions');
+    const photo = db.homePhoto || (db.profile && db.profile.coverPhoto) || (db.profile && db.profile.photo) || '';
+
+    if (photo) {
+        if (photoContainer) {
+            photoContainer.style.backgroundImage = `url(${photo})`;
+            photoContainer.classList.remove('hidden');
+        }
+        if (glowContainer) {
+            glowContainer.style.backgroundImage = `url(${photo})`;
+            glowContainer.classList.remove('hidden');
+        }
+        if (emptyState) emptyState.classList.add('hidden');
+        if (photoActions) photoActions.classList.remove('hidden');
+    } else {
+        if (photoContainer) {
+            photoContainer.style.backgroundImage = 'none';
+            photoContainer.classList.add('hidden');
+        }
+        if (glowContainer) {
+            glowContainer.style.backgroundImage = 'none';
+            glowContainer.classList.add('hidden');
+        }
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (photoActions) photoActions.classList.add('hidden');
+    }
+}
+window.renderHomePhoto = renderHomePhoto;
+
+function triggerHomePhotoUpload() {
+    const input = document.getElementById('homePhotoFileInput');
+    if (input) input.click();
+}
+window.triggerHomePhotoUpload = triggerHomePhotoUpload;
+
+function handleHomePhotoUpload(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('Photo is too large! Please choose an image under 2MB.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const dataUrl = evt.target.result;
+        db.homePhoto = dataUrl;
+        if (!db.profile) db.profile = {};
+        db.profile.coverPhoto = dataUrl;
+        saveDatabase();
+        renderHomePhoto();
+        showToast('Home background photo updated successfully!');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+}
+window.handleHomePhotoUpload = handleHomePhotoUpload;
+
+function removeHomePhoto() {
+    requireConfirmation('Remove home background photo?', () => {
+        db.homePhoto = '';
+        if (db.profile) db.profile.coverPhoto = '';
+        saveDatabase();
+        renderHomePhoto();
+        showToast('Home background photo removed');
+    });
+}
+window.removeHomePhoto = removeHomePhoto;
+
+function previewHomePhotoFullscreen() {
+    const photo = db.homePhoto || (db.profile && db.profile.coverPhoto) || (db.profile && db.profile.photo) || '';
+    if (!photo) return;
+    const previewBody = document.getElementById('previewModalBody');
+    const previewTitle = document.getElementById('previewFileTitle');
+    if (previewTitle) previewTitle.innerText = 'Home Background Photo';
+    if (previewBody) {
+        previewBody.innerHTML = `<img src="${photo}" class="max-h-[75vh] w-auto max-w-full rounded-2xl shadow-2xl border border-surface-700 object-contain mx-auto">`;
+    }
+    openModal('filePreviewModal');
+}
+window.previewHomePhotoFullscreen = previewHomePhotoFullscreen;
+
 function renderHomeProfile() {
-    if (!db.profile) return;
+    if (!db.profile) db.profile = {};
     const nameEl = document.getElementById('homeProfileName');
-    const phoneEl = document.getElementById('homeProfilePhone');
+    const subtitleEl = document.getElementById('homeProfileSubtitle');
+    const hqBadgeEl = document.getElementById('homeHeadquartersBadge');
+    const protocolPillEl = document.getElementById('homeProtocolPillText');
     const photoEl = document.getElementById('profilePhotoImg');
     const titleEl = document.getElementById('homePrinciplesTitle');
     const listEl = document.getElementById('homePrinciplesList');
+    const c1El = document.getElementById('homeProfileContact1');
+    const c2El = document.getElementById('homeProfileContact2');
+    const waEl = document.getElementById('homeProfileWhatsapp');
+    const gmEl = document.getElementById('homeProfileGmail');
+    const fbEl = document.getElementById('homeProfileFacebook');
+    const igEl = document.getElementById('homeProfileInstagram');
 
     if (nameEl && db.profile.name && document.activeElement !== nameEl) {
         nameEl.innerText = db.profile.name;
     }
-    if (phoneEl && db.profile.phone && document.activeElement !== phoneEl) {
-        phoneEl.innerText = db.profile.phone;
+    if (subtitleEl && db.profile.subtitle && document.activeElement !== subtitleEl) {
+        subtitleEl.innerText = db.profile.subtitle;
+    }
+    if (hqBadgeEl && db.profile.headquartersBadge && document.activeElement !== hqBadgeEl) {
+        hqBadgeEl.innerText = db.profile.headquartersBadge;
+    }
+    if (protocolPillEl && db.profile.protocolPillText && document.activeElement !== protocolPillEl) {
+        protocolPillEl.innerText = db.profile.protocolPillText;
     }
     if (photoEl && db.profile.photo) {
         photoEl.src = db.profile.photo;
@@ -694,6 +1146,28 @@ function renderHomeProfile() {
     if (titleEl && db.profile.principlesTitle && document.activeElement !== titleEl) {
         titleEl.innerText = db.profile.principlesTitle;
     }
+
+    if (c1El && document.activeElement !== c1El) {
+        c1El.innerText = db.profile.contact1 || '';
+    }
+    if (c2El && document.activeElement !== c2El) {
+        c2El.innerText = db.profile.contact2 || '';
+    }
+    if (waEl && document.activeElement !== waEl) {
+        waEl.innerText = db.profile.whatsapp || '';
+    }
+    if (gmEl && document.activeElement !== gmEl) {
+        gmEl.innerText = db.profile.gmail || '';
+    }
+    if (fbEl && document.activeElement !== fbEl) {
+        fbEl.innerText = db.profile.facebook || '';
+    }
+    if (igEl && document.activeElement !== igEl) {
+        igEl.innerText = db.profile.instagram || '';
+    }
+
+    updateContactLinks();
+    renderHomePhoto();
 
     if (listEl) {
         if (listEl.contains(document.activeElement)) {
@@ -711,30 +1185,116 @@ function renderHomeProfile() {
             ];
 
         const diamondGradients = [
-            'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.45)]',
-            'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.45)]',
-            'text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.45)]',
-            'text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.45)]',
-            'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.45)]'
+            'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.7)]',
+            'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.7)]',
+            'bg-amber-300 shadow-[0_0_8px_rgba(252,211,77,0.7)]',
+            'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.7)]',
+            'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]'
         ];
 
         listEl.innerHTML = principles.map((item, idx) => {
-            const glow = diamondGradients[idx % diamondGradients.length];
+            const dotGlow = diamondGradients[idx % diamondGradients.length];
             const safeText = String(item).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             return `
-                <div class="home-principle-row flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl hover:bg-surface-900/60 transition-all duration-200 group/item">
-                    <span class="w-5 h-5 rounded-lg bg-surface-900/90 flex items-center justify-center shrink-0 shadow-sm">
-                        <i class="fa-solid fa-gem ${glow} text-[10px]"></i>
-                    </span>
-                    <div class="home-principle-text flex-1 font-mono text-[12px] text-slate-200 leading-snug outline-none cursor-text hover:text-white transition-colors" contenteditable="true" onblur="saveHomePrinciples()" data-index="${idx}" title="Click to edit">${safeText}</div>
-                    <button type="button" onclick="deleteHomePrinciple(${idx})" class="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 transition-opacity p-1 text-[10px] cursor-pointer" title="Remove">
-                        <i class="fa-solid fa-xmark"></i>
+                <div class="home-principle-row flex items-center gap-2.5 py-1 px-1 hover:pl-2 transition-all duration-200 group/item relative">
+                    <span class="w-1.5 h-1.5 rounded-full ${dotGlow} shrink-0"></span>
+                    <div class="home-principle-text flex-1 font-['Outfit',sans-serif] text-[12px] font-normal text-slate-200/90 tracking-wide leading-tight outline-none cursor-text hover:text-white transition-colors" contenteditable="true" onblur="saveHomePrinciples()" data-index="${idx}" title="Click to edit">${safeText}</div>
+                    <button type="button" onmousedown="deleteHomePrinciple(${idx}, event)" onclick="deleteHomePrinciple(${idx}, event)" class="opacity-0 group-hover/item:opacity-100 p-1 w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition-all text-[11px] cursor-pointer shrink-0" title="Delete principle">
+                        <i class="fa-solid fa-trash-can pointer-events-none"></i>
                     </button>
                 </div>
             `;
         }).join('');
     }
+
+    if (typeof updateHomeLiquidityRadar === 'function') updateHomeLiquidityRadar();
+    if (typeof calculateHomeFxQuick === 'function') calculateHomeFxQuick();
 }
+
+function updateHomeLiquidityRadar() {
+    // 1. Calculate Bank liquid totals
+    let liquidInr = 0;
+    const rate = parseFloat(db.exchangeRate) || 22.85;
+    
+    if (Array.isArray(db.bankAccounts)) {
+        db.bankAccounts.forEach(acc => {
+            const bal = parseFloat(acc.balance) || 0;
+            if (acc.currency === 'QAR') liquidInr += bal * rate;
+            else liquidInr += bal;
+        });
+    }
+
+    // 2. Calculate Total Assets & Loans
+    let totalAssetsInr = 0;
+    if (Array.isArray(db.assets)) {
+        db.assets.forEach(a => {
+            totalAssetsInr += parseFloat(a.currentValue || a.value) || 0;
+        });
+    }
+    if (Array.isArray(db.equities)) {
+        db.equities.forEach(eq => {
+            const qty = parseFloat(eq.quantity) || 0;
+            const cmp = parseFloat(eq.cmp || eq.avgPrice) || 0;
+            totalAssetsInr += qty * cmp;
+        });
+    }
+    if (Array.isArray(db.mutualFunds)) {
+        db.mutualFunds.forEach(mf => {
+            totalAssetsInr += parseFloat(mf.currentValue || mf.invested) || 0;
+        });
+    }
+    totalAssetsInr += liquidInr;
+
+    let totalLoansInr = 0;
+    if (Array.isArray(db.loans)) {
+        db.loans.forEach(l => {
+            totalLoansInr += parseFloat(l.outstanding || l.amount) || 0;
+        });
+    }
+
+    // Calculate Monthly Burn & Runway
+    let monthlyBurn = 0;
+    if (Array.isArray(db.dailyExpenses)) {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        db.dailyExpenses.forEach(exp => {
+            if (new Date(exp.date) >= thirtyDaysAgo) {
+                monthlyBurn += parseFloat(exp.amount) || 0;
+            }
+        });
+    }
+    if (monthlyBurn <= 0) monthlyBurn = 75000; // Sensible executive baseline
+
+    const runwayMonths = (liquidInr / monthlyBurn).toFixed(1);
+    const runwayBarPct = Math.min(100, Math.max(10, Math.round((parseFloat(runwayMonths) / 24) * 100)));
+
+    const reservesEl = document.getElementById('homeLiquidReservesText');
+    const qarBadgeEl = document.getElementById('homeLiquidQarBadge');
+    const runwayTextEl = document.getElementById('homeRunwayMonthsText');
+    const runwayBarEl = document.getElementById('homeRunwayProgressBar');
+    const assetsEl = document.getElementById('homeTotalAssetsText');
+    const loansEl = document.getElementById('homeTotalLoansText');
+
+    if (reservesEl) reservesEl.innerText = `₹${Math.round(liquidInr).toLocaleString('en-IN')}`;
+    if (qarBadgeEl) qarBadgeEl.innerText = `${Math.round(liquidInr / rate).toLocaleString('en-US')} QAR`;
+    if (runwayTextEl) runwayTextEl.innerText = parseFloat(runwayMonths) >= 24 ? '24+ Months' : `${runwayMonths} Months`;
+    if (runwayBarEl) runwayBarEl.style.width = `${runwayBarPct}%`;
+    if (assetsEl) assetsEl.innerText = `₹${Math.round(totalAssetsInr).toLocaleString('en-IN')}`;
+    if (loansEl) loansEl.innerText = `₹${Math.round(totalLoansInr).toLocaleString('en-IN')}`;
+}
+window.updateHomeLiquidityRadar = updateHomeLiquidityRadar;
+
+function calculateHomeFxQuick() {
+    const qarInput = document.getElementById('homeFxQarInput');
+    const inrResult = document.getElementById('homeFxInrResult');
+    if (!qarInput || !inrResult) return;
+
+    const qarVal = parseFloat(qarInput.value) || 0;
+    const rate = parseFloat(db.exchangeRate) || 22.85;
+    const inr = Math.round(qarVal * rate);
+    inrResult.innerText = `₹${inr.toLocaleString('en-IN')}`;
+}
+window.calculateHomeFxQuick = calculateHomeFxQuick;
 
 function addHomePrinciple() {
     if (!db.profile) db.profile = {};
@@ -766,6 +1326,50 @@ function addHomePrinciple() {
         }
     }, 50);
 }
+window.addHomePrinciple = addHomePrinciple;
+
+function deleteHomePrinciple(index, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    isDeletingPrinciple = true;
+    if (!db.profile) db.profile = {};
+    if (!Array.isArray(db.profile.principles) || db.profile.principles.length === 0) {
+        const currentElements = document.querySelectorAll('.home-principle-text');
+        const items = [];
+        currentElements.forEach(el => {
+            const txt = el.innerText.trim();
+            if (txt) items.push(txt);
+        });
+        db.profile.principles = items.length > 0 ? items : [
+            'Set a highest goal',
+            'Make a plan',
+            'Work harder & harder for it',
+            'Evaluate the update daily',
+            'Gradually will get the result'
+        ];
+    }
+    const idx = parseInt(index, 10);
+    if (!isNaN(idx) && idx >= 0 && idx < db.profile.principles.length) {
+        const deletedText = db.profile.principles[idx];
+        if (typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'homePrinciple',
+                originalIndex: idx,
+                data: deletedText,
+                label: `Principle: "${deletedText}"`
+            });
+        }
+        db.profile.principles.splice(idx, 1);
+        saveDatabase();
+        renderHomeProfile();
+    }
+    setTimeout(() => {
+        isDeletingPrinciple = false;
+    }, 150);
+}
+window.deleteHomePrinciple = deleteHomePrinciple;
 
 // =========================================================================
 // GLOBAL UNDO ENGINE & RESTORATION STACK
@@ -835,6 +1439,15 @@ function undoLastDelete() {
                     db.assetLogs.splice(item.originalIndex, 0, item.data);
                 } else {
                     db.assetLogs.push(item.data);
+                }
+                restored = true;
+                break;
+            case 'qatarAsset':
+                if (!db.qatarAssets) db.qatarAssets = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.qatarAssets.length) {
+                    db.qatarAssets.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.qatarAssets.push(item.data);
                 }
                 restored = true;
                 break;
@@ -917,6 +1530,15 @@ function undoLastDelete() {
                 }
                 restored = true;
                 break;
+            case 'favorite':
+                if (!db.favorites) db.favorites = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.favorites.length) {
+                    db.favorites.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.favorites.push(item.data);
+                }
+                restored = true;
+                break;
             case 'homePrinciple':
                 if (!db.profile) db.profile = {};
                 if (!Array.isArray(db.profile.principles)) db.profile.principles = [];
@@ -960,12 +1582,14 @@ function updateUndoUI() {
     
     document.querySelectorAll('.global-undo-btn').forEach(btn => {
         if (count > 0) {
-            btn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-            btn.classList.add('opacity-100', 'cursor-pointer');
-            btn.setAttribute('title', `Undo last delete: ${lastItem ? lastItem.label : ''} (Ctrl+Z)`);
+            btn.disabled = false;
+            btn.classList.remove('cursor-not-allowed', 'pointer-events-none');
+            btn.classList.add('cursor-pointer');
+            btn.setAttribute('title', `Undo last delete: ${lastItem ? (lastItem.label || 'Item') : ''} (Ctrl+Z)`);
         } else {
-            btn.classList.add('opacity-40', 'cursor-not-allowed');
-            btn.classList.remove('opacity-100');
+            btn.disabled = true;
+            btn.classList.add('cursor-not-allowed', 'pointer-events-none');
+            btn.classList.remove('cursor-pointer');
             btn.setAttribute('title', 'Nothing to undo (Ctrl+Z)');
         }
     });

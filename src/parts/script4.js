@@ -21,6 +21,17 @@ function renderNetWorthAnalysis() {
         });
     }
 
+    let qatarAssets = 0;
+    if (db.qatarAssets) {
+        db.qatarAssets.forEach(qa => {
+            let qr = parseFloat(qa.valueQr) || 0;
+            let per = parseFloat(qa.perQr) || QAR_TO_INR_RATE;
+            let rs = parseFloat(qa.valueRs);
+            if (isNaN(rs) || rs === 0) rs = qr * per;
+            qatarAssets += rs;
+        });
+    }
+
     let physicalAssets = 0;
     if (db.assetLogs) {
         db.assetLogs.forEach(log => {
@@ -28,7 +39,7 @@ function renderNetWorthAnalysis() {
         });
     }
 
-    const totalAssets = bankAssets + mfAssets + physicalAssets;
+    const totalAssets = bankAssets + mfAssets + qatarAssets + physicalAssets;
 
     let totalLiabilities = 0;
     if (db.loans) {
@@ -52,11 +63,13 @@ function renderNetWorthAnalysis() {
 
     const elRepBank = document.getElementById('repBankAssets');
     const elRepMf = document.getElementById('repMfAssets');
+    const elRepQatar = document.getElementById('repQatarAssets');
     const elRepPhys = document.getElementById('repPhysicalAssets');
     const elRepLiab = document.getElementById('repLiabilities');
     const elRepNW = document.getElementById('repNetWorthFinal');
 
     if (elRepBank) elRepBank.innerText = formatINR(bankAssets);
+    if (elRepQatar) elRepQatar.innerText = formatINR(qatarAssets);
     if (elRepMf) elRepMf.innerText = formatINR(mfAssets);
     
     const repEquityRow = document.getElementById('repEquityAssets');
@@ -93,11 +106,12 @@ function renderNetWorthAnalysis() {
             window.nwAllocationChartInst = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Banking & Liquid', 'Mutual Funds', 'Physical Assets'],
+                    labels: ['Banking & Liquid', 'Qatar Assets', 'Mutual Funds', 'Physical Assets'],
                     datasets: [{
-                        data: [bankAssets, mfAssets, physicalAssets],
+                        data: [bankAssets, qatarAssets, mfAssets, physicalAssets],
                         backgroundColor: [
                             '#88A3D6',
+                            '#f59e0b',
                             '#34d399',
                             '#C9A46B'
                         ],

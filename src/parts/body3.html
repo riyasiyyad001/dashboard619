@@ -1,7 +1,7 @@
         <!-- PAGE 7: BUDGET & GOALS -->
         <section id="page-budget" class="page-view space-y-8 hidden">
             
-            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-surface-800/80 pb-3 md:mt-10 group">
+            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-surface-800/80 pb-3 group">
                 <!-- SUB-PAGE TAB BAR FOR BUDGETS -->
                 <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
                     <button onclick="switchBudgetSubTab('qatar')" id="btnBudgetSubQatar" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-brand-600 to-brand-700 text-surface-950 font-bold transition-all whitespace-nowrap shadow-[0_4px_15px_rgba(201,164,107,0.25)] flex items-center gap-2 border border-brand-500/30">
@@ -17,9 +17,9 @@
                 
                 <div class="flex items-center justify-end w-full xl:w-auto gap-4">
                     <!-- TIME FILTER CONTROLS FOR BUDGETS -->
-                    <div class="group/filter relative h-10 flex items-center justify-end min-w-[80px] z-20">
+                    <div class="group/filter opacity-0 group-hover:opacity-100 hover:opacity-100 focus-within:opacity-100 relative h-10 flex items-center justify-end min-w-[80px] z-20 transition-all duration-300">
                         <!-- Filter Placeholder/Icon (Visible by default, hidden on hover) -->
-                        <div class="absolute right-0 flex items-center gap-2 text-slate-500 cursor-pointer group-hover/filter:opacity-0 transition-opacity duration-300">
+                        <div class="absolute right-0 flex items-center gap-2 text-slate-400 hover:text-white cursor-pointer group-hover/filter:opacity-0 transition-opacity duration-300">
                             <span class="text-[10px] font-mono uppercase tracking-widest">Filters</span>
                             <i class="fa-solid fa-sliders text-xs"></i>
                         </div>
@@ -58,10 +58,16 @@
                         </div>
                     </div>
                     
-                    <!-- Clear Budget Data Button -->
-                    <button onclick="confirmClearAllData('budget')" class="opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-pointer" title="Clear all budget and expense records">
-                        <i class="fa-solid fa-trash-can"></i> Clear Budget Data
-                    </button>
+                    <!-- Action Buttons: Undo & Clear -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-800 border border-surface-700 text-slate-400 hover:text-brand-400 hover:border-brand-500/40 transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-not-allowed">
+                            <i class="fa-solid fa-rotate-left"></i> Undo
+                        </button>
+                        <!-- Clear Budget Data Button -->
+                        <button onclick="confirmClearAllData('budget')" class="opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-pointer" title="Clear all budget and expense records">
+                            <i class="fa-solid fa-trash-can"></i> Clear Budget Data
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -72,28 +78,32 @@
                         <i class="fa-solid fa-coins"></i> Qatar Budget & SPENDS (QAR)
                     </h3>
                     <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-3 py-1.5 bg-surface-800 border border-surface-700 hover:border-rose-400 text-slate-400 hover:text-rose-400 rounded-lg text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-md cursor-not-allowed">
+                            <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                        </button>
                         <button onclick="openDailyExpenseLogModal('QAR')" class="px-3 py-1.5 bg-surface-800 border border-rose-400/50 text-white rounded-lg text-xs font-medium hover:bg-surface-700 transition-all duration-300 shadow-md cursor-pointer"><i class="fa-solid fa-list-check mr-1"></i> View Log</button>
                         <button onclick="openDailyExpenseModal('QAR')" class="px-3 py-1.5 bg-surface-800 border border-rose-400/50 text-rose-400 rounded-lg text-xs font-medium hover:bg-surface-700 transition-all duration-300 shadow-md cursor-pointer"><i class="fa-solid fa-calendar-day mr-1"></i> + Add Daily Expense</button>
                         <button onclick="openBudgetModal('QAR')" class="px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-400/50 rounded-lg text-xs font-medium hover:bg-rose-500/30 transition-all duration-300 shadow-md cursor-pointer">+ Add QAR Budget</button>
                     </div>
                 </div>
-                <div class="premium-card p-4 overflow-x-auto">
-                    <table class="w-full text-left text-sm whitespace-nowrap">
+                    <div class="overflow-x-auto rounded-xl border border-surface-800/50">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-surface-900/90 border-b border-surface-800 sticky top-0 z-10">
-                                <tr class="text-[10px] font-mono tracking-[0.1em] uppercase text-brand-500 font-bold">
-                                    <th class="py-2 px-2 text-center w-12">S.No.</th>
-                                    <th class="py-2 px-2">Period</th>
-                                    <th class="py-2 px-2">Category</th>
-                                    <th class="py-2 px-2 text-right">Budget</th>
-                                    <th class="py-2 px-2 text-right">Spend</th>
-                                    <th class="py-2 px-2 text-right">Var</th>
-                                    <th class="py-2 px-2">Status</th>
-                                    <th class="py-2 px-2 text-center">Manage</th>
+                                <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-rose-400 font-bold">
+                                    <th class="py-3 px-4 text-center w-12">S.No.</th>
+                                    <th class="py-3 px-4">Period</th>
+                                    <th class="py-3 px-4">Category</th>
+                                    <th class="py-3 px-4 text-right">Budget</th>
+                                    <th class="py-3 px-4 text-right">Spend</th>
+                                    <th class="py-3 px-4 text-right">Var</th>
+                                    <th class="py-3 px-4 text-center">Status</th>
+                                    <th class="py-3 px-4 text-center">Manage</th>
                                 </tr>
                             </thead>
-                            <tbody id="qatarBudgetTableBody" class="divide-y divide-surface-800/50 font-light text-slate-300"></tbody>
-                        <tfoot id="qatarBudgetTableFoot" class="font-mono text-xs bg-surface-900/80"></tfoot>
-                    </table>
+                            <tbody id="qatarBudgetTableBody" class="font-light text-slate-300"></tbody>
+                            <tfoot id="qatarBudgetTableFoot" class="font-mono text-xs bg-surface-900/80 border-none"></tfoot>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -104,29 +114,33 @@
                         <i class="fa-solid fa-piggy-bank"></i> India Budget & SPENDS (INR)
                     </h3>
                     <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-3 py-1.5 bg-surface-800 border border-surface-700 hover:border-accent-cyan text-slate-400 hover:text-accent-cyan rounded-lg text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-md cursor-not-allowed">
+                            <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                        </button>
                         <button onclick="openDailyExpenseLogModal('INR')" class="px-3 py-1.5 bg-surface-800 border border-accent-cyan/50 text-white rounded-lg text-xs font-medium hover:bg-surface-700 transition-all duration-300 shadow-md cursor-pointer"><i class="fa-solid fa-list-check mr-1"></i> View Log</button>
                         <button onclick="openDailyExpenseModal('INR')" class="px-3 py-1.5 bg-surface-800 border border-accent-cyan/50 text-accent-cyan rounded-lg text-xs font-medium hover:bg-surface-700 transition-all duration-300 shadow-md cursor-pointer"><i class="fa-solid fa-calendar-day mr-1"></i> + Add Daily Expense</button>
                         <button onclick="openBudgetModal('INR')" class="px-3 py-1.5 bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/50 rounded-lg text-xs font-medium hover:bg-accent-cyan/30 transition-all duration-300 shadow-md cursor-pointer">+ Add INR Budget</button>
                     </div>
                 </div>
-                <div class="premium-card p-4 overflow-x-auto">
-                    <table class="w-full text-left text-sm whitespace-nowrap">
+                <div class="premium-card p-4">
+                    <div class="overflow-x-auto rounded-xl border border-surface-800/50">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-surface-900/90 border-b border-surface-800 sticky top-0 z-10">
-                                <tr class="text-[10px] font-mono tracking-[0.1em] uppercase text-brand-500 font-bold">
-                                    <th class="py-2 px-2 text-center w-12">S.No.</th>
-                                    <th class="py-2 px-2">Period</th>
-                                    <th class="py-2 px-2">Category</th>
-                                    <th class="py-2 px-2 text-right">Budget</th>
-                                    <th class="py-2 px-2 text-right">Spend</th>
-                                    <th class="py-2 px-2 text-right">Var</th>
-                                    <th class="py-2 px-2">Status</th>
-                                    <th class="py-2 px-2 text-center">Manage</th>
+                                <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-accent-cyan font-bold">
+                                    <th class="py-3 px-4 text-center w-12">S.No.</th>
+                                    <th class="py-3 px-4">Period</th>
+                                    <th class="py-3 px-4">Category</th>
+                                    <th class="py-3 px-4 text-right">Budget</th>
+                                    <th class="py-3 px-4 text-right">Spend</th>
+                                    <th class="py-3 px-4 text-right">Var</th>
+                                    <th class="py-3 px-4 text-center">Status</th>
+                                    <th class="py-3 px-4 text-center">Manage</th>
                                 </tr>
                             </thead>
-                            <tbody id="indiaBudgetTableBody" class="divide-y divide-surface-800/50 font-light text-slate-300"></tbody>
-                        <tfoot id="indiaBudgetTableFoot" class="font-mono text-xs bg-surface-900/80"></tfoot>
-                    </table>
-                </div>
+                            <tbody id="indiaBudgetTableBody" class="font-light text-slate-300"></tbody>
+                            <tfoot id="indiaBudgetTableFoot" class="font-mono text-xs bg-surface-900/80 border-none"></tfoot>
+                        </table>
+                    </div>
             </div>
 
             <!-- SECTION 3: BUDGET & SPEND ANALYSIS -->
@@ -276,21 +290,23 @@
                         </h4>
                         <span id="baTablePeriodLabel" class="text-[10px] font-mono text-slate-500 uppercase">Period: February 2026</span>
                     </div>
-                    <div class="premium-card p-4 overflow-x-auto">
-                        <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-surface-900/90 border-b border-surface-800">
-                                <tr class="text-[10px] font-mono tracking-[0.1em] uppercase text-brand-500 font-bold">
-                                    <th class="py-2.5 px-3">Category</th>
-                                    <th class="py-2.5 px-3 text-right">Planned Budget</th>
-                                    <th class="py-2.5 px-3 text-right">Actual Spend</th>
-                                    <th class="py-2.5 px-3 text-right">Variance</th>
-                                    <th class="py-2.5 px-3 w-48">Utilization</th>
-                                    <th class="py-2.5 px-3 text-center">Health Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="budgetAnalysisTableBody" class="divide-y divide-surface-800/50 font-light text-slate-300">
-                            </tbody>
-                        </table>
+                    <div class="premium-card p-4">
+                        <div class="overflow-x-auto rounded-xl border border-surface-800/50">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead class="bg-surface-900/90 border-b border-surface-800">
+                                    <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
+                                        <th class="py-3 px-4">Category</th>
+                                        <th class="py-3 px-4 text-right">Planned Budget</th>
+                                        <th class="py-3 px-4 text-right">Actual Spend</th>
+                                        <th class="py-3 px-4 text-right">Variance</th>
+                                        <th class="py-3 px-4 w-48">Utilization</th>
+                                        <th class="py-3 px-4 text-center">Health Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="budgetAnalysisTableBody" class="font-light text-slate-300">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -299,7 +315,7 @@
         <!-- PAGE 8: GOALS PAGE -->
         <section id="page-goals" class="page-view flex flex-col space-y-6 hidden">
             
-            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-surface-800/80 pb-3 md:mt-10 group">
+            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-surface-800/80 pb-3 group">
                 <!-- SUB-PAGE TAB BAR FOR GOALS -->
                 <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
                     <button onclick="switchGoalSubTab('financial')" id="btnGoalSubFinancial" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-brand-600 to-brand-700 text-surface-950 font-bold transition-all whitespace-nowrap shadow-[0_4px_15px_rgba(201,164,107,0.25)] flex items-center gap-2 border border-brand-500/30">
@@ -325,10 +341,16 @@
                     </button>
                 </div>
                 
-                <!-- Clear Milestone Data Button -->
-                <button onclick="confirmClearAllData('goals')" class="opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm w-full xl:w-auto cursor-pointer" title="Clear all milestone and goal records">
-                    <i class="fa-solid fa-trash-can"></i> Clear Milestone Data
-                </button>
+                <!-- Action Buttons: Undo & Clear -->
+                <div class="flex items-center gap-2 w-full xl:w-auto justify-end">
+                    <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-surface-800 border border-surface-700 text-slate-400 hover:text-brand-400 hover:border-brand-500/40 transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-not-allowed">
+                        <i class="fa-solid fa-rotate-left"></i> Undo
+                    </button>
+                    <!-- Clear Milestone Data Button -->
+                    <button onclick="confirmClearAllData('goals')" class="opacity-0 group-hover:opacity-100 shrink-0 px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 shadow-sm cursor-pointer" title="Clear all milestone and goal records">
+                        <i class="fa-solid fa-trash-can"></i> Clear Milestone Data
+                    </button>
+                </div>
             </div>
 
             <!-- FINANCIAL GOALS -->
@@ -341,6 +363,9 @@
                                 <button id="btnFinancialActive" onclick="toggleGoalView('financial', 'active')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold bg-surface-800 text-white shadow-sm transition-all">Active</button>
                                 <button id="btnFinancialCompleted" onclick="toggleGoalView('financial', 'completed')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-slate-300 transition-all bg-transparent flex items-center gap-1.5">Completed <span id="financialCompCount" class="px-1.5 py-0.2 rounded-full bg-surface-800 text-[9px] font-mono">0</span></button>
                             </div>
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 px-3 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
                             <button onclick="openGoalModal()" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
                                 <i class="fa-solid fa-plus text-[10px]"></i> Add Goal
                             </button>
@@ -352,6 +377,7 @@
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
                                     <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                    <th class="py-3 px-3 w-16 text-center">Priority</th>
                                     <th class="py-3 px-3">Objective</th>
                                     <th class="py-3 px-3 w-20">Start</th>
                                     <th class="py-3 px-3 w-20">Target</th>
@@ -387,6 +413,7 @@
                                 <thead class="bg-surface-900/90 border-b border-surface-800">
                                     <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-emerald-400 font-bold">
                                         <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                        <th class="py-3 px-3 w-16 text-center">Priority</th>
                                         <th class="py-3 px-3">Objective</th>
                                         <th class="py-3 px-3 w-20">Start</th>
                                         <th class="py-3 px-3 w-20">Target</th>
@@ -416,6 +443,9 @@
                                 <button id="btnBusinessActive" onclick="toggleGoalView('business', 'active')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold bg-surface-800 text-white shadow-sm transition-all">Active</button>
                                 <button id="btnBusinessCompleted" onclick="toggleGoalView('business', 'completed')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-slate-300 transition-all bg-transparent flex items-center gap-1.5">Completed <span id="businessCompCount" class="px-1.5 py-0.2 rounded-full bg-surface-800 text-[9px] font-mono">0</span></button>
                             </div>
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 px-3 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
                             <button onclick="openGoalModal()" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
                                 <i class="fa-solid fa-plus text-[10px]"></i> Add Plan
                             </button>
@@ -427,6 +457,7 @@
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
                                     <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                    <th class="py-3 px-3 w-16 text-center">Priority</th>
                                     <th class="py-3 px-3">Objective</th>
                                     <th class="py-3 px-3">Category</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
@@ -459,6 +490,7 @@
                                 <thead class="bg-surface-900/90 border-b border-surface-800">
                                     <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-emerald-400 font-bold">
                                         <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                        <th class="py-3 px-3 w-16 text-center">Priority</th>
                                         <th class="py-3 px-3">Objective</th>
                                         <th class="py-3 px-3">Category</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
@@ -486,6 +518,9 @@
                                 <button id="btnPersonalActive" onclick="toggleGoalView('personal', 'active')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold bg-surface-800 text-white shadow-sm transition-all">Active</button>
                                 <button id="btnPersonalCompleted" onclick="toggleGoalView('personal', 'completed')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-slate-300 transition-all bg-transparent flex items-center gap-1.5">Completed <span id="personalCompCount" class="px-1.5 py-0.2 rounded-full bg-surface-800 text-[9px] font-mono">0</span></button>
                             </div>
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 px-3 py-2 bg-surface-800 border border-surface-700 hover:border-accent-cyan text-slate-400 hover:text-accent-cyan rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
                             <button onclick="openGoalModal()" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-accent-cyan text-accent-cyan rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
                                 <i class="fa-solid fa-plus text-[10px]"></i> Add Goal
                             </button>
@@ -497,6 +532,7 @@
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-accent-cyan font-bold">
                                     <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                    <th class="py-3 px-3 w-16 text-center">Priority</th>
                                     <th class="py-3 px-3">Objective</th>
                                     <th class="py-3 px-3">Category</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
@@ -529,6 +565,7 @@
                                 <thead class="bg-surface-900/90 border-b border-surface-800">
                                     <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-emerald-400 font-bold">
                                         <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                        <th class="py-3 px-3 w-16 text-center">Priority</th>
                                         <th class="py-3 px-3">Objective</th>
                                         <th class="py-3 px-3">Category</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
@@ -556,6 +593,9 @@
                                 <button id="btnBooksActive" onclick="toggleGoalView('books', 'active')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold bg-surface-800 text-white shadow-sm transition-all">Active</button>
                                 <button id="btnBooksCompleted" onclick="toggleGoalView('books', 'completed')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-slate-300 transition-all bg-transparent flex items-center gap-1.5">Completed <span id="booksCompCount" class="px-1.5 py-0.2 rounded-full bg-surface-800 text-[9px] font-mono">0</span></button>
                             </div>
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 px-3 py-2 bg-surface-800 border border-surface-700 hover:border-amber-400 text-slate-400 hover:text-amber-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
                             <button onclick="openGoalModal('books')" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-amber-400 text-amber-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
                                 <i class="fa-solid fa-plus text-[10px]"></i> Add Book Goal
                             </button>
@@ -567,6 +607,7 @@
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-amber-400 font-bold">
                                     <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                    <th class="py-3 px-3 w-16 text-center">Priority</th>
                                     <th class="py-3 px-3">Book Title / Goal</th>
                                     <th class="py-3 px-3">Genre / Topic</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
@@ -599,6 +640,7 @@
                                 <thead class="bg-surface-900/90 border-b border-surface-800">
                                     <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-emerald-400 font-bold">
                                         <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                        <th class="py-3 px-3 w-16 text-center">Priority</th>
                                         <th class="py-3 px-3">Book Title / Goal</th>
                                         <th class="py-3 px-3">Genre / Topic</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
@@ -626,6 +668,9 @@
                                 <button id="btnTravelActive" onclick="toggleGoalView('travel', 'active')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold bg-surface-800 text-white shadow-sm transition-all">Active</button>
                                 <button id="btnTravelCompleted" onclick="toggleGoalView('travel', 'completed')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-slate-300 transition-all bg-transparent flex items-center gap-1.5">Completed <span id="travelCompCount" class="px-1.5 py-0.2 rounded-full bg-surface-800 text-[9px] font-mono">0</span></button>
                             </div>
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 px-3 py-2 bg-surface-800 border border-surface-700 hover:border-accent-blue text-slate-400 hover:text-accent-blue rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
                             <button onclick="openGoalModal('travel')" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-accent-blue text-accent-blue rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
                                 <i class="fa-solid fa-plus text-[10px]"></i> Add Travel Destination
                             </button>
@@ -637,6 +682,7 @@
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-accent-blue font-bold">
                                     <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                    <th class="py-3 px-3 w-16 text-center">Priority</th>
                                     <th class="py-3 px-3">Destination / Trip</th>
                                     <th class="py-3 px-3">Focus / Itinerary</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
@@ -669,6 +715,7 @@
                                 <thead class="bg-surface-900/90 border-b border-surface-800">
                                     <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-emerald-400 font-bold">
                                         <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                        <th class="py-3 px-3 w-16 text-center">Priority</th>
                                         <th class="py-3 px-3">Destination / Trip</th>
                                         <th class="py-3 px-3">Focus / Itinerary</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
@@ -696,6 +743,9 @@
                                 <button id="btnZiyaraActive" onclick="toggleGoalView('ziyara', 'active')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold bg-surface-800 text-white shadow-sm transition-all">Active</button>
                                 <button id="btnZiyaraCompleted" onclick="toggleGoalView('ziyara', 'completed')" class="px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-slate-300 transition-all bg-transparent flex items-center gap-1.5">Completed <span id="ziyaraCompCount" class="px-1.5 py-0.2 rounded-full bg-surface-800 text-[9px] font-mono">0</span></button>
                             </div>
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn opacity-0 group-hover:opacity-100 px-3 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
+                            </button>
                             <button onclick="openGoalModal('ziyara')" class="opacity-0 group-hover:opacity-100 px-4 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-brand-500 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
                                 <i class="fa-solid fa-plus text-[10px]"></i> Add Ziyara Journey
                             </button>
@@ -707,6 +757,7 @@
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
                                     <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                    <th class="py-3 px-3 w-16 text-center">Priority</th>
                                     <th class="py-3 px-3">Ziyara / Holy Site</th>
                                     <th class="py-3 px-3">Intent / Notes</th>
                                     <th class="py-3 px-3 w-24">Target Date</th>
@@ -739,6 +790,7 @@
                                 <thead class="bg-surface-900/90 border-b border-surface-800">
                                     <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-emerald-400 font-bold">
                                         <th class="py-3 px-3 w-12 text-center">S.No.</th>
+                                        <th class="py-3 px-3 w-16 text-center">Priority</th>
                                         <th class="py-3 px-3">Ziyara / Holy Site</th>
                                         <th class="py-3 px-3">Intent / Notes</th>
                                         <th class="py-3 px-3 w-24">Target Date</th>
@@ -873,6 +925,7 @@
                             <thead class="bg-surface-900/90 border-b border-surface-800">
                                 <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-brand-500 font-bold">
                                     <th class="py-3 px-3 w-12 text-center">#</th>
+                                    <th class="py-3 px-3 w-16 text-center">Priority</th>
                                     <th class="py-3 px-3">Milestone</th>
                                     <th class="py-3 px-3">Track</th>
                                     <th class="py-3 px-3">Target Date</th>
@@ -891,83 +944,189 @@
         </section>
 
         <!-- PAGE 9: GRAPHS & AI INTELLIGENCE -->
-        <section id="page-graphs" class="page-view space-y-8 hidden">
+        <section id="page-graphs" class="page-view space-y-6 hidden">
             
             <!-- Intelligence Header & Export Controls -->
             <div class="flex flex-wrap items-center justify-between premium-card p-6 gap-4">
-                <h3 class="font-display text-xl text-white flex items-center gap-3">
-                    <i class="fa-solid fa-microchip text-accent-plum text-lg"></i> Financial Intelligence
-                </h3>
-                <div class="flex gap-3">
-                    <label for="importExcelInput" class="px-5 py-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-surface-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-[0_0_15px_rgba(52,211,153,0.15)] hover:shadow-[0_0_20px_rgba(52,211,153,0.4)] flex items-center gap-2 cursor-pointer">
+                <div>
+                    <h3 class="font-display text-2xl text-white font-bold flex items-center gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-accent-plum/15 border border-accent-plum/30 flex items-center justify-center text-accent-plum shadow-[0_0_15px_rgba(184,41,255,0.2)]">
+                            <i class="fa-solid fa-microchip text-base"></i>
+                        </span>
+                        Executive Financial Intelligence
+                    </h3>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="renderFinancialIntelligencePage()" class="px-4 py-2.5 bg-surface-900 border border-surface-700 hover:border-accent-plum text-slate-300 hover:text-accent-plum rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-arrows-rotate text-xs"></i> Re-Analyze
+                    </button>
+                    <label for="importExcelInput" class="px-4 py-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-surface-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-[0_0_15px_rgba(52,211,153,0.15)] flex items-center gap-2 cursor-pointer">
                         <i class="fa-solid fa-file-import"></i> Import Data
-                        <input type="file" id="importExcelInput" accept=".xlsx, .xls" class="hidden" onchange="importDataFromExcel(event)">
+                        <input type="file" id="importExcelInput" accept=".xlsx, .xls" class="hidden" onchange="importFromExcel(event)">
                     </label>
-                    <button onclick="exportDashboardToExcel()" class="px-5 py-2.5 bg-accent-plum/10 text-accent-plum border border-accent-plum/30 hover:bg-accent-plum hover:text-surface-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-[0_0_15px_rgba(184,41,255,0.15)] hover:shadow-[0_0_20px_rgba(184,41,255,0.4)] flex items-center gap-2">
-                        <i class="fa-solid fa-file-excel"></i> Export to Excel
+                    <button onclick="exportToExcel()" class="px-4 py-2.5 bg-accent-plum/10 text-accent-plum border border-accent-plum/30 hover:bg-accent-plum hover:text-surface-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-[0_0_15px_rgba(184,41,255,0.15)] flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-file-excel"></i> Export Excel
                     </button>
                 </div>
             </div>
 
-            <!-- SMART FINANCIAL HEALTH SCORECARD -->
-            <div class="grid grid-cols-1 lg:grid-cols-1 gap-6">
-                
-                <!-- Box: Smart Financial Health Scorecard -->
+            <!-- KEY FINANCIAL INTELLIGENCE METRIC CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- KPI 1: Financial Health Score -->
+                <div class="premium-card p-5 relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="font-mono text-[10px] uppercase tracking-widest text-slate-400">Health Index</span>
+                        <span id="intelHealthBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">Optimal</span>
+                    </div>
+                    <div class="flex items-baseline gap-2 mb-2">
+                        <span id="intelHealthScore" class="font-mono text-3xl font-black text-white">92</span>
+                        <span class="font-mono text-xs text-slate-500">/ 100</span>
+                    </div>
+                    <div class="w-full bg-surface-900 rounded-full h-1.5 overflow-hidden border border-surface-800">
+                        <div id="intelHealthBar" class="bg-gradient-to-r from-emerald-500 to-accent-cyan h-full rounded-full transition-all duration-700" style="width: 92%"></div>
+                    </div>
+                    <p id="intelHealthDesc" class="text-[11px] text-slate-400 mt-2 font-light">Strong balance sheet fundamentals</p>
+                </div>
+
+                <!-- KPI 2: Asset to Debt Coverage -->
+                <div class="premium-card p-5 relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="font-mono text-[10px] uppercase tracking-widest text-slate-400">Asset / Debt Coverage</span>
+                        <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xs"><i class="fa-solid fa-shield-halved"></i></span>
+                    </div>
+                    <div class="mb-2">
+                        <span id="intelAssetRatio" class="font-mono text-3xl font-black text-emerald-400">0.0x</span>
+                    </div>
+                    <p id="intelAssetRatioSub" class="text-[11px] text-slate-400 font-light">Cushion over total liabilities</p>
+                </div>
+
+                <!-- KPI 3: Liquid Cash Buffer -->
+                <div class="premium-card p-5 relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="font-mono text-[10px] uppercase tracking-widest text-slate-400">Liquid Cash Buffer</span>
+                        <span class="w-6 h-6 rounded-lg bg-accent-blue/10 text-accent-blue flex items-center justify-center text-xs"><i class="fa-solid fa-droplet"></i></span>
+                    </div>
+                    <div class="mb-2">
+                        <span id="intelLiquidBuffer" class="font-mono text-2xl font-black text-white">₹0.00</span>
+                    </div>
+                    <p id="intelLiquidBufferSub" class="text-[11px] text-slate-400 font-light">Qatar & India bank accounts</p>
+                </div>
+
+                <!-- KPI 4: Emergency Runway -->
+                <div class="premium-card p-5 relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="font-mono text-[10px] uppercase tracking-widest text-slate-400">Emergency Runway</span>
+                        <span class="w-6 h-6 rounded-lg bg-accent-plum/10 text-accent-plum flex items-center justify-center text-xs"><i class="fa-solid fa-hourglass-half"></i></span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5 mb-2">
+                        <span id="intelRunwayMonths" class="font-mono text-3xl font-black text-accent-plum">0.0</span>
+                        <span class="font-mono text-xs text-slate-400">months</span>
+                    </div>
+                    <p id="intelRunwayDesc" class="text-[11px] text-slate-400 font-light">Coverage at current monthly spend</p>
+                </div>
+            </div>
+
+            <!-- ANALYTICS CHARTS GRID (TRAJECTORY & ALLOCATION) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left 2 Cols: Wealth Growth Trajectory & Forecast Chart -->
+                <div class="lg:col-span-2 premium-card p-6 flex flex-col justify-between">
+                    <div class="flex flex-wrap items-center justify-between border-b border-surface-800 pb-3 mb-4 gap-2">
+                        <div>
+                            <h4 class="font-mono text-xs font-bold text-brand-500 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line"></i> Consolidated Wealth Trajectory & Forecast
+                            </h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Historical growth track + projected trajectory</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="intelNetWorthPill" class="px-3 py-1 rounded-xl bg-surface-900 border border-surface-700 text-xs font-mono font-bold text-brand-400">Net Worth: ₹0.00</span>
+                        </div>
+                    </div>
+                    <div class="h-[300px] w-full relative">
+                        <canvas id="intelGrowthChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Right 1 Col: Asset vs Liability Allocation Donut Chart -->
                 <div class="premium-card p-6 flex flex-col justify-between">
-                    <div class="border-b border-surface-800 pb-3 mb-5 flex items-center justify-between">
-                        <h3 class="font-mono text-[10px] text-brand-500 uppercase tracking-widest flex items-center gap-2">
-                            <i class="fa-solid fa-heart-pulse"></i> Executive Financial Health Audit
-                        </h3>
-                        <span id="healthScoreBadge" class="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Optimal</span>
+                    <div class="border-b border-surface-800 pb-3 mb-4">
+                        <h4 class="font-mono text-xs font-bold text-accent-cyan uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie"></i> Capital Allocation Mix
+                        </h4>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Breakdown of wealth across asset classes</p>
                     </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-auto">
-                        <div class="flex items-center justify-between p-4 rounded-xl bg-surface-900/50 border border-surface-800">
-                            <div>
-                                <p class="text-xs font-semibold text-white mb-0.5">Asset-to-Liability Ratio</p>
-                                <p class="text-[10px] text-slate-400 font-light">Measures your overall financial safety cushion</p>
-                            </div>
-                            <span id="auditAssetRatio" class="font-mono text-base font-bold text-emerald-400">0x</span>
-                        </div>
-                        <div class="flex items-center justify-between p-4 rounded-xl bg-surface-900/50 border border-surface-800">
-                            <div>
-                                <p class="text-xs font-semibold text-white mb-0.5">Liquid Cash Buffer</p>
-                                <p class="text-[10px] text-slate-400 font-light">Total liquid balances across Qatar & India banks</p>
-                            </div>
-                            <span id="auditLiquidBuffer" class="font-mono text-base font-bold text-accent-blue">₹0.00</span>
-                        </div>
+                    <div class="h-[220px] w-full relative flex items-center justify-center my-auto">
+                        <canvas id="intelAllocationChart"></canvas>
                     </div>
+                    <div id="intelAllocationSummary" class="grid grid-cols-2 gap-2 pt-3 border-t border-surface-800/80 text-[10px] font-mono text-slate-300">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
 
-                    <div class="pt-4 mt-5 border-t border-surface-800/80">
-                        <p id="auditRecommendationText" class="text-xs text-slate-300 font-light italic leading-relaxed">
-                            <i class="fa-solid fa-circle-info text-brand-500 mr-1.5"></i> All systems nominal. Your portfolio maintains robust asset backing against recorded liabilities.
-                        </p>
+            <!-- CASHFLOW VELOCITY & AI AUDIT ADVISORY -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left 1 Col: Monthly Spends & Budget Adherence -->
+                <div class="premium-card p-6 flex flex-col justify-between">
+                    <div class="border-b border-surface-800 pb-3 mb-4">
+                        <h4 class="font-mono text-xs font-bold text-rose-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-scale-balanced"></i> Monthly Cashflow Velocity
+                        </h4>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Budgeted limits vs actual burn rate</p>
+                    </div>
+                    <div class="h-[220px] w-full relative">
+                        <canvas id="intelCashflowChart"></canvas>
+                    </div>
+                    <div class="pt-3 border-t border-surface-800/80 flex items-center justify-between text-xs font-mono">
+                        <span class="text-slate-400">Budget Adherence:</span>
+                        <span id="intelAdherenceRate" class="font-bold text-emerald-400">100%</span>
                     </div>
                 </div>
 
-            </div>
+                <!-- Right 2 Cols: Smart Executive Audit & Strategic Intelligence -->
+                <div class="lg:col-span-2 premium-card p-6 flex flex-col justify-between">
+                    <div class="flex items-center justify-between border-b border-surface-800 pb-3 mb-4">
+                        <h4 class="font-mono text-xs font-bold text-accent-plum uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-brain"></i> Strategic AI Wealth Audits & Recommendations
+                        </h4>
+                        <span class="px-2.5 py-0.5 rounded-md text-[10px] font-mono bg-accent-plum/10 text-accent-plum border border-accent-plum/30">Active Live Engine</span>
+                    </div>
 
-            <!-- Growth Chart -->
-            <div class="premium-card p-6">
-                <h3 class="font-mono text-[10px] text-brand-500 uppercase tracking-widest border-b border-surface-800 pb-3 mb-5">Portfolio Value Breakdown (Assets vs. Liabilities)</h3>
-                <div class="h-[320px] relative flex items-center justify-center">
-                    <canvas id="growthComboChart"></canvas>
+                    <!-- Dynamic Insights Grid -->
+                    <div id="intelAuditGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <!-- Dynamic Cards will be rendered here -->
+                    </div>
+
+                    <!-- AI Executive Summary Banner -->
+                    <div class="p-4 rounded-xl bg-surface-900/60 border border-surface-800/80 flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 shrink-0 mt-0.5">
+                            <i class="fa-solid fa-lightbulb text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-semibold text-white mb-0.5">Executive Strategy Overview</p>
+                            <p id="intelExecutiveSummary" class="text-xs text-slate-300 font-light leading-relaxed">
+                                Portfolio balance is robust with healthy liquidity reserves and positive equity allocations.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
+
         </section>
 
         <!-- PAGE 6: NOTES / JOURNAL -->
         <section id="page-notes" class="page-view space-y-6 hidden">
             <!-- Executive Header & Actions -->
-            <div class="flex flex-wrap items-center justify-between border-b border-surface-800/80 pb-4 md:mt-10 gap-4 group">
+            <div class="flex flex-wrap items-center justify-between border-b border-surface-800/80 pb-4 gap-4 group">
                 <div>
                     <div class="flex items-center gap-2.5">
                         <h3 class="font-display text-2xl text-white font-bold">Executive Journal & Notes</h3>
                         <span id="notesCountBadge" class="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-mono text-[11px] font-bold">0</span>
                     </div>
-                    <p class="text-xs text-slate-400 font-mono mt-1">Strategic thoughts, rich meeting logs, ideas, and stylized documentation</p>
                 </div>
                 <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-4 py-2.5 bg-surface-900 border border-surface-700 hover:border-amber-400 text-slate-400 hover:text-amber-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-sm cursor-not-allowed">
+                        <i class="fa-solid fa-rotate-left text-xs"></i> Undo
+                    </button>
                     <button onclick="confirmClearAllData('notes')" class="px-4 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 whitespace-nowrap flex items-center gap-2 cursor-pointer shadow-sm" title="Clear all notes">
                         <i class="fa-solid fa-trash-can text-xs"></i> Clear Notes Data
                     </button>
@@ -1012,6 +1171,7 @@
                     <!-- Sort Select -->
                     <select id="notesSortSelect" onchange="filterNotes()" class="px-3 py-2 rounded-xl bg-surface-950 border border-surface-700/80 text-xs text-slate-300 focus:border-amber-400 focus:outline-none cursor-pointer">
                         <option value="pinned">📌 Pinned First</option>
+                        <option value="custom">✋ Custom (Drag Order)</option>
                         <option value="newest">⏱️ Newest First</option>
                         <option value="oldest">⏳ Oldest First</option>
                         <option value="title">🔤 Title (A-Z)</option>
@@ -1040,7 +1200,7 @@
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="border-b border-surface-800 bg-surface-900/60 font-mono text-[10px] text-slate-400 uppercase tracking-wider">
-                                <th class="p-4 w-12 text-center">Pin</th>
+                                <th class="p-4 w-16 text-center">Move / Pin</th>
                                 <th class="p-4">Title & Excerpt</th>
                                 <th class="p-4">Category</th>
                                 <th class="p-4">Typography & Theme</th>
@@ -1059,19 +1219,18 @@
         <!-- PAGE 7: REMINDERS -->
         <section id="page-reminders" class="page-view space-y-6 hidden">
             <!-- Executive Header & Quick Actions -->
-            <div class="flex flex-wrap items-center justify-between border-b border-surface-800/80 pb-5 md:mt-6 gap-4 group">
+            <div class="flex flex-wrap items-center justify-between border-b border-surface-800/80 pb-5 gap-4 group">
                 <div>
                     <div class="flex items-center gap-2.5">
                         <h3 class="font-display text-2xl text-white font-bold tracking-tight">
                             Reminders & Agenda
                         </h3>
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/25 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span> Live Schedule
-                        </span>
                     </div>
-                    <p class="text-xs text-slate-400 font-mono mt-1">Scheduled commitments, executive alerts, and synced notifications</p>
                 </div>
                 <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-3.5 py-2 rounded-xl text-xs font-mono bg-surface-900/80 border border-surface-800 text-slate-400 hover:text-brand-400 hover:border-brand-500/30 transition-all duration-200 whitespace-nowrap flex items-center gap-1.5 cursor-not-allowed shadow-sm">
+                        <i class="fa-solid fa-rotate-left text-xs"></i> Undo
+                    </button>
                     <button onclick="confirmClearAllData('reminders')" class="px-3.5 py-2 rounded-xl text-xs font-mono bg-surface-900/80 border border-surface-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/30 transition-all duration-200 whitespace-nowrap flex items-center gap-2 cursor-pointer shadow-sm" title="Clear all reminders">
                         <i class="fa-solid fa-trash-can text-xs"></i>
                         <span class="hidden sm:inline">Clear Data</span>
@@ -1082,84 +1241,39 @@
                 </div>
             </div>
 
-            <!-- Executive Metric Strip with Completion Bar -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-                <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 backdrop-blur-sm relative overflow-hidden group hover:border-brand-500/30 transition-all">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Active Tasks</span>
-                        <div class="w-8 h-8 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-clock"></i>
-                        </div>
-                    </div>
-                    <div class="flex items-baseline gap-2 mt-2">
-                        <span id="remindersActiveStat" class="text-2xl font-bold font-mono text-white">0</span>
-                        <span class="text-[11px] text-slate-400 font-light">pending</span>
-                    </div>
-                </div>
-
-                <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 backdrop-blur-sm relative overflow-hidden group hover:border-rose-500/30 transition-all">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">High Priority</span>
-                        <div class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-fire"></i>
-                        </div>
-                    </div>
-                    <div class="flex items-baseline gap-2 mt-2">
-                        <span id="remindersHighStat" class="text-2xl font-bold font-mono text-rose-400">0</span>
-                        <span class="text-[11px] text-slate-400 font-light">urgent</span>
-                    </div>
-                </div>
-
-                <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 backdrop-blur-sm relative overflow-hidden group hover:border-amber-500/30 transition-all">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Overdue</span>
-                        <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                        </div>
-                    </div>
-                    <div class="flex items-baseline gap-2 mt-2">
-                        <span id="remindersOverdueStat" class="text-2xl font-bold font-mono text-amber-400">0</span>
-                        <span class="text-[11px] text-slate-400 font-light">require action</span>
-                    </div>
-                </div>
-
-                <div class="p-4 rounded-2xl bg-surface-900/70 border border-surface-800/80 backdrop-blur-sm relative overflow-hidden group hover:border-emerald-500/30 transition-all">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Completed</span>
-                        <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
-                    </div>
-                    <div class="flex items-baseline gap-2 mt-2">
-                        <span id="remindersCompletedStat" class="text-2xl font-bold font-mono text-emerald-400">0</span>
-                        <span id="remindersCompletionRate" class="text-[11px] text-emerald-400/80 font-mono font-semibold">0%</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sleek Filter, Search & View Toggle Toolbar -->
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surface-900/60 p-2 rounded-2xl border border-surface-800/80 backdrop-blur-sm">
-                <!-- Filter Pills -->
-                <div class="flex items-center gap-1 overflow-x-auto custom-scrollbar p-0.5">
-                    <button id="btnReminderFilter-all" onclick="setReminderFilter('all')" class="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-brand-500/15 text-brand-300 border border-brand-500/30 transition-all whitespace-nowrap cursor-pointer">
-                        All <span id="cntFilterAll" class="opacity-70 text-[10px] ml-1 font-mono">0</span>
+            <!-- REMINDER SUB-NAVIGATION TAB BAR & CONTROLS -->
+            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-surface-800/80 pb-3 group/remnav">
+                <!-- Sub-Navigation Heading Buttons -->
+                <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
+                    <button onclick="setReminderFilter('all')" id="btnReminderSubAll" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-brand-600 to-brand-700 text-surface-950 font-bold transition-all whitespace-nowrap shadow-[0_4px_15px_rgba(201,164,107,0.25)] flex items-center gap-2 border border-brand-500/30 cursor-pointer">
+                        <i class="fa-solid fa-list-check text-[10px]"></i>
+                        <span>All</span>
+                        <span id="remindersAllStat" class="px-1.5 py-0.5 rounded-md bg-surface-950/40 text-surface-950 font-bold text-[10px]">0</span>
                     </button>
-                    <button id="btnReminderFilter-active" onclick="setReminderFilter('active')" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 transition-all whitespace-nowrap cursor-pointer">
-                        Active <span id="cntFilterActive" class="opacity-70 text-[10px] ml-1 font-mono">0</span>
+                    <button onclick="setReminderFilter('active')" id="btnReminderSubActive" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white hover:border-cyan-500/40 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-clock text-[10px] text-cyan-400"></i>
+                        <span>Active</span>
+                        <span id="remindersActiveStat" class="px-1.5 py-0.5 rounded-md bg-surface-950 border border-surface-800 text-cyan-400 font-bold text-[10px]">0</span>
                     </button>
-                    <button id="btnReminderFilter-high" onclick="setReminderFilter('high')" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 transition-all whitespace-nowrap cursor-pointer">
-                        High Priority <span id="cntFilterHigh" class="opacity-70 text-[10px] ml-1 font-mono">0</span>
+                    <button onclick="setReminderFilter('high')" id="btnReminderSubHigh" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white hover:border-rose-500/40 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-fire text-[10px] text-rose-400"></i>
+                        <span>High Priority</span>
+                        <span id="remindersHighStat" class="px-1.5 py-0.5 rounded-md bg-surface-950 border border-surface-800 text-rose-400 font-bold text-[10px]">0</span>
                     </button>
-                    <button id="btnReminderFilter-overdue" onclick="setReminderFilter('overdue')" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 transition-all whitespace-nowrap cursor-pointer">
-                        Overdue <span id="cntFilterOverdue" class="opacity-70 text-[10px] ml-1 font-mono">0</span>
+                    <button onclick="setReminderFilter('overdue')" id="btnReminderSubOverdue" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white hover:border-amber-500/40 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-triangle-exclamation text-[10px] text-amber-400"></i>
+                        <span>Overdue</span>
+                        <span id="remindersOverdueStat" class="px-1.5 py-0.5 rounded-md bg-surface-950 border border-surface-800 text-amber-400 font-bold text-[10px]">0</span>
                     </button>
-                    <button id="btnReminderFilter-completed" onclick="setReminderFilter('completed')" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 transition-all whitespace-nowrap cursor-pointer">
-                        Completed <span id="cntFilterCompleted" class="opacity-70 text-[10px] ml-1 font-mono">0</span>
+                    <button onclick="setReminderFilter('completed')" id="btnReminderSubCompleted" class="px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white hover:border-emerald-500/40 transition-all whitespace-nowrap flex items-center gap-2 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-circle-check text-[10px] text-emerald-400"></i>
+                        <span>Completed</span>
+                        <span id="remindersCompletedStat" class="px-1.5 py-0.5 rounded-md bg-surface-950 border border-surface-800 text-emerald-400 font-bold text-[10px]">0</span>
                     </button>
                 </div>
 
-                <!-- Search & View Mode Switcher -->
-                <div class="flex items-center gap-2">
+                <!-- Right: Search & View Mode Switcher -->
+                <div class="flex items-center gap-2 opacity-0 group-hover/remnav:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 justify-end">
                     <div class="relative flex-1 sm:w-60">
                         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
                         <input type="text" id="reminderSearchInput" oninput="renderRemindersTable()" placeholder="Search reminders..." class="w-full pl-9 pr-8 py-1.5 rounded-xl border border-surface-700/60 bg-surface-950/60 text-xs text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none font-mono transition-all">
@@ -1189,10 +1303,11 @@
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead class="bg-surface-900/90 border-b border-surface-800 sticky top-0 z-10">
                         <tr class="text-[10px] font-mono tracking-[0.12em] uppercase text-brand-400 font-bold">
-                            <th class="py-3.5 px-5 w-[42%] min-w-[220px]">Subject / Title</th>
-                            <th class="py-3.5 px-4 w-[20%]">Date & Time</th>
-                            <th class="py-3.5 px-4 w-[14%]">Priority</th>
-                            <th class="py-3.5 px-4 w-[14%]">Repeat</th>
+                            <th class="py-3.5 px-5 w-[36%] min-w-[200px]">Subject / Title</th>
+                            <th class="py-3.5 px-4 w-[18%]">Remind Date & Time</th>
+                            <th class="py-3.5 px-4 w-[14%]">Entry Date</th>
+                            <th class="py-3.5 px-4 w-[12%]">Priority</th>
+                            <th class="py-3.5 px-4 w-[10%]">Repeat</th>
                             <th class="py-3.5 px-4 text-center w-[10%]">Actions</th>
                         </tr>
                     </thead>
@@ -1200,6 +1315,152 @@
                         <!-- Injected via JS -->
                     </tbody>
                 </table>
+            </div>
+        </section>
+
+        <!-- PAGE 8.5: DOCUMENTS & MEDIA VAULT -->
+        <section id="page-documents" class="page-view space-y-6 hidden">
+            <!-- Header & Action Buttons -->
+            <div class="flex items-center justify-between gap-4 pb-4 border-b border-surface-800/80 group/docheader">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                        <i class="fa-solid fa-folder-open text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-2xl text-white font-bold tracking-tight">Documents</h3>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons at Top Right (Hidden by default, reveals on hover) -->
+                <div class="flex items-center gap-2 opacity-0 group-hover/docheader:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                    <button onclick="openDocumentUploadModal()" class="px-4 py-2 rounded-xl text-xs font-mono bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95">
+                        <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                        <span class="font-medium font-sans">Upload Document / Photo</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SEARCH, CATEGORIES & VIEW SWITCHER TOOLBAR -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80 group/docbar">
+                <!-- Category Select Pills -->
+                <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
+                    <button id="btnDocCat-all" onclick="setDocumentSubCategory('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer whitespace-nowrap">All Categories</button>
+                    <button id="btnDocCat-identity" onclick="setDocumentSubCategory('identity')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Identity &amp; Passports</button>
+                    <button id="btnDocCat-legal" onclick="setDocumentSubCategory('legal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Legal &amp; Deeds</button>
+                    <button id="btnDocCat-financial" onclick="setDocumentSubCategory('financial')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Financial &amp; Tax</button>
+                    <button id="btnDocCat-business" onclick="setDocumentSubCategory('business')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Business &amp; Ventures</button>
+                    <button id="btnDocCat-receipts" onclick="setDocumentSubCategory('receipts')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Receipts &amp; Invoices</button>
+                    <button id="btnDocCat-personal" onclick="setDocumentSubCategory('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Photos &amp; Personal</button>
+                </div>
+
+                <!-- Search & View Controls (Revealed on hover / focus) -->
+                <div class="flex items-center gap-2.5 justify-between md:justify-end opacity-0 group-hover/docbar:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                    <!-- Search Input -->
+                    <div class="relative w-40 sm:w-56">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="docSearchInput" oninput="renderDocumentsPage()" placeholder="Search documents..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-surface-700/60 bg-surface-950/60 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none font-mono">
+                    </div>
+
+                    <!-- View Mode Switcher -->
+                    <div class="flex items-center bg-surface-950/80 p-1 rounded-xl border border-surface-800 shrink-0">
+                        <button id="btnDocViewGrid" onclick="setDocumentViewMode('grid')" title="Grid Card View" class="px-2.5 py-1 rounded-lg text-xs font-mono transition-all bg-surface-800 text-emerald-300 shadow-sm cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-grip text-xs"></i>
+                            <span class="hidden sm:inline text-[11px]">Grid</span>
+                        </button>
+                        <button id="btnDocViewList" onclick="setDocumentViewMode('list')" title="List Table View" class="px-2.5 py-1 rounded-lg text-xs font-mono transition-all text-slate-400 hover:text-white cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-list text-xs"></i>
+                            <span class="hidden sm:inline text-[11px]">List</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCUMENTS GRID CONTAINER -->
+            <div id="documentsGridContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                <!-- Dynamic cards injected via JS -->
+            </div>
+
+            <!-- DOCUMENTS LIST CONTAINER (Alternative View) -->
+            <div id="documentsListContainer" class="hidden premium-card p-0 overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-surface-900/80 text-[10px] font-mono uppercase tracking-wider text-slate-400 border-b border-surface-800">
+                            <tr>
+                                <th class="p-3.5">Document / Asset</th>
+                                <th class="p-3.5">Category</th>
+                                <th class="p-3.5">Type &amp; Format</th>
+                                <th class="p-3.5">Size</th>
+                                <th class="p-3.5">Date</th>
+                                <th class="p-3.5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documentsTableBody" class="divide-y divide-surface-800/40 font-light">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 9: FAVORITES (PHOTOS & QUOTES) -->
+        <section id="page-favorites" class="page-view space-y-5 hidden">
+            <!-- Header & Action Buttons -->
+            <div class="flex items-center justify-between gap-4 pb-4 border-b border-surface-800/80 group/favheader">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-star text-sm"></i>
+                    </div>
+                    <h3 class="font-display text-2xl text-white font-bold tracking-tight">Favorites</h3>
+                </div>
+                
+                <!-- Single Add Button at Top Right (Hidden by default, reveals on hover) -->
+                <div id="favAddBtnContainer" class="opacity-0 group-hover/favheader:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                    <button onclick="openFavoriteModal(null, favCurrentFilter)" class="px-4 py-2 rounded-xl text-xs font-mono bg-gradient-to-r from-cyan-500/20 to-amber-500/20 border border-brand-500/40 text-brand-300 hover:bg-brand-500/20 hover:border-brand-400 transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span class="font-medium font-sans">Add Favorite</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Tabs & View Toggle Bar (Photos & Quotes) -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80 group/favbar">
+                <!-- Filter Tabs: Photos & Quotes -->
+                <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+                    <button id="btnFavFilter-photo" onclick="setFavoriteFilter('photo')" class="px-3.5 py-1.5 rounded-xl text-xs font-mono font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition-all cursor-pointer flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-camera text-[11px]"></i>
+                        <span>Photos (<span id="cntFavFilterPhoto">0</span>)</span>
+                    </button>
+                    <button id="btnFavFilter-quote" onclick="setFavoriteFilter('quote')" class="px-3.5 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer border border-transparent flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-quote-left text-[11px]"></i>
+                        <span>Quotes (<span id="cntFavFilterQuote">0</span>)</span>
+                    </button>
+                </div>
+
+                <!-- Search & View Mode Switcher (Hidden by default, reveals on hover / focus) -->
+                <div id="favToolsGroup" class="flex items-center gap-2.5 justify-between sm:justify-end opacity-0 group-hover/favbar:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                    <!-- Search Input -->
+                    <div id="favSearchContainer" class="relative w-40 sm:w-52">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="favSearchInput" oninput="renderFavoritesPage()" placeholder="Search..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-surface-700/60 bg-surface-950/60 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none font-mono">
+                    </div>
+
+                    <!-- View Mode Switcher: Grid (Compact Icons) vs List -->
+                    <div id="favViewSwitcherContainer" class="flex items-center bg-surface-950/80 p-1 rounded-xl border border-surface-800 shrink-0">
+                        <button id="btnFavViewGrid" onclick="setFavoriteViewMode('grid')" title="Small Icons / Grid View" class="px-2.5 py-1 rounded-lg text-xs font-mono transition-all bg-surface-800 text-cyan-300 shadow-sm cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-grip text-xs"></i>
+                            <span class="hidden md:inline text-[11px]">Grid</span>
+                        </button>
+                        <button id="btnFavViewList" onclick="setFavoriteViewMode('list')" title="List View" class="px-2.5 py-1 rounded-lg text-xs font-mono transition-all text-slate-400 hover:text-white cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-list text-xs"></i>
+                            <span class="hidden md:inline text-[11px]">List</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAVORITES CONTAINER -->
+            <div id="favoritesContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                <!-- Dynamically populated via JS -->
             </div>
         </section>
 

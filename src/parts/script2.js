@@ -305,6 +305,7 @@ function switchAssetSubTab(tabKey) {
         valuation: { id: 'btnAssetSubValuation', icon: 'fa-chart-line', label: 'Valuation Log' }, 
         mutualfunds: { id: 'btnAssetSubMutualFunds', icon: 'fa-seedling', label: 'Mutual Funds' },
         banking: { id: 'btnAssetSubBanking', icon: 'fa-building-columns', label: 'Banking' }, 
+        qatarvaluation: { id: 'btnAssetSubQatarValuation', icon: 'fa-earth-asia', label: 'Qatar Valuation' },
         credit: { id: 'btnAssetSubCredit', icon: 'fa-credit-card', label: 'Credit & Liabilities' }, 
         analysis: { id: 'btnAssetSubAnalysis', icon: 'fa-chart-pie', label: 'Net Worth Analysis' }
     };
@@ -322,7 +323,9 @@ function switchAssetSubTab(tabKey) {
         }
     });
 
-    if(tabKey === 'analysis') {
+    if(tabKey === 'qatarvaluation') {
+        renderQatarAssetsTable();
+    } else if(tabKey === 'analysis') {
         renderNetWorthAnalysis();
     }
 }
@@ -393,8 +396,37 @@ function renderAssetLogsTable() {
         });
     }
 
-    totalValueImpact += bankAssets + mfAssets;
+    let qatarAssetsTotalRs = 0;
+    let qatarAssetsTotalQr = 0;
+    if (db.qatarAssets) {
+        db.qatarAssets.forEach(qa => {
+            let qr = parseFloat(qa.valueQr) || 0;
+            let per = parseFloat(qa.perQr) || 23.5;
+            let rs = parseFloat(qa.valueRs);
+            if (isNaN(rs) || rs === 0) rs = qr * per;
+            qatarAssetsTotalQr += qr;
+            qatarAssetsTotalRs += rs;
+        });
+    }
 
+    totalValueImpact += qatarAssetsTotalRs + mfAssets + bankAssets;
+
+    // 1. Qatar Assets Valuation (Auto-Synced above Mutual Funds)
+    const trQatar = document.createElement('tr');
+    trQatar.className = 'group transition-colors';
+    trQatar.innerHTML = `
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-amber-400"></i> Live</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-semibold text-amber-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-earth-asia w-5 mr-1"></i> Qatar Assets Valuation</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-slate-300 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">Qatar Offshore Holdings</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 font-bold text-amber-400/80 transition-colors">Auto-Synced (QR ${qatarAssetsTotalQr.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-right font-bold font-mono text-amber-400 flex items-center justify-end h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">₹${qatarAssetsTotalRs.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center justify-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">
+            <button onclick="switchAssetSubTab('qatarvaluation')" class="text-amber-400 hover:text-amber-300 font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-amber-500/40 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
+        </div></td>
+    `;
+    body.appendChild(trQatar);
+
+    // 2. Mutual Funds Portfolio
     const trMf = document.createElement('tr');
     trMf.className = 'group transition-colors';
     trMf.innerHTML = `
@@ -409,6 +441,7 @@ function renderAssetLogsTable() {
     `;
     body.appendChild(trMf);
 
+    // 3. Consolidated Bank Balances
     const trBank = document.createElement('tr');
     trBank.className = 'group transition-colors';
     trBank.innerHTML = `
@@ -428,7 +461,7 @@ function renderAssetLogsTable() {
         foot.className = 'font-mono text-xs bg-surface-900/80 border-none';
         foot.innerHTML = `
             <tr>
-                <td colspan="4" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Value Impact (Incl. Liquid):</td>
+                <td colspan="4" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 font-mono tracking-widest text-xs font-bold align-middle border-none">Total Value Impact (Incl. Qatar & Liquid):</td>
                 <td class="py-4 pr-0 pl-4 text-right align-middle border-none">
                     <span class="inline-block px-4 py-2.5 rounded-xl bg-surface-950 border ${totalValueImpact >= 0 ? 'border-emerald-500/30 text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.15)]' : 'border-rose-500/30 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.15)]'} text-lg font-mono tracking-wider font-bold">₹${totalValueImpact.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                 </td>
@@ -513,6 +546,245 @@ function deleteAssetLog(id) {
         }
         db.assetLogs = db.assetLogs.filter(x => x.id !== id);
         saveDatabase();
+        renderAssetLogsTable();
+        renderNetWorthAnalysis();
+    });
+}
+
+// =========================================================================
+// QATAR ASSET VALUATION ENGINE
+// =========================================================================
+
+function renderQatarAssetsTable() {
+    const body = document.getElementById('qatarAssetsTableBody');
+    if (!body) return;
+    body.innerHTML = '';
+    if (!Array.isArray(db.qatarAssets)) db.qatarAssets = [];
+
+    let totalQr = 0;
+    let totalInr = 0;
+
+    const getQatarCategoryIcon = (cat) => {
+        const c = (cat || '').toLowerCase();
+        if (c.includes('real estate') || c.includes('property')) return 'fa-building text-brand-500';
+        if (c.includes('commercial') || c.includes('business')) return 'fa-briefcase text-accent-cyan';
+        if (c.includes('vehicle') || c.includes('transport')) return 'fa-car text-accent-blue';
+        if (c.includes('deposit') || c.includes('cash')) return 'fa-money-bill-wave text-emerald-400';
+        if (c.includes('equity') || c.includes('shares')) return 'fa-chart-line text-amber-400';
+        if (c.includes('gold') || c.includes('valuable')) return 'fa-gem text-amber-400';
+        return 'fa-earth-asia text-slate-400';
+    };
+
+    const sortedList = [...db.qatarAssets].sort((a, b) => {
+        const dateA = a.date ? (a.date.includes('-') ? a.date : a.date.split('/').reverse().join('-')) : '';
+        const dateB = b.date ? (b.date.includes('-') ? b.date : b.date.split('/').reverse().join('-')) : '';
+        return new Date(dateB) - new Date(dateA); // Latest first
+    });
+
+    if (sortedList.length === 0) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="8" class="py-12 text-center text-slate-500 font-mono text-xs">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                        <i class="fa-solid fa-earth-asia text-2xl text-amber-500/40"></i>
+                        <span>No Qatar asset records found. Click "Add Qatar Asset" to track offshore holdings.</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        sortedList.forEach((item, index) => {
+            const qrVal = parseFloat(item.valueQr) || 0;
+            const perQr = parseFloat(item.perQr) || 23.5;
+            let inrVal = parseFloat(item.valueRs);
+            if (isNaN(inrVal) || inrVal === 0) inrVal = qrVal * perQr;
+
+            totalQr += qrVal;
+            totalInr += inrVal;
+
+            const iconClass = getQatarCategoryIcon(item.category);
+            const tr = document.createElement('tr');
+            tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
+            tr.innerHTML = `
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${index + 1}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(item.date)}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl font-semibold flex flex-col justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                    <span class="flex items-center gap-2 text-white"><i class="fa-solid ${iconClass} w-4 text-xs"></i> ${item.assetIdentity || 'Qatar Asset'}</span>
+                    ${item.remarks ? `<span class="text-[10px] font-mono text-slate-400 font-normal mt-0.5 truncate max-w-xs">${item.remarks}</span>` : ''}
+                </div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs text-slate-300">${item.category || 'Asset'}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono text-amber-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">QR ${qrVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-mono text-slate-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs">₹${perQr.toFixed(2)}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono text-emerald-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${inrVal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                    <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
+                        <button onclick="openQatarAssetModal('${item.id}')" title="Edit" class="text-slate-400 hover:text-amber-400 transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="deleteQatarAsset('${item.id}')" title="Delete" class="text-slate-400 hover:text-rose-500 transition-colors"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                </div></td>
+            `;
+            body.appendChild(tr);
+        });
+    }
+
+    // Update summary metrics
+    const totalQrEl = document.getElementById('qatarAssetTotalQrVal');
+    const totalInrEl = document.getElementById('qatarAssetTotalInrVal');
+    const countEl = document.getElementById('qatarAssetCountVal');
+
+    if (totalQrEl) totalQrEl.innerText = `QR ${totalQr.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    if (totalInrEl) totalInrEl.innerText = `₹${totalInr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    if (countEl) countEl.innerText = `${sortedList.length} ${sortedList.length === 1 ? 'Holding' : 'Holdings'}`;
+
+    // Render footer totals
+    const foot = document.getElementById('qatarAssetsTableFoot');
+    if (foot) {
+        foot.innerHTML = `
+            <tr class="border-t border-surface-800 bg-surface-900/90 font-bold">
+                <td colspan="4" class="py-3.5 px-4 text-right uppercase tracking-widest text-slate-400 text-[10px]">Total Qatar Portfolio Valuation:</td>
+                <td class="py-3.5 px-4 text-right font-mono text-amber-400 text-sm">QR ${totalQr.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="py-3.5 px-4 text-right font-mono text-slate-400 text-xs">Avg: ₹${totalQr > 0 ? (totalInr / totalQr).toFixed(2) : '23.50'}</td>
+                <td class="py-3.5 px-4 text-right font-mono text-emerald-400 text-sm">₹${totalInr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td></td>
+            </tr>
+        `;
+    }
+}
+
+function openQatarAssetModal(id = null) {
+    const idEl = document.getElementById('qatarAssetId');
+    const titleEl = document.getElementById('qatarAssetModalTitle');
+    const dateEl = document.getElementById('qatarAssetDateInput');
+    const catEl = document.getElementById('qatarAssetCategoryInput');
+    const nameEl = document.getElementById('qatarAssetNameInput');
+    const valQrEl = document.getElementById('qatarAssetValueQrInput');
+    const perQrEl = document.getElementById('qatarAssetPerQrInput');
+    const valRsEl = document.getElementById('qatarAssetValueRsInput');
+    const remEl = document.getElementById('qatarAssetRemarksInput');
+
+    if (!idEl) return;
+
+    if (id) {
+        const item = (db.qatarAssets || []).find(x => x.id === id);
+        if (item) {
+            idEl.value = item.id;
+            if (titleEl) titleEl.innerText = 'Edit Qatar Asset';
+            if (dateEl) {
+                let d = item.date;
+                if (d && d.includes('/')) {
+                    const parts = d.split('/');
+                    if (parts.length === 3) d = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+                dateEl.value = d || new Date().toISOString().split('T')[0];
+            }
+            if (catEl) catEl.value = item.category || 'Real Estate';
+            if (nameEl) nameEl.value = item.assetIdentity || '';
+            if (valQrEl) valQrEl.value = item.valueQr || '';
+            if (perQrEl) perQrEl.value = item.perQr || '23.50';
+            if (remEl) remEl.value = item.remarks || '';
+            computeQatarModalInrValue();
+        }
+    } else {
+        idEl.value = '';
+        if (titleEl) titleEl.innerText = 'Add Qatar Asset';
+        if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+        if (catEl) catEl.value = 'Real Estate';
+        if (nameEl) nameEl.value = '';
+        if (valQrEl) valQrEl.value = '';
+        if (perQrEl) perQrEl.value = '23.50';
+        if (valRsEl) valRsEl.value = '₹0.00';
+        if (remEl) remEl.value = '';
+    }
+
+    openModal('qatarAssetModal');
+}
+
+function computeQatarModalInrValue() {
+    const valQr = parseFloat(document.getElementById('qatarAssetValueQrInput')?.value) || 0;
+    const perQr = parseFloat(document.getElementById('qatarAssetPerQrInput')?.value) || 0;
+    const inr = valQr * perQr;
+    const valRsEl = document.getElementById('qatarAssetValueRsInput');
+    if (valRsEl) {
+        valRsEl.value = `₹${inr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+}
+
+function saveQatarAssetDetails() {
+    const id = document.getElementById('qatarAssetId')?.value;
+    const dateVal = document.getElementById('qatarAssetDateInput')?.value;
+    const category = document.getElementById('qatarAssetCategoryInput')?.value || 'Real Estate';
+    const assetIdentity = document.getElementById('qatarAssetNameInput')?.value?.trim();
+    const valueQr = parseFloat(document.getElementById('qatarAssetValueQrInput')?.value);
+    const perQr = parseFloat(document.getElementById('qatarAssetPerQrInput')?.value) || 23.50;
+    const remarks = document.getElementById('qatarAssetRemarksInput')?.value?.trim() || '';
+
+    if (!dateVal) {
+        showToast('Please select an asset valuation date');
+        return;
+    }
+    if (!assetIdentity) {
+        showToast('Please enter an asset identity or name');
+        return;
+    }
+    if (isNaN(valueQr) || valueQr <= 0) {
+        showToast('Please enter a valid Value in QR greater than 0');
+        return;
+    }
+
+    const valueRs = valueQr * perQr;
+
+    if (!Array.isArray(db.qatarAssets)) db.qatarAssets = [];
+
+    if (id) {
+        const item = db.qatarAssets.find(x => x.id === id);
+        if (item) {
+            item.date = dateVal;
+            item.category = category;
+            item.assetIdentity = assetIdentity;
+            item.valueQr = valueQr;
+            item.perQr = perQr;
+            item.valueRs = valueRs;
+            item.remarks = remarks;
+        }
+    } else {
+        const newAsset = {
+            id: 'qa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            date: dateVal,
+            category,
+            assetIdentity,
+            valueQr,
+            perQr,
+            valueRs,
+            remarks,
+            createdAt: new Date().toISOString()
+        };
+        db.qatarAssets.push(newAsset);
+    }
+
+    saveDatabase();
+    renderQatarAssetsTable();
+    renderAssetLogsTable();
+    renderNetWorthAnalysis();
+    closeModal('qatarAssetModal');
+    showToast('Qatar asset valuation saved successfully');
+}
+
+function deleteQatarAsset(id) {
+    requireConfirmation('Delete this Qatar asset valuation record?', () => {
+        if (!Array.isArray(db.qatarAssets)) return;
+        const item = db.qatarAssets.find(x => x.id === id);
+        const idx = db.qatarAssets.findIndex(x => x.id === id);
+        if (item && typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'qatarAsset',
+                label: `Qatar Asset: ${item.assetIdentity || 'Asset'} (QR ${item.valueQr})`,
+                data: JSON.parse(JSON.stringify(item)),
+                originalIndex: idx
+            });
+        }
+        db.qatarAssets = db.qatarAssets.filter(x => x.id !== id);
+        saveDatabase();
+        renderQatarAssetsTable();
         renderAssetLogsTable();
         renderNetWorthAnalysis();
     });

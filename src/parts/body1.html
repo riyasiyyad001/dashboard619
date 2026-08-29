@@ -24,13 +24,12 @@
     </div>
 
     <!-- VERTICAL SIDEBAR NAVIGATION -->
-    <aside id="mainSidebar" class="w-full md:w-72 glass flex flex-col justify-between shrink-0 z-30 transition-all md:min-h-screen p-6 pb-12 border-b md:border-b-0 md:border-r border-surface-800">
-        <div class="space-y-6">
+    <aside id="mainSidebar" class="w-full md:w-72 glass flex flex-col justify-between shrink-0 z-30 transition-all md:min-h-screen p-5 pb-5 border-b md:border-b-0 md:border-r border-surface-800">
+        <div class="flex-1 flex flex-col justify-between">
             <!-- Branding & Info - Refined Luxury Header -->
-            <div class="flex flex-col pt-12 pb-5 relative">
-                
-                <div class="flex items-center gap-6 mb-2 pl-2">
-                    <div class="relative group shrink-0 mt-1">
+            <div class="flex flex-col pt-6 pb-2.5 relative shrink-0">
+                <div class="flex items-center gap-4 mb-1 pl-1">
+                    <div class="relative group shrink-0">
                         <!-- Diamond outer glow -->
                         <div class="absolute inset-0 bg-brand-500 blur-md opacity-40 rounded-xl rotate-45 group-hover:opacity-70 transition-opacity duration-500"></div>
                         <!-- Diamond shape container -->
@@ -42,226 +41,281 @@
                     <div>
                         <h1 class="font-display font-bold text-lg tracking-wider text-white uppercase" id="navAppName">Riyas Madathil</h1>
                         <p class="text-[9px] text-brand-500 font-mono tracking-[0.3em] uppercase opacity-90">Executive OS</p>
-                        <!-- Minimal Location & Time Readout moved directly below Executive OS -->
-                        <div class="mt-1.5 text-[10px] font-mono tracking-wider text-slate-400">
+                        <!-- Minimal Location & Time Readout -->
+                        <div class="mt-1 text-[10px] font-mono tracking-wider text-slate-400">
                             <span id="liveDateTime">--/--/----</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Vertical Page Navigation Links with Container Border -->
-            <div class="p-4 bg-surface-900/40 border border-surface-800 rounded-3xl shadow-inner space-y-2">
+            <!-- UNIFIED OVAL/ROUNDED NAVIGATION CONTAINER EXTENDING ALL THE WAY DOWN WITH ICONS INSIDE -->
+            <div class="flex-1 flex flex-col justify-between p-3.5 bg-surface-900/40 border border-surface-800 rounded-3xl shadow-inner my-2">
+                <!-- Vertical Page Navigation Links -->
                 <nav id="navPageTabs" class="flex flex-col gap-2">
                     <!-- Tabs rendered vertically via JS -->
                 </nav>
-                <!-- Cloud Synced Status Badge moved below Intelligence Navigation Menu (Hidden by default, visible on hover) -->
-                <div id="cloudSyncContainer" class="pt-2 border-t border-surface-800/40 opacity-0 hover:opacity-100 transition-all duration-300">
-                    <div id="cloudSyncStatusBadge" onclick="openCloudSyncModal()" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-950/80 border border-emerald-500/40 cursor-pointer hover:border-emerald-500 transition-all duration-300 shadow-sm" title="Cloud Sync & Account Status">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-                        <span class="text-slate-200 font-mono text-[10px] truncate max-w-[190px]">Cloud Synced (riyasiyyad)</span>
-                        <i class="fa-solid fa-cloud text-xs text-emerald-400 ml-auto shrink-0 opacity-75"></i>
+
+                <!-- Container Bottom Section: Cloud Sync + Uniform Icon Grid -->
+                <div class="pt-3 space-y-2.5">
+                    <!-- Cloud Synced Status Badge (Hidden by default, visible on hover) -->
+                    <div id="cloudSyncContainer" class="opacity-0 hover:opacity-100 transition-all duration-300">
+                        <div id="cloudSyncStatusBadge" onclick="openCloudSyncModal()" class="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-950/80 border border-emerald-500/40 cursor-pointer hover:border-emerald-500 transition-all duration-300 shadow-sm" title="Cloud Sync & Account Status">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                            <span class="text-slate-200 font-mono text-[10px] truncate max-w-[190px]">Cloud Synced (riyasiyyad)</span>
+                            <i class="fa-solid fa-cloud text-xs text-emerald-400 ml-auto shrink-0 opacity-75"></i>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Bottom Controls - Enclosed inside the oval container -->
+                    <div class="pt-2.5 border-t border-surface-800/80 group/sidebar-bottom">
+                        <div class="flex items-center justify-between px-0.5">
+                            <!-- Undo Button with Live Badge -->
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn relative w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 opacity-0 group-hover/sidebar-bottom:opacity-100 hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-not-allowed">
+                                <i class="fa-solid fa-rotate-left fa-fw text-xs group-hover:-rotate-45 transition-transform duration-300"></i>
+                                <span class="global-undo-badge hidden absolute -top-1 -right-1 w-4 h-4 bg-brand-500 text-surface-950 text-[9px] font-bold rounded-full flex items-center justify-center shadow-md">0</span>
+                            </button>
+                            <!-- Cloud Sync & Account -->
+                            <button onclick="openCloudSyncModal()" title="Cloud Sync & Account" class="w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
+                                <i class="fa-solid fa-cloud fa-fw text-xs group-hover:scale-110 transition-transform duration-300"></i>
+                            </button>
+                            <!-- Theme Toggle -->
+                            <button onclick="toggleTheme()" title="Toggle Theme" class="w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
+                                <i class="fa-solid fa-leaf fa-fw text-xs group-hover:-rotate-12 transition-transform duration-300" id="themeToggleIcon"></i>
+                            </button>
+                            <!-- Search -->
+                            <button onclick="openUniversalSearch()" title="Search" class="w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
+                                <i class="fa-solid fa-magnifying-glass fa-fw text-xs group-hover:scale-110 transition-transform duration-300"></i>
+                            </button>
+                            <!-- Passcode Settings -->
+                            <button onclick="openPasscodeModal()" title="Passcode Settings" class="w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
+                                <i class="fa-solid fa-fingerprint fa-fw text-xs group-hover:scale-110 transition-transform duration-300"></i>
+                            </button>
+                            <!-- Lock Screen -->
+                            <button onclick="lockDashboard()" title="Lock Screen" class="w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
+                                <i class="fa-solid fa-lock fa-fw text-xs group-hover:scale-110 transition-transform duration-300"></i>
+                            </button>
+                            <!-- Customize Menu -->
+                            <button onclick="openNavCustomizeModal()" title="Customize Menu" class="w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
+                                <i class="fa-solid fa-sliders fa-fw text-xs group-hover:-rotate-90 transition-transform duration-300"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Sidebar Bottom Controls - Uniform Icon Grid -->
-        <div class="pt-6 mt-6 pb-4 border-t border-surface-800/80">
-            <div class="flex items-center justify-between px-1">
-                <!-- Undo Button with Live Badge -->
-                <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn relative w-9 h-9 rounded-xl bg-transparent hover:bg-surface-800/40 text-slate-500/70 hover:text-brand-500 opacity-40 cursor-not-allowed transition-all flex items-center justify-center group">
-                    <i class="fa-solid fa-rotate-left fa-fw text-sm group-hover:-rotate-45 transition-transform duration-300"></i>
-                    <span class="global-undo-badge hidden absolute -top-1 -right-1 w-4 h-4 bg-brand-500 text-surface-950 text-[9px] font-bold rounded-full flex items-center justify-center shadow-md">0</span>
-                </button>
-                <!-- Cloud Sync & Account -->
-                <button onclick="openCloudSyncModal()" title="Cloud Sync & Account" class="w-9 h-9 rounded-xl bg-transparent hover:bg-surface-800/40 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
-                    <i class="fa-solid fa-cloud fa-fw text-sm group-hover:scale-110 transition-transform duration-300"></i>
-                </button>
-                <!-- Theme Toggle -->
-                <button onclick="toggleTheme()" title="Toggle Theme" class="w-9 h-9 rounded-xl bg-transparent hover:bg-surface-800/40 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
-                    <i class="fa-solid fa-leaf fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300" id="themeToggleIcon"></i>
-                </button>
-                <!-- Search -->
-                <button onclick="openUniversalSearch()" title="Search" class="w-9 h-9 rounded-xl bg-transparent hover:bg-surface-800/40 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
-                    <i class="fa-solid fa-magnifying-glass fa-fw text-sm group-hover:scale-110 transition-transform duration-300"></i>
-                </button>
-                <!-- Passcode Settings -->
-                <button onclick="openPasscodeModal()" title="Passcode Settings" class="w-9 h-9 rounded-xl bg-transparent hover:bg-surface-800/40 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
-                    <i class="fa-solid fa-fingerprint fa-fw text-sm group-hover:scale-110 transition-transform duration-300"></i>
-                </button>
-                <!-- Lock Screen -->
-                <button onclick="lockDashboard()" title="Lock Screen" class="w-9 h-9 rounded-xl bg-transparent hover:bg-surface-800/40 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
-                    <i class="fa-solid fa-lock fa-fw text-sm group-hover:scale-110 transition-transform duration-300"></i>
-                </button>
-                <!-- Customize Menu -->
-                <button onclick="openNavCustomizeModal()" title="Customize Menu" class="w-9 h-9 rounded-xl bg-transparent hover:bg-surface-800/40 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
-                    <i class="fa-solid fa-sliders fa-fw text-sm group-hover:-rotate-90 transition-transform duration-300"></i>
-                </button>
-            </div>
-        </div>
     </aside>
 
-    <!-- MAIN CONTENT CONTAINER -->
-    <main class="flex-1 w-full mx-auto p-4 md:p-6 space-y-6 relative transition-all flex flex-col overflow-y-auto min-h-screen" id="appMainCanvas">
+    <!-- MAIN CONTENT CONTAINER - UNIFIED PREMIUM OVAL WRAPPER -->
+    <main class="flex-1 w-full m-1 sm:m-2 md:my-2 md:mr-2.5 md:ml-1 p-2 sm:p-3 md:p-3.5 space-y-3 relative transition-all flex flex-col overflow-y-auto main-canvas-oval min-h-[calc(100vh-1rem)]" id="appMainCanvas">
 
         <!-- GLOBAL EDITABLE BACKGROUND OVERLAY -->
         <div id="customBgOverlay" class="fixed inset-0 pointer-events-none -z-10 transition-all duration-700" style="background-size: cover; background-position: center; opacity: 0.05;"></div>
 
         <!-- PAGE 1: HOME -->
-        <section id="page-home" class="page-view flex-1 flex flex-col">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 items-stretch">
+        <section id="page-home" class="page-view flex-1 flex flex-col justify-between gap-2.5 h-full min-h-[calc(100vh-3.5rem)]">
+            
+            <!-- TOP/MAIN: CLEAN PHOTO HERO CONTAINER TIGHTLY FITTED INTO OUTER OVAL BORDER -->
+            <div id="homeOvalFrameContainer" class="flex-1 w-full relative min-h-[360px] sm:min-h-[420px] md:min-h-[470px] rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden flex flex-col justify-between items-center p-4 sm:p-6 md:p-7 group/oval bg-transparent">
                 
-                <!-- Column 1: Profile Card -->
-                <div class="premium-card p-10 flex flex-col items-center text-center group justify-between relative overflow-hidden h-full min-h-[500px]">
-                    
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+                <!-- Ambient Photo Spread Glow Layer (Diffuses softly toward outer oval border) -->
+                <div id="homeOvalSpreadGlow" class="absolute -inset-4 bg-cover bg-center transition-all duration-700 hidden pointer-events-none filter blur-xl opacity-50 scale-105"></div>
 
-                    <div class="relative mb-8 mt-4">
-                        <div class="absolute inset-0 bg-brand-500 blur-2xl opacity-20 rounded-full group-hover:opacity-40 transition-opacity duration-700"></div>
-                        <img id="profilePhotoImg" src="https://placehold.co/200x200/0A140F/00FF9D?text=RM" class="w-40 h-40 rounded-full object-cover relative z-10 border border-brand-500/40 shadow-[0_0_40px_rgba(0,255,157,0.15)] p-1.5 bg-surface-900" alt="Profile">
-                        <label for="profilePhotoInput" class="absolute bottom-2 right-2 p-3 bg-brand-600 text-surface-950 rounded-full cursor-pointer hover:bg-brand-500 shadow-[0_0_20px_rgba(0,255,157,0.5)] transition-all z-20 hover:scale-110">
-                            <i class="fa-solid fa-camera text-sm"></i>
-                            <input type="file" id="profilePhotoInput" accept="image/*" class="hidden" onchange="uploadProfilePhoto(event)">
-                        </label>
+                <!-- Main Background Photo Layer with Soft Feathered Spread Edges -->
+                <div id="homeOvalBgPhoto" class="absolute inset-0 bg-cover bg-center transition-all duration-700 hidden group-hover/oval:scale-[1.02] [mask-image:radial-gradient(ellipse_at_center,black_75%,rgba(0,0,0,0.9)_90%,transparent_100%)]"></div>
+
+                <!-- Gradient Overlay for Contrast & Seamless Vignette Blend into Outer Canvas -->
+                <div class="absolute inset-0 bg-radial from-transparent via-surface-950/30 to-surface-950/80 pointer-events-none z-0"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-surface-950/60 via-transparent to-surface-950/80 pointer-events-none z-0"></div>
+
+                <!-- Hidden Photo Input -->
+                <input type="file" id="homePhotoFileInput" accept="image/*" class="hidden" onchange="handleHomePhotoUpload(event)">
+
+                <!-- Top Floating Action Toolbar (Change Photo / Fullscreen / Remove) - Hidden by default, visible on hover -->
+                <div class="w-full flex items-center justify-between relative z-10">
+                    <!-- Left: Minimalist Executive Badge (Editable) -->
+                    <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-surface-900/80 backdrop-blur-md border border-white/[0.08] shadow-sm">
+                        <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
+                        <span id="homeHeadquartersBadge" contenteditable="true" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-brand-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit badge">Executive Headquarters</span>
                     </div>
 
-                    <div class="my-auto space-y-3 w-full">
-                        <h2 id="homeProfileName" class="font-display text-3xl font-bold text-white tracking-widest mb-1.5" contenteditable="true" onblur="saveHomeProfile()">Riyas Madathil</h2>
-                        <p class="font-mono text-[10px] uppercase tracking-[0.3em] text-brand-500 mb-3">Executive Dashboard</p>
-
-                        <!-- Determine to Overcome - Cute Borderless Format with Diamonds & Inline Editable -->
-                        <div class="my-3 py-3.5 px-3 sm:px-4 rounded-2xl bg-surface-950/40 relative overflow-hidden backdrop-blur-sm group/creed">
-                            <!-- Subtle Ambient Glow -->
-                            <div class="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-20 bg-brand-500/10 rounded-full blur-2xl pointer-events-none"></div>
-                            
-                            <!-- Header Title (Editable) -->
-                            <div class="flex items-center justify-center gap-2 mb-3">
-                                <span class="h-px w-6 bg-gradient-to-r from-transparent to-brand-500/40"></span>
-                                <h4 id="homePrinciplesTitle" contenteditable="true" onblur="saveHomePrinciples()" class="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.22em] text-brand-400 font-bold outline-none cursor-text hover:text-brand-300 transition-colors text-center" title="Click to edit heading">
-                                    Determine to Overcome
-                                </h4>
-                                <span class="h-px w-6 bg-gradient-to-l from-transparent to-brand-500/40"></span>
-                            </div>
-
-                            <!-- List of Principles (Diamond on Left, Keyword on Right, Editable) -->
-                            <div id="homePrinciplesList" class="flex flex-col gap-1.5 text-left w-full">
-                                <div class="home-principle-row flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl hover:bg-surface-900/60 transition-all duration-200 group/item">
-                                    <span class="w-5 h-5 rounded-lg bg-surface-900/90 flex items-center justify-center shrink-0 shadow-sm">
-                                        <i class="fa-solid fa-gem text-amber-400 text-[10px] drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]"></i>
-                                    </span>
-                                    <div class="home-principle-text flex-1 font-mono text-[12px] text-slate-200 leading-snug outline-none cursor-text hover:text-white transition-colors" contenteditable="true" onblur="saveHomePrinciples()">Set a highest goal</div>
-                                </div>
-                                <div class="home-principle-row flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl hover:bg-surface-900/60 transition-all duration-200 group/item">
-                                    <span class="w-5 h-5 rounded-lg bg-surface-900/90 flex items-center justify-center shrink-0 shadow-sm">
-                                        <i class="fa-solid fa-gem text-sky-400 text-[10px] drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]"></i>
-                                    </span>
-                                    <div class="home-principle-text flex-1 font-mono text-[12px] text-slate-200 leading-snug outline-none cursor-text hover:text-white transition-colors" contenteditable="true" onblur="saveHomePrinciples()">Make a plan</div>
-                                </div>
-                                <div class="home-principle-row flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl hover:bg-surface-900/60 transition-all duration-200 group/item">
-                                    <span class="w-5 h-5 rounded-lg bg-surface-900/90 flex items-center justify-center shrink-0 shadow-sm">
-                                        <i class="fa-solid fa-gem text-amber-300 text-[10px] drop-shadow-[0_0_8px_rgba(252,211,77,0.4)]"></i>
-                                    </span>
-                                    <div class="home-principle-text flex-1 font-mono text-[12px] text-slate-200 leading-snug outline-none cursor-text hover:text-white transition-colors" contenteditable="true" onblur="saveHomePrinciples()">Work harder &amp; harder for it</div>
-                                </div>
-                                <div class="home-principle-row flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl hover:bg-surface-900/60 transition-all duration-200 group/item">
-                                    <span class="w-5 h-5 rounded-lg bg-surface-900/90 flex items-center justify-center shrink-0 shadow-sm">
-                                        <i class="fa-solid fa-gem text-indigo-400 text-[10px] drop-shadow-[0_0_8px_rgba(129,140,248,0.4)]"></i>
-                                    </span>
-                                    <div class="home-principle-text flex-1 font-mono text-[12px] text-slate-200 leading-snug outline-none cursor-text hover:text-white transition-colors" contenteditable="true" onblur="saveHomePrinciples()">Evaluate the update daily</div>
-                                </div>
-                                <div class="home-principle-row flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl hover:bg-surface-900/60 transition-all duration-200 group/item">
-                                    <span class="w-5 h-5 rounded-lg bg-surface-900/90 flex items-center justify-center shrink-0 shadow-sm">
-                                        <i class="fa-solid fa-gem text-emerald-400 text-[10px] drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]"></i>
-                                    </span>
-                                    <div class="home-principle-text flex-1 font-mono text-[12px] text-slate-200 leading-snug outline-none cursor-text hover:text-white transition-colors" contenteditable="true" onblur="saveHomePrinciples()">Gradually will get the result</div>
-                                </div>
-                            </div>
-
-                            <!-- Cute subtle add-item button -->
-                            <div class="mt-2.5 pt-2 flex items-center justify-center border-t border-surface-800/40 opacity-40 hover:opacity-100 transition-opacity">
-                                <button type="button" onclick="addHomePrinciple()" class="text-[10px] font-mono text-brand-400/80 hover:text-brand-300 flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-surface-900/70 transition-all cursor-pointer">
-                                    <i class="fa-solid fa-plus text-[9px]"></i> Add Line
-                                </button>
-                            </div>
+                    <!-- Right: Photo Controls & Notification Bell (to the right of delete button) -->
+                    <div class="flex items-center gap-2 relative">
+                        <!-- Photo Controls (Hidden by default, reveals on hover) -->
+                        <div id="homeOvalPhotoActions" class="flex items-center gap-2 opacity-0 group-hover/oval:opacity-100 pointer-events-none group-hover/oval:pointer-events-auto transition-all duration-300">
+                            <button onclick="triggerHomePhotoUpload()" class="px-3.5 py-1.5 rounded-full bg-surface-900/90 hover:bg-brand-600 hover:text-surface-950 text-slate-200 font-mono text-[11px] border border-white/[0.1] hover:border-brand-500 flex items-center gap-1.5 transition-all shadow-md cursor-pointer pointer-events-auto" title="Change background photo">
+                                <i class="fa-solid fa-camera text-brand-400 hover:text-surface-950 text-xs"></i>
+                                <span class="hidden sm:inline">Change Photo</span>
+                            </button>
+                            <button onclick="removeHomePhoto()" class="w-8 h-8 rounded-full bg-surface-900/90 hover:bg-rose-900/50 text-slate-400 hover:text-rose-300 border border-white/[0.1] hover:border-rose-500/40 flex items-center justify-center transition-all shadow-md cursor-pointer pointer-events-auto" title="Remove background photo">
+                                <i class="fa-regular fa-trash-can text-xs"></i>
+                            </button>
                         </div>
-                        
-                        <div class="h-px w-24 bg-gradient-to-r from-transparent via-brand-500/30 to-transparent mx-auto my-3"></div>
-                        
-                        <div class="p-4 rounded-2xl bg-surface-900/50 border border-surface-800 flex flex-col items-center gap-2">
-                            <i class="fa-solid fa-phone text-slate-500 text-xs"></i>
-                            <p id="homeProfilePhone" class="text-xs text-slate-300 font-mono tracking-wider whitespace-pre-wrap leading-relaxed text-center" contenteditable="true" onblur="saveHomeProfile()">+91 7559803371
-+974 55003371</p>
+
+                        <!-- Red Notification Bell (Positioned to the right of delete button, visible when active) -->
+                        <div id="homeNotificationBellContainer" class="relative hidden">
+                            <button id="homeNotificationBellBtn" onclick="toggleHomeNotificationFlyout(event)" class="relative p-2 sm:px-2.5 sm:py-1.5 rounded-full bg-rose-950/80 hover:bg-rose-900/90 text-rose-400 border border-rose-500/50 hover:border-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.35)] flex items-center gap-1.5 transition-all cursor-pointer group/bell pointer-events-auto" title="Active Notifications">
+                                <i class="fa-solid fa-bell text-rose-500 text-xs animate-bounce"></i>
+                                <span id="homeNotificationUnreadCount" class="text-[10px] font-mono font-bold text-rose-300">1</span>
+                            </button>
+
+                            <!-- Sleek Floating Notification Flyout Popover (Double Size) -->
+                            <div id="homeNotificationFlyout" class="hidden absolute right-0 top-full mt-3 w-[92vw] sm:w-[640px] md:w-[720px] max-w-[94vw] p-5 sm:p-6 rounded-3xl bg-surface-950/98 backdrop-blur-2xl border border-rose-500/40 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(244,63,94,0.2)] z-50 transition-all text-left">
+                                <!-- Top Bar -->
+                                <div class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-white/[0.1]">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                                            <i class="fa-solid fa-bell text-sm animate-pulse"></i>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <h4 class="text-sm sm:text-base font-mono font-bold text-white uppercase tracking-wider">Reminder & Alert Hub</h4>
+                                                <span id="homeNotificationHeaderCount" class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 font-mono text-[11px] font-bold border border-rose-500/30">1</span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-400 font-light hidden sm:block">Active reminder alerts and critical notifications</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="markAllNotificationsRead()" class="text-xs font-mono text-slate-300 hover:text-emerald-400 px-3 py-1.5 rounded-xl bg-surface-900/90 border border-white/[0.08] hover:border-emerald-500/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="Mark all as read">
+                                            <i class="fa-solid fa-check text-[11px] text-emerald-400"></i>
+                                            <span>Mark Read</span>
+                                        </button>
+                                        <button onclick="clearAllNotifications()" class="text-xs font-mono text-slate-300 hover:text-rose-400 px-3 py-1.5 rounded-xl bg-surface-900/90 border border-white/[0.08] hover:border-rose-500/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="Clear all">
+                                            <i class="fa-regular fa-trash-can text-[11px] text-rose-400"></i>
+                                            <span>Clear</span>
+                                        </button>
+                                        <button onclick="toggleHomeNotificationFlyout(event)" class="w-8 h-8 rounded-xl bg-surface-900/90 hover:bg-surface-800 text-slate-400 hover:text-white border border-white/[0.08] flex items-center justify-center transition-colors cursor-pointer" title="Close">
+                                            <i class="fa-solid fa-xmark text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Notifications List Container (Double height & comfortable scrolling) -->
+                                <div id="homeNotificationFlyoutList" class="max-h-[480px] sm:max-h-[540px] overflow-y-auto space-y-3 custom-scrollbar pr-1.5">
+                                    <!-- Dynamic items -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Column 2: Notification Hub (Replaced Residences) -->
-                <div class="premium-card p-6 flex flex-col group h-full min-h-[500px]">
-                    <div class="flex flex-wrap items-center justify-between border-b border-surface-800 pb-4 mb-4 gap-3">
-                        <div class="flex items-center gap-2.5">
-                            <h3 class="font-display text-lg text-white flex items-center gap-2">
-                                <i class="fa-solid fa-inbox text-amber-400 text-sm"></i> Notification Hub
-                                <span id="notificationBadge" class="hidden px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono text-[10px] border border-amber-500/30">0</span>
-                            </h3>
-                        </div>
-                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                            <!-- Undo Button -->
-                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn text-[10px] font-mono text-slate-400 hover:text-brand-400 opacity-40 cursor-not-allowed transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700 flex items-center gap-1.5 shadow-sm">
-                                <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
-                            </button>
-                            <!-- Sound Chime Toggle & Test -->
-                            <button onclick="toggleNotificationSound()" id="btnNotificationSound" class="text-[10px] font-mono text-slate-400 hover:text-amber-400 transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700 flex items-center gap-1.5 cursor-pointer shadow-sm" title="Toggle notification sound chime">
-                                <i id="notifSoundIcon" class="fa-solid fa-volume-high text-[10px] text-amber-400"></i>
-                                <span id="notifSoundText">Chime ON</span>
-                            </button>
-                            <button onclick="testNotificationSound()" class="text-[10px] font-mono text-slate-400 hover:text-brand-400 transition-colors bg-surface-800/80 px-2 py-1 rounded-lg border border-surface-700 flex items-center gap-1 cursor-pointer shadow-sm" title="Play test chime">
-                                <i class="fa-solid fa-play text-[9px]"></i> Test
-                            </button>
-                            <button onclick="markAllNotificationsRead()" class="text-[10px] font-mono text-slate-400 hover:text-amber-400 transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700 cursor-pointer">Mark Read</button>
-                            <button onclick="clearAllNotifications()" class="text-[10px] font-mono text-slate-400 hover:text-rose-400 transition-colors bg-surface-800/80 px-2.5 py-1 rounded-lg border border-surface-700 cursor-pointer">Clear</button>
-                        </div>
-                    </div>
-                    <div id="notificationsList" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2 max-h-[600px]">
-                        <!-- Notifications injected via JS -->
-                    </div>
-                </div>
-
-                <!-- Column 3: Vaults (Documents & Captures Stacked) -->
-                <div class="flex flex-col gap-6 h-full min-h-[500px]">
-                    <!-- Box 1: Documents -->
-                    <div onclick="openStorageModal('documents')" class="premium-card p-6 cursor-pointer hover-lift flex flex-col justify-between group flex-1">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="p-3 bg-surface-800/50 border border-surface-700 text-accent-blue rounded-xl">
-                                <i class="fa-regular fa-folder-open text-xl"></i>
-                            </div>
-                            <span class="text-surface-600 group-hover:text-brand-500 transition-colors">
-                                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
-                            </span>
+                <!-- Center Area: Empty State or Centered Branding -->
+                <div class="relative z-10 flex flex-col items-center justify-center text-center my-auto py-6">
+                    <!-- Empty State (When no photo set) -->
+                    <div id="homeOvalEmptyState" class="flex flex-col items-center justify-center gap-4 cursor-pointer p-6 rounded-3xl hover:bg-white/[0.03] transition-all" onclick="triggerHomePhotoUpload()">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-brand-500/10 border-2 border-dashed border-brand-400/50 flex items-center justify-center text-brand-400 group-hover/oval:scale-110 group-hover/oval:border-brand-400 transition-all shadow-[0_0_25px_rgba(201,164,107,0.2)]">
+                            <i class="fa-solid fa-image text-2xl sm:text-3xl"></i>
                         </div>
                         <div>
-                            <h4 class="font-display text-lg text-white mb-1">Documents Vault</h4>
-                            <p class="text-[10px] font-mono uppercase tracking-wider text-slate-500" id="docCountText">0 Files Secured</p>
+                            <h3 class="font-display text-lg sm:text-xl font-bold text-white tracking-wide">Add Home Background Photo</h3>
+                            <p class="text-xs font-mono text-slate-400 mt-1 max-w-sm">Click here to upload your favorite portrait, landscape, or executive visual background</p>
                         </div>
+                        <button type="button" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-surface-950 font-mono font-bold text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Photo
+                        </button>
                     </div>
 
-                    <!-- Box 2: Captures -->
-                    <div onclick="openStorageModal('captures')" class="premium-card p-6 cursor-pointer hover-lift flex flex-col justify-between group flex-1">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="p-3 bg-surface-800/50 border border-surface-700 text-accent-cyan rounded-xl">
-                                <i class="fa-solid fa-camera-retro text-xl"></i>
-                            </div>
-                            <span class="text-surface-600 group-hover:text-brand-500 transition-colors">
-                                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
-                            </span>
-                        </div>
-                        <div>
-                            <h4 class="font-display text-lg text-white mb-1">Captures Vault</h4>
-                            <p class="text-[10px] font-mono uppercase tracking-wider text-slate-500" id="captureCountText">0 Media Assets</p>
+                    <!-- Ambient Center Identity (Subtle overlay when photo is active) -->
+                    <div id="homeOvalCenterIdentity" class="flex flex-col items-center gap-2 pointer-events-auto">
+                        <h2 id="homeProfileName" contenteditable="true" onblur="saveHomeProfile()" class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wider outline-none cursor-text hover:text-brand-300 transition-colors drop-shadow-md" title="Click to edit name">
+                            Executive Leader
+                        </h2>
+                        <div class="flex items-center justify-center px-3.5 py-1.5 rounded-full bg-surface-950/60 backdrop-blur-md border border-white/[0.08] shadow-sm">
+                            <span id="homeProfileSubtitle" contenteditable="true" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.25em] text-slate-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit subtitle">Financial Operating System</span>
                         </div>
                     </div>
                 </div>
 
+                <!-- Bottom Ambient Pill inside Oval (Editable) -->
+                <div class="w-full flex items-center justify-center relative z-10">
+                    <div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-950/60 backdrop-blur-md border border-white/[0.06] shadow-sm">
+                        <i class="fa-solid fa-infinity text-brand-400 text-[10px]"></i>
+                        <span id="homeProtocolPillText" contenteditable="true" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono text-slate-300 tracking-widest uppercase outline-none cursor-text hover:text-white transition-colors" title="Click to edit protocol text">High-Net-Worth Wealth &amp; Operations Protocol</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHUVADE: DIRECT CONNECT & SOCIALS (Clean layout without outer border) -->
+            <div class="w-full">
+                <!-- Horizontal 6-Column Grid Layout (Icon only, no label text) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 text-left">
+                    <!-- 1. Contact 1 -->
+                    <div class="flex items-center gap-2 p-2 sm:p-2.5 rounded-xl bg-surface-950/60 hover:bg-surface-800/80 border border-white/[0.05] hover:border-emerald-500/40 transition-all duration-200 group/contact">
+                        <span class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 flex items-center justify-center shrink-0 shadow-sm">
+                            <i class="fa-solid fa-phone text-xs"></i>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div id="homeProfileContact1" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Number 1..."></div>
+                        </div>
+                        <a id="homeProfileContact1Link" href="#" target="_blank" class="hidden text-slate-400 hover:text-emerald-400 p-1 text-[11px] transition-colors shrink-0" title="Call">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+
+                    <!-- 2. Contact 2 -->
+                    <div class="flex items-center gap-2 p-2 sm:p-2.5 rounded-xl bg-surface-950/60 hover:bg-surface-800/80 border border-white/[0.05] hover:border-sky-500/40 transition-all duration-200 group/contact">
+                        <span class="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/25 text-sky-400 flex items-center justify-center shrink-0 shadow-sm">
+                            <i class="fa-solid fa-mobile-screen-button text-xs"></i>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div id="homeProfileContact2" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Number 2..."></div>
+                        </div>
+                        <a id="homeProfileContact2Link" href="#" target="_blank" class="hidden text-slate-400 hover:text-sky-400 p-1 text-[11px] transition-colors shrink-0" title="Call">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+
+                    <!-- 3. WhatsApp -->
+                    <div class="flex items-center gap-2 p-2 sm:p-2.5 rounded-xl bg-surface-950/60 hover:bg-surface-800/80 border border-white/[0.05] hover:border-emerald-500/40 transition-all duration-200 group/contact">
+                        <span class="w-8 h-8 rounded-lg bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] flex items-center justify-center shrink-0 shadow-sm">
+                            <i class="fa-brands fa-whatsapp text-sm"></i>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div id="homeProfileWhatsapp" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="WhatsApp..."></div>
+                        </div>
+                        <a id="homeProfileWhatsappLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-emerald-400 p-1 text-[11px] transition-colors shrink-0" title="Chat on WhatsApp">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+
+                    <!-- 4. Gmail -->
+                    <div class="flex items-center gap-2 p-2 sm:p-2.5 rounded-xl bg-surface-950/60 hover:bg-surface-800/80 border border-white/[0.05] hover:border-red-500/40 transition-all duration-200 group/contact">
+                        <span class="w-8 h-8 rounded-lg bg-[#EA4335]/15 border border-[#EA4335]/30 text-[#EA4335] flex items-center justify-center shrink-0 shadow-sm">
+                            <i class="fa-solid fa-envelope text-xs"></i>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div id="homeProfileGmail" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Email..."></div>
+                        </div>
+                        <a id="homeProfileGmailLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-red-400 p-1 text-[11px] transition-colors shrink-0" title="Send Email">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+
+                    <!-- 5. Facebook -->
+                    <div class="flex items-center gap-2 p-2 sm:p-2.5 rounded-xl bg-surface-950/60 hover:bg-surface-800/80 border border-white/[0.05] hover:border-blue-500/40 transition-all duration-200 group/contact">
+                        <span class="w-8 h-8 rounded-lg bg-[#1877F2]/15 border border-[#1877F2]/30 text-[#1877F2] flex items-center justify-center shrink-0 shadow-sm">
+                            <i class="fa-brands fa-facebook-f text-xs"></i>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div id="homeProfileFacebook" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Profile / Link..."></div>
+                        </div>
+                        <a id="homeProfileFacebookLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-blue-400 p-1 text-[11px] transition-colors shrink-0" title="Visit Facebook">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+
+                    <!-- 6. Instagram -->
+                    <div class="flex items-center gap-2 p-2 sm:p-2.5 rounded-xl bg-surface-950/60 hover:bg-surface-800/80 border border-white/[0.05] hover:border-pink-500/40 transition-all duration-200 group/contact">
+                        <span class="w-8 h-8 rounded-lg bg-pink-500/15 border border-pink-500/30 text-pink-400 flex items-center justify-center shrink-0 shadow-sm">
+                            <i class="fa-brands fa-instagram text-xs"></i>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div id="homeProfileInstagram" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Username / Link..."></div>
+                        </div>
+                        <a id="homeProfileInstagramLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-pink-400 p-1 text-[11px] transition-colors shrink-0" title="Visit Instagram">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
 
             <!-- Custom Navigation Titles Editor Toolbar -->

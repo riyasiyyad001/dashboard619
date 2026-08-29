@@ -11,7 +11,19 @@
         },
         "payload": {
           "type": "string",
-          "description": "Serialized JSON string representing all dashboard records, settings, and tables"
+          "description": "Serialized JSON string representing dashboard records, settings, and tables (or chunk payload)"
+        },
+        "isChunked": {
+          "type": "boolean",
+          "description": "Whether this state payload is split across multiple chunk documents"
+        },
+        "totalChunks": {
+          "type": "number",
+          "description": "Total number of chunk documents for this state payload"
+        },
+        "chunkIndex": {
+          "type": "number",
+          "description": "The index of this chunk if multi-part payload"
         },
         "updatedAt": {
           "type": "string",
@@ -23,12 +35,52 @@
         }
       },
       "required": ["payload"]
+    },
+    "VaultFile": {
+      "title": "VaultFile",
+      "description": "Encrypted or binary document / photo file payload stored separately from master state",
+      "type": "object",
+      "properties": {
+        "docId": {
+          "type": "string",
+          "description": "The unique document identifier matching db.documents"
+        },
+        "fileData": {
+          "type": "string",
+          "description": "Base64 dataURI or chunk of the document/media file"
+        },
+        "chunkIndex": {
+          "type": "number",
+          "description": "Index for multi-chunk file binaries"
+        },
+        "totalChunks": {
+          "type": "number",
+          "description": "Total chunks for large files"
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME type of the file"
+        },
+        "userId": {
+          "type": "string",
+          "description": "User UID who owns this file"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of upload"
+        }
+      },
+      "required": ["fileData"]
     }
   },
   "firestore": {
     "/app_data/{docId}": {
       "schema": "DashboardState",
-      "description": "Shared executive dashboard data for multi-device sync"
+      "description": "Shared executive dashboard data and chunks for multi-device sync"
+    },
+    "/vault_files/{docId}": {
+      "schema": "VaultFile",
+      "description": "Document vault binaries, PDF files, and image attachments"
     },
     "/users/{userId}/dashboard/state": {
       "schema": "DashboardState",

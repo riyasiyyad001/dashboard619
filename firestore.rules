@@ -18,13 +18,26 @@ service cloud.firestore {
     function isValidPayload(data) {
       return data.keys().hasAll(['payload']) &&
              data.payload is string &&
-             data.payload.size() <= 2097152; // Max 2MB payload
+             data.payload.size() <= 1048576; // Under 1MB engine limit
     }
 
-    // Shared Master Executive State across all devices (Worldwide Multi-device sync)
+    function isValidVaultFile(data) {
+      return data.keys().hasAll(['fileData']) &&
+             data.fileData is string &&
+             data.fileData.size() <= 1048576; // Under 1MB engine limit
+    }
+
+    // Shared Master Executive State & Chunks across all devices (Worldwide Multi-device sync)
     match /app_data/{docId} {
       allow read: if isSignedIn() && isValidId(docId);
       allow create, update: if isSignedIn() && isValidId(docId) && isValidPayload(request.resource.data);
+      allow delete: if isSignedIn() && isValidId(docId);
+    }
+
+    // Document Vault Files & Media Attachments
+    match /vault_files/{docId} {
+      allow read: if isSignedIn() && isValidId(docId);
+      allow create, update: if isSignedIn() && isValidId(docId) && isValidVaultFile(request.resource.data);
       allow delete: if isSignedIn() && isValidId(docId);
     }
 

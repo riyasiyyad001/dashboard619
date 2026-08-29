@@ -121,11 +121,11 @@ function renderBudgetBlock(curr, tableBodyId, tableFootId) {
 
         let statusBadge = '';
         if (spendAmt === 0) {
-            statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-mono border border-slate-700 bg-surface-900 text-slate-400">Planned</span>`;
+            statusBadge = `<span class="inline-flex items-center gap-1.5 text-xs font-mono text-slate-400 font-medium"><i class="fa-regular fa-clock text-[11px] text-slate-500"></i> Planned</span>`;
         } else if (variance >= 0) {
-            statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-mono border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-bold">Within Budget</span>`;
+            statusBadge = `<span class="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check text-[11px]"></i> Within Budget</span>`;
         } else {
-            statusBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-mono border border-rose-500/30 bg-rose-500/10 text-rose-400 font-bold">Over Budget</span>`;
+            statusBadge = `<span class="inline-flex items-center gap-1.5 text-xs font-mono text-rose-400 font-semibold"><i class="fa-solid fa-circle-exclamation text-[11px]"></i> Over Budget</span>`;
         }
 
         const varClass = variance >= 0 ? 'text-emerald-400' : 'text-rose-400';
@@ -133,42 +133,50 @@ function renderBudgetBlock(curr, tableBodyId, tableFootId) {
         const varDisplay = `${varSign}${currSymbol}${Math.abs(variance).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
 
         const tr = document.createElement('tr');
-        tr.className = 'group hover:bg-surface-800/20 transition-colors border-b border-surface-800/30 last:border-0';
+        tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
         tr.innerHTML = `
-            <td class="py-2.5 px-2 text-center font-mono text-xs text-slate-400">${idx + 1}</td>
-            <td class="py-2.5 px-2 font-mono text-xs text-slate-300 font-medium">${b.month || 'All'} ${b.year || '2026'}</td>
-            <td class="py-2.5 px-2 font-semibold text-slate-100 flex items-center gap-2">
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 font-medium flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.month || 'All'} ${b.year || '2026'}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold text-slate-100 flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[180px]">
                 <span>${b.category}</span>
                 ${b.notes ? `<span class="text-[10px] text-slate-500 font-normal italic">(${b.notes})</span>` : ''}
-            </td>
-            <td class="py-2.5 px-2 text-right font-bold text-slate-200 font-mono">${currSymbol}${budgetAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-            <td class="py-2.5 px-2 text-right font-bold text-rose-400 font-mono">${currSymbol}${spendAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-            <td class="py-2.5 px-2 text-right font-bold font-mono ${varClass}">${varDisplay}</td>
-            <td class="py-2.5 px-2">${statusBadge}</td>
-            <td class="py-2.5 px-2 text-center">
-                <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="openBudgetModal('${curr}', '${b.id}')" class="p-1 text-slate-400 hover:text-brand-500 transition-colors" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
-                    <button onclick="deleteBudget('${curr}', '${b.id}')" class="p-1 text-slate-400 hover:text-rose-500 transition-colors" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
+            </div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-slate-200 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${budgetAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-rose-400 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${spendAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${varClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${varDisplay}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${statusBadge}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
+                    <button onclick="openBudgetModal('${curr}', '${b.id}')" class="text-slate-500 hover:text-brand-500 transition-colors" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
+                    <button onclick="deleteBudget('${curr}', '${b.id}')" class="text-slate-500 hover:text-rose-500 transition-colors" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
                 </div>
-            </td>
+            </div></td>
         `;
         body.appendChild(tr);
     });
 
     const foot = document.getElementById(tableFootId);
     if (foot) {
+        foot.className = 'font-mono text-xs bg-surface-900/80 border-none';
         const netVariance = totalBudgetSum - totalSpendSum;
         const netVarClass = netVariance >= 0 ? 'text-emerald-400 border-emerald-500/30' : 'text-rose-400 border-rose-500/30';
         const netSign = netVariance < 0 ? '-' : '+';
         foot.innerHTML = `
-            <tr class="border-t-2 border-surface-700 bg-surface-900/90 font-mono text-xs">
-                <td colspan="3" class="py-3 px-3 uppercase text-slate-400 tracking-wider font-bold">Total (${curr})</td>
-                <td class="py-3 px-2 text-right font-bold text-slate-100">${currSymbol}${totalBudgetSum.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                <td class="py-3 px-2 text-right font-bold text-rose-400">${currSymbol}${totalSpendSum.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                <td class="py-3 px-2 text-right font-bold ${netVarClass}">${netSign}${currSymbol}${Math.abs(netVariance).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                <td colspan="2" class="py-3 px-2 text-center text-slate-400 text-[10px]">
-                    <span class="px-2 py-0.5 rounded-md border bg-surface-950 ${netVarClass}">${netVariance >= 0 ? 'Net Surplus' : 'Net Deficit'}</span>
+            <tr class="border-none">
+                <td colspan="3" class="py-4 pr-4 pl-4 text-right uppercase text-slate-400 tracking-widest text-xs font-bold align-middle border-none">Total (${curr}):</td>
+                <td class="py-4 px-1 text-right align-middle border-none">
+                    <span class="inline-block px-3 py-2 rounded-xl bg-surface-950 border border-brand-500/30 text-slate-100 font-bold font-mono text-xs shadow-sm">${currSymbol}${totalBudgetSum.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                 </td>
+                <td class="py-4 px-1 text-right align-middle border-none">
+                    <span class="inline-block px-3 py-2 rounded-xl bg-surface-950 border border-rose-500/30 text-rose-400 font-bold font-mono text-xs shadow-sm">${currSymbol}${totalSpendSum.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                </td>
+                <td class="py-4 px-1 text-right align-middle border-none">
+                    <span class="inline-block px-3 py-2 rounded-xl bg-surface-950 border ${netVarClass} font-bold font-mono text-xs shadow-sm">${netSign}${currSymbol}${Math.abs(netVariance).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                </td>
+                <td class="py-4 px-1 text-center align-middle border-none">
+                    <span class="inline-block px-3 py-2 rounded-xl bg-surface-950 border ${netVarClass} text-[10px] font-mono font-bold shadow-sm">${netVariance >= 0 ? 'Net Surplus' : 'Net Deficit'}</span>
+                </td>
+                <td class="border-none"></td>
             </tr>
         `;
     }
@@ -324,60 +332,82 @@ function deleteBudget(currency, id) {
     });
 }
 
-function openDailyExpenseModal(currency, id = null) {
+function onDailyExpenseCurrencyChanged() {
     const currEl = document.getElementById('dailyExpenseCurrency') || document.getElementById('dailyExpenseCurrencyInput');
-    if (currEl) currEl.value = currency;
-    const idEl = document.getElementById('dailyExpenseId');
-    if (idEl) idEl.value = id || '';
-    
+    const curr = currEl ? currEl.value : 'INR';
+    const catSel = document.getElementById('dailyExpCategoryInput') || document.getElementById('dailyExpenseCategoryInput');
+    const currentCat = catSel ? catSel.value : '';
+    populateCategorySelect('dailyExpCategoryInput', curr, currentCat);
+    toggleDailyExpCategoryInput();
+}
+window.onDailyExpenseCurrencyChanged = onDailyExpenseCurrencyChanged;
+
+function openDailyExpenseModal(currency, id = null) {
     const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const isQAR = (currency || '').toUpperCase() === 'QAR';
+    let selectedCurr = currency || 'INR';
+    let targetExp = null;
+
+    if (id) {
+        targetExp = (db.dailyExpenses || []).find(x => String(x.id) === String(id));
+        if (targetExp && targetExp.currency) {
+            selectedCurr = targetExp.currency;
+        }
+    }
+
+    const currEl = document.getElementById('dailyExpenseCurrency') || document.getElementById('dailyExpenseCurrencyInput');
+    if (currEl) currEl.value = selectedCurr;
+    
+    const idEl = document.getElementById('dailyExpenseId');
+    if (idEl) idEl.value = id ? String(id) : '';
+    
+    const isQAR = (selectedCurr || '').toUpperCase() === 'QAR';
     const defaultCat = isQAR ? 'Personal Expenses' : 'Family Maintenance';
     
-    if (id) {
-        const exp = (db.dailyExpenses || []).find(x => x.id === id);
-        if (exp) {
-            const titleEl = document.getElementById('dailyExpenseModalTitle');
-            if (titleEl) titleEl.innerText = `Edit ${currency} Expense`;
-            const dateInput = document.getElementById('dailyExpDateInput') || document.getElementById('dailyExpenseDateInput');
-            if (dateInput) {
-                if (dateInput._flatpickr) {
-                    dateInput._flatpickr.setDate(exp.date && exp.date.includes('-') ? exp.date.split('-').reverse().join('/') : (exp.date || todayStr));
-                } else {
-                    dateInput.value = exp.date || todayStr;
-                }
-            }
-            populateCategorySelect('dailyExpCategoryInput', currency, exp.category || defaultCat);
-            const customCatInput = document.getElementById('dailyExpCustomCategoryInput');
-            if (customCatInput) {
-                if (exp.category && !['Personal Expenses', 'Family Maintenance', 'Charity', 'Investment'].includes(exp.category)) {
-                    customCatInput.value = exp.category;
-                } else {
-                    customCatInput.value = '';
-                }
-            }
-            const descEl = document.getElementById('dailyExpDescInput') || document.getElementById('dailyExpenseItemInput');
-            if (descEl) descEl.value = exp.particulars || exp.item || '';
-            const amtEl = document.getElementById('dailyExpAmountInput') || document.getElementById('dailyExpenseAmountInput');
-            if (amtEl) amtEl.value = exp.amount || '';
+    const titleEl = document.getElementById('dailyExpenseModalTitle');
+    const dateInput = document.getElementById('dailyExpDateInput') || document.getElementById('dailyExpenseDateInput');
+    const customCatInput = document.getElementById('dailyExpCustomCategoryInput');
+    const descEl = document.getElementById('dailyExpDescInput') || document.getElementById('dailyExpenseItemInput');
+    const amtEl = document.getElementById('dailyExpAmountInput') || document.getElementById('dailyExpenseAmountInput');
+
+    if (targetExp) {
+        if (titleEl) titleEl.innerText = `Edit ${selectedCurr} Expense`;
+        
+        let dVal = targetExp.date || todayStr;
+        if (dVal && dVal.includes('-')) {
+            const parts = dVal.split('-');
+            if (parts.length === 3) dVal = `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
         }
-    } else {
-        const titleEl = document.getElementById('dailyExpenseModalTitle');
-        if (titleEl) titleEl.innerText = `Log ${currency} Expense`;
-        const dateInput = document.getElementById('dailyExpDateInput') || document.getElementById('dailyExpenseDateInput');
         if (dateInput) {
             if (dateInput._flatpickr) {
-                dateInput._flatpickr.setDate(new Date());
+                dateInput._flatpickr.setDate(dVal, true, "d/m/Y");
+            } else {
+                dateInput.value = dVal;
+            }
+        }
+        
+        const standardCats = ['Family Maintenance', 'Personal Expenses', 'Charity', 'Investment'];
+        const isCustom = targetExp.category && !standardCats.includes(targetExp.category);
+        
+        populateCategorySelect('dailyExpCategoryInput', selectedCurr, isCustom ? 'Others' : (targetExp.category || defaultCat));
+        
+        if (customCatInput) {
+            customCatInput.value = isCustom ? targetExp.category : '';
+        }
+        
+        if (descEl) descEl.value = targetExp.particulars || targetExp.item || '';
+        if (amtEl) amtEl.value = targetExp.amount !== undefined ? targetExp.amount : '';
+    } else {
+        if (titleEl) titleEl.innerText = `Log ${selectedCurr} Expense`;
+        if (dateInput) {
+            if (dateInput._flatpickr) {
+                dateInput._flatpickr.setDate(todayStr, true, "d/m/Y");
             } else {
                 dateInput.value = todayStr;
             }
         }
-        populateCategorySelect('dailyExpCategoryInput', currency, defaultCat);
-        const customCatInput = document.getElementById('dailyExpCustomCategoryInput');
+        populateCategorySelect('dailyExpCategoryInput', selectedCurr, defaultCat);
         if (customCatInput) customCatInput.value = '';
-        const descEl = document.getElementById('dailyExpDescInput') || document.getElementById('dailyExpenseItemInput');
         if (descEl) descEl.value = '';
-        const amtEl = document.getElementById('dailyExpAmountInput') || document.getElementById('dailyExpenseAmountInput');
         if (amtEl) amtEl.value = '';
     }
     toggleDailyExpCategoryInput();
@@ -391,14 +421,15 @@ function saveDailyExpense() {
     const id = idEl ? idEl.value : '';
     
     const dateInput = document.getElementById('dailyExpDateInput') || document.getElementById('dailyExpenseDateInput');
-    let date = dateInput ? dateInput.value : '';
+    let date = dateInput ? dateInput.value.trim() : '';
     if (!date) date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
     if (date.includes('-')) {
         const parts = date.split('-');
-        if (parts.length === 3) date = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        if (parts.length === 3) date = `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
     }
     
-    let category = (document.getElementById('dailyExpCategoryInput') || document.getElementById('dailyExpenseCategoryInput')) ? (document.getElementById('dailyExpCategoryInput') || document.getElementById('dailyExpenseCategoryInput')).value : 'Family Maintenance';
+    const catSel = document.getElementById('dailyExpCategoryInput') || document.getElementById('dailyExpenseCategoryInput');
+    let category = catSel ? catSel.value : 'Family Maintenance';
     if (category === 'Others') {
         const customCat = (document.getElementById('dailyExpCustomCategoryInput') ? document.getElementById('dailyExpCustomCategoryInput').value.trim() : '');
         if (customCat) category = customCat;
@@ -411,7 +442,7 @@ function saveDailyExpense() {
 
     if (!db.dailyExpenses) db.dailyExpenses = [];
     if (id) {
-        const exp = db.dailyExpenses.find(x => x.id === id);
+        const exp = db.dailyExpenses.find(x => String(x.id) === String(id));
         if (exp) {
             exp.currency = curr;
             exp.date = date;
@@ -419,6 +450,16 @@ function saveDailyExpense() {
             exp.item = particulars;
             exp.category = category;
             exp.amount = amount;
+        } else {
+            db.dailyExpenses.push({
+                id: String(id),
+                currency: curr,
+                date,
+                particulars,
+                item: particulars,
+                category,
+                amount
+            });
         }
     } else {
         db.dailyExpenses.push({
@@ -435,7 +476,12 @@ function saveDailyExpense() {
     saveDatabase();
     renderBudgetsAndGoals();
     closeModal('dailyExpenseModal');
-    showToast('Outflow expense logged');
+    showToast(id ? 'Daily expense updated' : 'Daily expense logged');
+
+    const logModal = document.getElementById('dailyExpenseLogModal');
+    if (logModal && !logModal.classList.contains('hidden')) {
+        renderDailyExpensesLogTable();
+    }
 }
 window.saveDailyExpenseDetails = saveDailyExpense;
 
@@ -593,24 +639,26 @@ function renderDailyExpensesLogTable() {
 
     list.forEach(exp => {
         const tr = document.createElement('tr');
-        tr.className = 'group hover:bg-surface-800/20 transition-colors border-b border-surface-800/40 last:border-0';
+        tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
         const curr = exp.currency || 'INR';
-        const currColor = curr === 'QAR' ? 'text-[#8A1538] border-rose-900/40 bg-rose-950/20' : 'text-brand-500 border-brand-500/30 bg-brand-950/20';
+        const currBadge = curr === 'QAR' 
+            ? `<span class="inline-flex items-center gap-1 font-mono text-xs font-bold text-rose-400"><i class="fa-solid fa-coins text-[10px] text-rose-400/80"></i> QAR</span>`
+            : `<span class="inline-flex items-center gap-1 font-mono text-xs font-bold text-accent-cyan"><i class="fa-solid fa-indian-rupee-sign text-[10px] text-accent-cyan/80"></i> INR</span>`;
         const amt = parseFloat(exp.amount) || 0;
         const particularText = exp.particulars || exp.item || 'Expense';
 
         tr.innerHTML = `
-            <td class="py-3 px-4 font-mono text-xs text-slate-400">${exp.date || '-'}</td>
-            <td class="py-3 px-4"><span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${currColor}">${curr}</span></td>
-            <td class="py-3 px-4 text-slate-300 font-medium">${exp.category || 'General'}</td>
-            <td class="py-3 px-4 text-white font-medium">${particularText}</td>
-            <td class="py-3 px-4 text-right font-mono font-bold text-slate-200">${curr === 'QAR' ? 'QR ' : '₹'}${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-            <td class="py-3 px-4 text-center">
-                <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="openDailyExpenseModal('${curr}', '${exp.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-brand-500/20 text-slate-400 hover:text-brand-400 transition-colors flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
-                    <button onclick="deleteDailyExpenseFromLog('${exp.id}')" class="w-7 h-7 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${exp.date || '-'}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currBadge}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-slate-300 font-medium flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${exp.category || 'General'}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-white font-medium flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[200px]">${particularText}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold text-slate-200 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${curr === 'QAR' ? 'QR ' : '₹'}${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
+                    <button onclick="openDailyExpenseModal('${curr}', '${exp.id}')" class="text-slate-500 hover:text-brand-500 transition-colors" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
+                    <button onclick="deleteDailyExpenseFromLog('${exp.id}')" class="text-slate-500 hover:text-rose-500 transition-colors" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
                 </div>
-            </td>
+            </div></td>
         `;
         body.appendChild(tr);
     });
@@ -889,13 +937,13 @@ function renderBudgetAnalysis() {
 
                 let healthBadge = '';
                 if (catSpend === 0 && catBudget > 0) {
-                    healthBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono border border-slate-700 bg-surface-900 text-slate-400">Unspent</span>`;
+                    healthBadge = `<span class="inline-flex items-center gap-1.5 text-xs font-mono text-slate-400 font-medium"><i class="fa-regular fa-clock text-[11px] text-slate-500"></i> Unspent</span>`;
                 } else if (catSpend > 0 && catBudget === 0) {
-                    healthBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono border border-amber-500/30 bg-amber-500/10 text-amber-400 font-bold">Unbudgeted</span>`;
+                    healthBadge = `<span class="inline-flex items-center gap-1.5 text-xs font-mono text-amber-400 font-semibold"><i class="fa-solid fa-triangle-exclamation text-[11px]"></i> Unbudgeted</span>`;
                 } else if (catVar >= 0) {
-                    healthBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-bold">Within Budget</span>`;
+                    healthBadge = `<span class="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check text-[11px]"></i> Within Budget</span>`;
                 } else {
-                    healthBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono border border-rose-500/30 bg-rose-500/10 text-rose-400 font-bold">Over Budget</span>`;
+                    healthBadge = `<span class="inline-flex items-center gap-1.5 text-xs font-mono text-rose-400 font-semibold"><i class="fa-solid fa-circle-exclamation text-[11px]"></i> Over Budget</span>`;
                 }
 
                 let barColor = 'bg-emerald-400';
@@ -906,19 +954,31 @@ function renderBudgetAnalysis() {
                 const varColor = catVar >= 0 ? 'text-emerald-400' : 'text-rose-400';
 
                 const tr = document.createElement('tr');
-                tr.className = 'group hover:bg-surface-800/20 transition-colors border-b border-surface-800/30 last:border-0';
+                tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
                 tr.innerHTML = `
-                    <td class="py-3 px-3">
-                        <div class="flex items-center gap-2">
+                    <td class="py-px px-1">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                             <span class="w-2 h-2 rounded-full ${catUtil > 100 ? 'bg-rose-400' : (catUtil > 85 ? 'bg-amber-400' : 'bg-brand-400')}"></span>
                             <span class="font-semibold text-slate-100 text-xs">${c.category}</span>
                         </div>
                     </td>
-                    <td class="py-3 px-3 text-right font-mono font-bold text-slate-200 text-xs">${currSym}${catBudget.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="py-3 px-3 text-right font-mono font-bold text-amber-400 text-xs">${currSym}${catSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="py-3 px-3 text-right font-mono font-bold ${varColor} text-xs">${varSign}${currSym}${Math.abs(catVar).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="py-3 px-3">
-                        <div class="space-y-1">
+                    <td class="py-px px-1">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold text-slate-200 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                            ${currSym}${catBudget.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </td>
+                    <td class="py-px px-1">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold text-amber-400 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                            ${currSym}${catSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </td>
+                    <td class="py-px px-1">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold ${varColor} text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                            ${varSign}${currSym}${Math.abs(catVar).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </td>
+                    <td class="py-px px-1">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl flex flex-col justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors space-y-1">
                             <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
                                 <span>${catUtil.toFixed(1)}%</span>
                             </div>
@@ -927,7 +987,11 @@ function renderBudgetAnalysis() {
                             </div>
                         </div>
                     </td>
-                    <td class="py-3 px-3 text-center">${healthBadge}</td>
+                    <td class="py-px px-1">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                            ${healthBadge}
+                        </div>
+                    </td>
                 `;
                 tableBody.appendChild(tr);
             });

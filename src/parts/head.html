@@ -16,6 +16,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/themes/dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <!-- PDF.js for Embedded PDF Viewing & Rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        if (window.pdfjsLib) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -79,7 +86,8 @@
         /* Note Editor Placeholder */
         #noteEditor:empty:before,
         #msNoteEditor:empty:before,
-        #tradeNoteEditor:empty:before {
+        #tradeNoteEditor:empty:before,
+        .contact-placeholder:empty:before {
             content: attr(data-placeholder);
             color: #64748b;
             pointer-events: none;
@@ -140,6 +148,37 @@
             background: linear-gradient(90deg, transparent, rgba(0, 255, 157, 0.3), transparent);
         }
 
+        /* Executive Unified Main Canvas Oval Container */
+        .main-canvas-oval {
+            border-radius: 2.5rem;
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            background: radial-gradient(circle at 50% 0%, rgba(18, 36, 26, 0.45) 0%, rgba(4, 9, 6, 0.8) 100%);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(0, 255, 157, 0.25), 0 0 30px -5px rgba(0, 255, 157, 0.06);
+            backdrop-filter: blur(20px);
+        }
+
+        /* Luxury Dark Navigation Tab Styles with Inner Light Effect */
+        .nav-tab-active {
+            background: linear-gradient(145deg, rgba(16, 28, 21, 0.92) 0%, rgba(6, 12, 9, 0.96) 100%);
+            border: 1px solid rgba(0, 255, 157, 0.22);
+            box-shadow: inset 0 1px 2px 0 rgba(0, 255, 157, 0.28), inset 0 0 18px 0 rgba(0, 255, 157, 0.07), 0 8px 24px -4px rgba(0, 0, 0, 0.65);
+            color: #ffffff;
+            font-weight: 700;
+            backdrop-filter: blur(16px);
+        }
+        .nav-tab-inactive {
+            background: rgba(10, 16, 13, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: #94a3b8;
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.02);
+        }
+        .nav-tab-inactive:hover {
+            background: rgba(18, 30, 23, 0.55);
+            border-color: rgba(0, 255, 157, 0.12);
+            color: #ffffff;
+            box-shadow: inset 0 1px 1px 0 rgba(0, 255, 157, 0.1), 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
         h1, h2, h3, .display-font { font-family: 'Playfair Display', serif; }
         
         /* Subtle grid background pattern */
@@ -164,6 +203,11 @@
             background: linear-gradient(145deg, #0a0a0a 0%, #000000 100%);
             border: 1px solid rgba(0, 255, 157, 0.1);
             box-shadow: 0 4px 30px -2px rgba(0, 255, 157, 0.05), 0 0 20px -5px rgba(0, 255, 157, 0.03);
+        }
+        html.dark.theme-black .main-canvas-oval {
+            border-color: rgba(0, 255, 157, 0.16);
+            background: radial-gradient(circle at 50% 0%, rgba(12, 12, 12, 0.75) 0%, rgba(2, 2, 2, 0.9) 100%);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8), inset 0 1px 1px 0 rgba(0, 255, 157, 0.2), 0 0 25px -5px rgba(0, 255, 157, 0.04);
         }
         
         /* LIGHT THEME OVERRIDES */
@@ -191,6 +235,11 @@
             box-shadow: 0 4px 25px -2px rgba(0, 204, 126, 0.06), 0 0 15px -4px rgba(0, 204, 126, 0.03);
         }
         html.theme-light .premium-card::before { background: linear-gradient(90deg, transparent, rgba(0, 204, 126, 0.3), transparent); }
+        html.theme-light .main-canvas-oval {
+            border-color: rgba(0, 204, 126, 0.25);
+            background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 249, 0.9) 100%);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05), inset 0 1px 1px 0 rgba(255, 255, 255, 0.8), 0 0 25px -5px rgba(0, 204, 126, 0.08);
+        }
         html.theme-light .bg-pattern {
             background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
                               linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -201,13 +250,99 @@
             .print-only { display: block !important; }
             body { background: white !important; color: black !important; }
         }
+
+        [contenteditable][data-placeholder]:empty:before {
+            content: attr(data-placeholder);
+            color: #64748b;
+            font-style: italic;
+            opacity: 0.8;
+            pointer-events: none;
+        }
     </style>
 
-    <!-- FIREBASE CLOUD STORAGE INTEGRATION -->
+    <!-- FIREBASE CLOUD STORAGE & VAULT BINARY ENGINE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Native IndexedDB Engine for Vault Files & Media Blobs
+        const VAULT_DB_NAME = 'ExecutiveVaultStorageDB';
+        const VAULT_DB_VERSION = 1;
+        const VAULT_STORE_NAME = 'vault_files';
+
+        function getVaultIndexedDB() {
+            return new Promise((resolve) => {
+                if (!window.indexedDB) {
+                    resolve(null);
+                    return;
+                }
+                const req = window.indexedDB.open(VAULT_DB_NAME, VAULT_DB_VERSION);
+                req.onupgradeneeded = (e) => {
+                    const idb = e.target.result;
+                    if (!idb.objectStoreNames.contains(VAULT_STORE_NAME)) {
+                        idb.createObjectStore(VAULT_STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = (e) => {
+                    console.warn('IndexedDB open error:', e);
+                    resolve(null);
+                };
+            });
+        }
+
+        window.vaultStorage = {
+            async saveFile(id, fileData) {
+                if (!id || !fileData) return;
+                try {
+                    const idb = await getVaultIndexedDB();
+                    if (!idb) return;
+                    return new Promise((resolve) => {
+                        const tx = idb.transaction(VAULT_STORE_NAME, 'readwrite');
+                        const store = tx.objectStore(VAULT_STORE_NAME);
+                        store.put({ id, fileData, updatedAt: Date.now() });
+                        tx.oncomplete = () => resolve(true);
+                        tx.onerror = () => resolve(false);
+                    });
+                } catch (e) {
+                    console.warn('vaultStorage.saveFile error:', e);
+                }
+            },
+            async getFile(id) {
+                if (!id) return null;
+                try {
+                    const idb = await getVaultIndexedDB();
+                    if (!idb) return null;
+                    return new Promise((resolve) => {
+                        const tx = idb.transaction(VAULT_STORE_NAME, 'readonly');
+                        const store = tx.objectStore(VAULT_STORE_NAME);
+                        const req = store.get(id);
+                        req.onsuccess = () => resolve(req.result ? req.result.fileData : null);
+                        req.onerror = () => resolve(null);
+                    });
+                } catch (e) {
+                    console.warn('vaultStorage.getFile error:', e);
+                    return null;
+                }
+            },
+            async deleteFile(id) {
+                if (!id) return;
+                try {
+                    const idb = await getVaultIndexedDB();
+                    if (!idb) return;
+                    return new Promise((resolve) => {
+                        const tx = idb.transaction(VAULT_STORE_NAME, 'readwrite');
+                        const store = tx.objectStore(VAULT_STORE_NAME);
+                        store.delete(id);
+                        tx.oncomplete = () => resolve(true);
+                        tx.onerror = () => resolve(false);
+                    });
+                } catch (e) {
+                    console.warn('vaultStorage.deleteFile error:', e);
+                }
+            }
+        };
 
         const firebaseConfig = {
             projectId: "my-dashboard-520e7",
@@ -286,17 +421,30 @@
                 try {
                     if (unsubscribeSnapshot) unsubscribeSnapshot();
                     const masterDocRef = doc(dbStore, 'app_data', 'executive_master');
-                    unsubscribeSnapshot = onSnapshot(masterDocRef, (snap) => {
+                    unsubscribeSnapshot = onSnapshot(masterDocRef, async (snap) => {
                         if (snap.exists()) {
                             const data = snap.data();
-                            if (data && data.payload) {
+                            if (data) {
                                 try {
-                                    const parsed = JSON.parse(data.payload);
-                                    if (window.onRemoteStateUpdate) {
+                                    let parsed = null;
+                                    if (data.isChunked && data.totalChunks > 1) {
+                                        let fullPayload = data.payload || '';
+                                        for (let i = 1; i < data.totalChunks; i++) {
+                                            const chunkRef = doc(dbStore, 'app_data', `executive_master_part_${i}`);
+                                            const cSnap = await getDoc(chunkRef);
+                                            if (cSnap.exists()) {
+                                                fullPayload += (cSnap.data().payload || '');
+                                            }
+                                        }
+                                        parsed = JSON.parse(fullPayload);
+                                    } else if (data.payload) {
+                                        parsed = JSON.parse(data.payload);
+                                    }
+                                    if (parsed && window.onRemoteStateUpdate) {
                                         window.onRemoteStateUpdate(parsed);
                                     }
                                 } catch (e) {
-                                    console.error("Payload parse error:", e);
+                                    console.error("Payload parse error in realtime listener:", e);
                                 }
                             }
                         }
@@ -308,25 +456,149 @@
                 }
             }
 
+            window.deleteVaultFileFromCloud = async function(docId) {
+                if (!window.isFirebaseReady || !docId) return;
+                try {
+                    const fileRef = doc(window.dbStore, 'vault_files', docId);
+                    await deleteDoc(fileRef);
+                } catch (e) {
+                    console.warn("Cloud delete vault file error:", e);
+                }
+            };
+
+            window.getOrFetchVaultFile = async function(docId) {
+                if (!docId) return null;
+                // 1. Check in-memory in db.documents
+                if (window.db && Array.isArray(window.db.documents)) {
+                    const d = window.db.documents.find(x => x.id === docId);
+                    if (d && d.fileData) return d.fileData;
+                }
+                // 2. Check IndexedDB cache
+                if (window.vaultStorage) {
+                    const cached = await window.vaultStorage.getFile(docId);
+                    if (cached) {
+                        if (window.db && Array.isArray(window.db.documents)) {
+                            const d = window.db.documents.find(x => x.id === docId);
+                            if (d) d.fileData = cached;
+                        }
+                        return cached;
+                    }
+                }
+                // 3. Fetch from Firestore vault_files collection
+                if (window.dbStore && window.isFirebaseReady) {
+                    try {
+                        const fileRef = doc(window.dbStore, 'vault_files', docId);
+                        const snap = await getDoc(fileRef);
+                        if (snap.exists()) {
+                            const fData = snap.data().fileData;
+                            if (fData) {
+                                if (window.vaultStorage) await window.vaultStorage.saveFile(docId, fData);
+                                if (window.db && Array.isArray(window.db.documents)) {
+                                    const d = window.db.documents.find(x => x.id === docId);
+                                    if (d) d.fileData = fData;
+                                }
+                                return fData;
+                            }
+                        }
+                    } catch (err) {
+                        console.warn("Firestore get vault file error:", err);
+                    }
+                }
+                return null;
+            };
+
             window.cloudSave = async function(data) {
                 if (!window.isFirebaseReady || !window.firebaseUser) return;
                 try {
                     updateCloudSyncStatusUI('saving');
-                    const payloadStr = JSON.stringify(data);
                     const nowIso = new Date().toISOString();
                     const userEmail = window.firebaseUser.email || (window.firebaseUser.isAnonymous ? 'Anonymous Device' : window.firebaseUser.uid);
                     
-                    // 1. Save to Global Master Document for Worldwide Cross-Device Instant Sync
-                    const masterDocRef = doc(window.dbStore, 'app_data', 'executive_master');
-                    await setDoc(masterDocRef, {
-                        userId: window.firebaseUser.uid,
-                        updatedBy: userEmail,
-                        payload: payloadStr,
-                        updatedAt: nowIso
-                    });
+                    // 1. Separate heavy document binaries (fileData) into local IndexedDB and vault_files collection
+                    const cleanData = JSON.parse(JSON.stringify(data));
+                    
+                    if (Array.isArray(cleanData.documents)) {
+                        for (let i = 0; i < cleanData.documents.length; i++) {
+                            const d = cleanData.documents[i];
+                            if (d.fileData && (d.fileData.startsWith('data:') || d.fileData.length > 2000)) {
+                                // Cache locally in IndexedDB
+                                if (window.vaultStorage) {
+                                    await window.vaultStorage.saveFile(d.id, d.fileData);
+                                }
+                                // Upload file binary to dedicated Firestore vault_files collection (under 950KB)
+                                try {
+                                    if (d.fileData.length <= 950000) {
+                                        const fileDocRef = doc(window.dbStore, 'vault_files', d.id);
+                                        await setDoc(fileDocRef, {
+                                            docId: d.id,
+                                            fileData: d.fileData,
+                                            mimeType: d.mimeType || 'application/octet-stream',
+                                            userId: window.firebaseUser.uid,
+                                            updatedAt: nowIso
+                                        });
+                                    }
+                                } catch (fErr) {
+                                    console.warn("Vault file upload warning:", fErr);
+                                }
+                                // Strip bulky binary string from consolidated master state
+                                d.hasBinary = true;
+                                delete d.fileData;
+                            }
+                        }
+                    }
 
-                    // 2. Also save to user specific doc
-                    if (!window.firebaseUser.isAnonymous) {
+                    // Also clean vault captures if any
+                    if (cleanData.vault && Array.isArray(cleanData.vault.captures)) {
+                        for (let i = 0; i < cleanData.vault.captures.length; i++) {
+                            const c = cleanData.vault.captures[i];
+                            if (c.data && (c.data.startsWith('data:') || c.data.length > 2000)) {
+                                if (window.vaultStorage) {
+                                    await window.vaultStorage.saveFile(c.id, c.data);
+                                }
+                                delete c.data;
+                                c.hasBinary = true;
+                            }
+                        }
+                    }
+
+                    const payloadStr = JSON.stringify(cleanData);
+
+                    // 2. Safe Master Payload Saving (Chunking if ever > 600KB)
+                    const CHUNK_SIZE = 600000;
+                    const totalChunks = Math.ceil(payloadStr.length / CHUNK_SIZE);
+
+                    if (totalChunks <= 1) {
+                        // Single master document
+                        const masterDocRef = doc(window.dbStore, 'app_data', 'executive_master');
+                        await setDoc(masterDocRef, {
+                            userId: window.firebaseUser.uid,
+                            updatedBy: userEmail,
+                            payload: payloadStr,
+                            isChunked: false,
+                            totalChunks: 1,
+                            chunkIndex: 0,
+                            updatedAt: nowIso
+                        });
+                    } else {
+                        // Multi-chunk saving for large tables
+                        for (let i = 0; i < totalChunks; i++) {
+                            const chunkStr = payloadStr.substr(i * CHUNK_SIZE, CHUNK_SIZE);
+                            const chunkDocId = i === 0 ? 'executive_master' : `executive_master_part_${i}`;
+                            const chunkRef = doc(window.dbStore, 'app_data', chunkDocId);
+                            await setDoc(chunkRef, {
+                                userId: window.firebaseUser.uid,
+                                updatedBy: userEmail,
+                                payload: chunkStr,
+                                isChunked: true,
+                                chunkIndex: i,
+                                totalChunks: totalChunks,
+                                updatedAt: nowIso
+                            });
+                        }
+                    }
+
+                    // 3. User-specific backup
+                    if (!window.firebaseUser.isAnonymous && totalChunks <= 1) {
                         const userDocRef = doc(window.dbStore, 'users', window.firebaseUser.uid, 'dashboard', 'state');
                         await setDoc(userDocRef, {
                             userId: window.firebaseUser.uid,
@@ -351,7 +623,19 @@
                     const snap = await getDoc(masterDocRef);
                     if (snap.exists()) {
                         const data = snap.data();
-                        return JSON.parse(data.payload);
+                        if (data.isChunked && data.totalChunks > 1) {
+                            let fullPayload = data.payload || '';
+                            for (let i = 1; i < data.totalChunks; i++) {
+                                const chunkRef = doc(window.dbStore, 'app_data', `executive_master_part_${i}`);
+                                const cSnap = await getDoc(chunkRef);
+                                if (cSnap.exists()) {
+                                    fullPayload += (cSnap.data().payload || '');
+                                }
+                            }
+                            return JSON.parse(fullPayload);
+                        } else if (data.payload) {
+                            return JSON.parse(data.payload);
+                        }
                     }
                     
                     // Fallback to user doc if available

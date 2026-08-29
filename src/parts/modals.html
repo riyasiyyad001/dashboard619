@@ -67,7 +67,7 @@
     </div>
 
     <!-- DAILY EXPENSE MODAL -->
-    <div id="dailyExpenseModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div id="dailyExpenseModal" class="fixed inset-0 z-[90] bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none"></div>
             <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
@@ -83,16 +83,22 @@
                 <button onclick="closeModal('dailyExpenseModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-4 text-sm font-light relative z-10">
-                <input type="hidden" id="dailyExpenseCurrency">
                 <input type="hidden" id="dailyExpenseId">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date</label>
-                        <input type="text" id="dailyExpDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                        <input type="text" id="dailyExpDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none custom-datepicker text-sm">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Currency</label>
+                        <select id="dailyExpenseCurrency" onchange="onDailyExpenseCurrencyChanged()" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium cursor-pointer text-sm">
+                            <option value="INR">₹ INR (India)</option>
+                            <option value="QAR">QR QAR (Qatar)</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Amount</label>
-                        <input type="number" step="0.01" id="dailyExpAmountInput" placeholder="Expense amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="dailyExpAmountInput" placeholder="0.00" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-mono text-sm">
                     </div>
                 </div>
                 <div>
@@ -257,6 +263,71 @@
                 </div>
                 <div class="pt-4">
                     <button onclick="saveBankDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="qatarAssetModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-xl w-full p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-36 h-36 bg-amber-500/10 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-surface-800 pb-4 mb-6 relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-sm shadow-inner">
+                        <i class="fa-solid fa-earth-asia"></i>
+                    </div>
+                    <div>
+                        <h3 id="qatarAssetModalTitle" class="font-display text-lg text-white font-bold">Add Qatar Asset</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Track asset identity, QAR valuation & auto-computed INR equivalent</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('qatarAssetModal')" class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-4 text-sm font-light relative z-10">
+                <input type="hidden" id="qatarAssetId">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date <span class="text-rose-400">*</span></label>
+                        <input type="date" id="qatarAssetDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none font-mono text-xs cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category <span class="text-rose-400">*</span></label>
+                        <select id="qatarAssetCategoryInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none font-medium text-xs cursor-pointer">
+                            <option value="Real Estate">Real Estate & Property</option>
+                            <option value="Commercial / Business">Commercial / Business Venture</option>
+                            <option value="Vehicles & Transport">Vehicles & Transport</option>
+                            <option value="Bank Deposits & Cash">Bank Deposits & Cash</option>
+                            <option value="Equity & Investments">Equity & Investments</option>
+                            <option value="Gold & Valuables">Gold & Valuables</option>
+                            <option value="Equipment & Industrial">Equipment & Industrial</option>
+                            <option value="Other Assets">Other Assets</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Asset Identity <span class="text-rose-400">*</span></label>
+                    <input type="text" id="qatarAssetNameInput" placeholder="e.g. Lusail Marina Apartment / Pearl Commercial Store" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none text-xs">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-amber-400">Value in QR <span class="text-rose-400">*</span></label>
+                        <input type="number" step="0.01" id="qatarAssetValueQrInput" oninput="computeQatarModalInrValue()" placeholder="e.g. 250000" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-amber-400 focus:border-amber-500 focus:outline-none font-mono text-xs font-semibold">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Per QR (₹) <span class="text-rose-400">*</span></label>
+                        <input type="number" step="0.0001" id="qatarAssetPerQrInput" oninput="computeQatarModalInrValue()" placeholder="e.g. 23.50" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none font-mono text-xs">
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-emerald-400">Value in Rs (Auto)</label>
+                        <input type="text" id="qatarAssetValueRsInput" readonly placeholder="₹0.00" class="w-full p-3 rounded-xl border border-surface-700/80 bg-surface-950 text-emerald-400 font-mono text-xs font-bold cursor-not-allowed">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Remarks / Description</label>
+                    <textarea id="qatarAssetRemarksInput" rows="2" placeholder="Deed numbers, location, ownership split, or additional notes..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none resize-none text-xs"></textarea>
+                </div>
+                <div class="pt-4">
+                    <button onclick="saveQatarAssetDetails()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(245,158,11,0.25)]">Save Qatar Asset</button>
                 </div>
             </div>
         </div>
@@ -567,21 +638,32 @@
                     </div>
                 </div>
 
+                <!-- Priority & Status Fields -->
                 <div class="grid grid-cols-2 gap-4">
-                    <div id="goalProgressField" class="hidden">
-                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Progress (%)</label>
-                        <input type="number" min="0" max="100" id="goalProgressInput" value="0" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Priority Level</label>
+                        <select id="goalPriorityInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
+                            <option value="Critical">🔴 Critical (Top Line)</option>
+                            <option value="High">🟠 High Priority</option>
+                            <option value="Medium" selected>🟡 Medium Priority</option>
+                            <option value="Low">🔵 Low Priority</option>
+                        </select>
                     </div>
-                    <div id="goalStatusContainer" class="col-span-2">
+                    <div id="goalStatusContainer">
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Status</label>
                         <select id="goalStatusInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-medium">
                             <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
+                            <option value="In Progress" selected>In Progress</option>
                             <option value="Completed">Completed</option>
                             <option value="On Hold">On Hold</option>
                             <option value="Abandoned">Abandoned</option>
                         </select>
                     </div>
+                </div>
+
+                <div id="goalProgressField" class="hidden">
+                    <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Progress (%)</label>
+                    <input type="number" min="0" max="100" id="goalProgressInput" value="0" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Action Milestones</label>
@@ -595,21 +677,28 @@
     </div>
 
     <!-- NOTE MODAL (RICH EXECUTIVE COMPOSER) -->
-    <div id="noteModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-3 md:p-6">
-        <div class="premium-card max-w-3xl w-full p-6 md:p-8 shadow-2xl flex flex-col h-[90vh] max-h-[850px] relative">
+    <div id="noteModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4 md:p-6 transition-all duration-300">
+        <div id="noteModalContainer" class="premium-card max-w-6xl w-full p-5 sm:p-6 md:p-8 shadow-2xl flex flex-col h-[94vh] max-h-[960px] relative transition-all duration-300">
             <!-- Modal Header -->
             <div class="flex items-center justify-between border-b border-surface-800 pb-3 mb-4 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
                         <i class="fa-solid fa-feather-pointed text-sm"></i>
                     </div>
-                    <h3 id="noteModalTitle" class="font-display text-lg text-white font-bold">Executive Note Composer</h3>
+                    <div>
+                        <h3 id="noteModalTitle" class="font-display text-lg text-white font-bold">Executive Note Composer</h3>
+                        <p class="text-[10px] font-mono text-slate-400 hidden sm:block">Full rich-text editor with typography & styling controls</p>
+                    </div>
                 </div>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 sm:gap-3">
                     <!-- Pin Toggle Button -->
                     <button type="button" id="btnToggleNotePin" onclick="toggleCurrentNotePin()" class="px-3 py-1.5 rounded-xl border border-surface-700 bg-surface-900 text-slate-400 hover:text-amber-400 hover:border-amber-500/50 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm" title="Pin Note to Top">
                         <i id="notePinIcon" class="fa-solid fa-thumbtack text-xs"></i>
-                        <span id="notePinLabel">Pin</span>
+                        <span id="notePinLabel" class="hidden sm:inline">Pin</span>
+                    </button>
+                    <!-- Maximize / Fullscreen Toggle Button -->
+                    <button type="button" id="btnToggleNoteModalMaximize" onclick="toggleNoteModalMaximize()" class="w-8 h-8 rounded-xl bg-surface-900 border border-surface-700 text-slate-400 hover:text-amber-400 hover:border-amber-500/40 hover:bg-surface-800 transition-all flex items-center justify-center cursor-pointer shadow-sm" title="Toggle Full Page (Maximize)">
+                        <i id="noteModalMaxIcon" class="fa-solid fa-expand text-xs"></i>
                     </button>
                     <button type="button" onclick="closeModal('noteModal')" class="w-8 h-8 rounded-xl bg-surface-900 border border-surface-800 text-slate-400 hover:text-white hover:bg-rose-500/20 hover:border-rose-500/40 transition-all flex items-center justify-center cursor-pointer">
                         <i class="fa-solid fa-xmark text-sm"></i>
@@ -625,7 +714,7 @@
 
                 <!-- Title Input -->
                 <div>
-                    <input type="text" id="noteTitleInput" placeholder="Note Title / Subject Header..." class="w-full px-4 py-3 rounded-xl border border-surface-700/80 bg-surface-900/90 text-white font-display text-lg md:text-xl font-bold focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none placeholder-slate-500 transition-all">
+                    <input type="text" id="noteTitleInput" placeholder="Note Title / Subject Header..." autocapitalize="sentences" autocorrect="on" spellcheck="true" autocomplete="off" oninput="handleNoteTitleInput(this)" class="w-full px-4 py-3 rounded-xl border border-surface-700/80 bg-surface-900/90 text-white font-display text-lg md:text-xl font-bold focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none placeholder-slate-500 transition-all">
                 </div>
 
                 <!-- Metadata Row: Category, Accent Color Theme, Font Family, Font Size -->
@@ -743,7 +832,7 @@
 
                 <!-- The Rich Content Editable Area -->
                 <div class="flex-1 min-h-[260px] relative rounded-xl border border-surface-700/80 bg-surface-950/70 p-4 md:p-6 overflow-y-auto custom-scrollbar focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400 transition-all">
-                    <div id="noteEditor" contenteditable="true" data-placeholder="Capture your thoughts, plans, meeting takeaways, or reflections here..." class="w-full h-full min-h-[220px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter" oninput="updateNoteStats()"></div>
+                    <div id="noteEditor" contenteditable="true" autocapitalize="sentences" autocorrect="on" spellcheck="true" data-placeholder="Capture your thoughts, plans, meeting takeaways, or reflections here..." class="w-full h-full min-h-[220px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter" oninput="handleNoteEditorInput(event)"></div>
                     <textarea id="noteContentInput" class="hidden"></textarea>
                 </div>
             </div>
@@ -766,9 +855,9 @@
     </div>
 
     <!-- NOTE FULL VIEW MODAL (READING & PRESENTATION MODE) -->
-    <div id="noteViewModal" class="fixed inset-0 z-[60] bg-surface-950/95 backdrop-blur-xl hidden flex items-center justify-center p-3 md:p-8 transition-all">
-        <!-- Dynamic Gradient Border Wrapper -->
-        <div id="viewNoteWrapper" class="max-w-4xl w-full h-full max-h-[88vh] rounded-[2rem] p-[2px] bg-gradient-to-br from-amber-400 via-brand-600 to-accent-plum shadow-[0_0_60px_rgba(201,164,107,0.25)] relative group">
+    <div id="noteViewModal" class="fixed inset-0 z-[60] bg-surface-950/95 backdrop-blur-xl hidden flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8 transition-all">
+        <!-- Dynamic Gradient Border Wrapper (Spacious 30%+ increased width: max-w-6xl xl:max-w-7xl) -->
+        <div id="viewNoteWrapper" class="max-w-6xl xl:max-w-7xl w-full h-full max-h-[92vh] rounded-[2rem] p-[2px] bg-gradient-to-br from-amber-400 via-brand-600 to-accent-plum shadow-[0_0_60px_rgba(201,164,107,0.25)] relative group transition-all duration-300">
             
             <!-- Subtle animated glow behind the modal -->
             <div id="viewNoteGlow" class="absolute inset-0 bg-gradient-to-br from-amber-400 to-accent-plum rounded-[2rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-700 -z-10"></div>
@@ -786,9 +875,11 @@
                         </div>
                         <h2 id="viewNoteTitle" class="font-display text-3xl md:text-5xl text-white font-bold leading-tight tracking-wide drop-shadow-md"></h2>
                     </div>
-                    <div class="flex items-center gap-3 shrink-0 mt-2">
-                        <button onclick="editNoteFromView()" class="w-12 h-12 rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1 cursor-pointer" title="Edit Note"><i class="fa-solid fa-pen text-base"></i></button>
-                        <button onclick="closeModal('noteViewModal')" class="w-12 h-12 rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-rose-900/60 hover:border-rose-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] hover:-translate-y-1 cursor-pointer" title="Close Reader"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    <div class="flex items-center gap-2 sm:gap-3 shrink-0 mt-2">
+                        <button type="button" id="btnToggleViewNotePin" onclick="toggleCurrentViewNotePin()" class="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1 cursor-pointer" title="Pin / Unpin Note"><i id="viewNotePinBtnIcon" class="fa-solid fa-thumbtack text-sm md:text-base"></i></button>
+                        <button type="button" id="btnToggleNoteViewMaximize" onclick="toggleNoteViewModalMaximize()" class="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1 cursor-pointer" title="Toggle Full Page"><i id="noteViewMaxIcon" class="fa-solid fa-expand text-sm md:text-base"></i></button>
+                        <button onclick="editNoteFromView()" class="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-amber-400 hover:bg-surface-700 hover:border-amber-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:-translate-y-1 cursor-pointer" title="Edit Note"><i class="fa-solid fa-pen text-sm md:text-base"></i></button>
+                        <button onclick="closeModal('noteViewModal')" class="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-rose-900/60 hover:border-rose-500/50 transition-all flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] hover:-translate-y-1 cursor-pointer" title="Close Reader"><i class="fa-solid fa-xmark text-lg md:text-xl"></i></button>
                     </div>
                 </div>
                 
@@ -819,21 +910,31 @@
             </div>
             <div class="space-y-4 text-sm font-light relative z-10">
                 <input type="hidden" id="reminderId">
+                <input type="hidden" id="reminderDateInput">
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Title / Subject</label>
                     <input type="text" id="reminderTitleInput" placeholder="e.g. Executive Board Meeting, Tax Filing, Visa Renewal" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none transition-all">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Date</label>
-                        <input type="text" id="reminderDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
+                            Entry Date <span class="text-slate-500 font-normal lowercase">(Logged Date)</span>
+                        </label>
+                        <input type="text" id="reminderEntryDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none custom-datepicker" placeholder="DD/MM/YYYY">
                     </div>
                     <div>
-                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Time</label>
-                        <input type="time" id="reminderTimeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none">
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-brand-400 flex items-center justify-between">
+                            <span>Remind Date <span class="text-slate-400 font-normal lowercase">(Alert Date)</span></span>
+                            <span class="text-[9px] text-amber-400 font-mono"><i class="fa-solid fa-bell text-[8px] mr-1"></i>24h alert</span>
+                        </label>
+                        <input type="text" id="reminderDueDateInput" class="w-full p-3 rounded-xl border border-brand-500/50 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none custom-datepicker" placeholder="DD/MM/YYYY">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Alert Time</label>
+                        <input type="time" id="reminderTimeInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none">
+                    </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Priority</label>
                         <select id="reminderPriorityInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none font-medium cursor-pointer">
@@ -855,6 +956,10 @@
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Additional Notes & Context</label>
                     <textarea id="reminderNotesInput" rows="3" placeholder="Add detailed notes, meeting agenda links, location details, or follow-up instructions..." class="w-full p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                </div>
+                <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-amber-400 shrink-0"></i>
+                    <span>Notification alert will be automatically triggered <strong>24 hours prior</strong> to the Remind Date & Time.</span>
                 </div>
                 <div class="pt-3">
                     <button onclick="saveReminder()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)] cursor-pointer active:scale-[0.98]">Save Reminder</button>
@@ -986,7 +1091,7 @@
                             <th class="py-3 px-4 text-center">Manage</th>
                         </tr>
                     </thead>
-                    <tbody id="dailyExpensesTableBody" class="divide-y divide-surface-800/50 font-light text-slate-300">
+                    <tbody id="dailyExpensesTableBody" class="font-light text-slate-300">
                         <!-- Expenses injected via JS -->
                     </tbody>
                 </table>
@@ -1374,6 +1479,403 @@
                 <div class="flex-1 min-h-[320px] relative rounded-2xl border border-surface-700/80 bg-surface-950/80 p-5 md:p-8 overflow-y-auto custom-scrollbar focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 transition-all shadow-inner">
                     <div id="tradeNoteEditor" contenteditable="true" dir="ltr" style="direction: ltr !important; text-align: left !important; unicode-bidi: normal !important; writing-mode: horizontal-tb !important;" data-placeholder="Record trade strategy, entry/exit levels, technical indicators, setup analysis, takeaways, or market reflections..." class="w-full h-full min-h-[280px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter text-left"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAVORITES ADD / EDIT MODAL (SIMPLE & CLEAN) -->
+    <div id="favoriteModal" class="fixed inset-0 z-50 bg-surface-950/90 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-surface-900 border border-surface-700/80 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 my-auto">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-4 sm:p-5 border-b border-surface-800 bg-surface-950/50">
+                <div class="flex items-center gap-3">
+                    <div id="favModalHeaderIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-star text-sm"></i>
+                    </div>
+                    <h3 id="favoriteModalTitle" class="font-display text-lg text-white font-bold tracking-tight">Add Favorite</h3>
+                </div>
+                <button type="button" onclick="closeModal('favoriteModal')" class="w-8 h-8 rounded-xl bg-surface-800/80 border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-700 transition-all flex items-center justify-center cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Simple Type Selector Tabs: Photo vs Quote -->
+            <div class="p-3 sm:p-4 border-b border-surface-800/80 bg-surface-900/40">
+                <div class="grid grid-cols-2 gap-2 bg-surface-950/70 p-1 rounded-2xl border border-surface-800">
+                    <button type="button" onclick="setFavoriteModalType('photo')" id="favTabPhoto" class="py-2 px-2.5 rounded-xl text-xs font-mono font-medium transition-all flex items-center justify-center gap-1.5 bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-camera text-xs"></i>
+                        <span>Photo</span>
+                    </button>
+                    <button type="button" onclick="setFavoriteModalType('quote')" id="favTabQuote" class="py-2 px-2.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-quote-left text-xs"></i>
+                        <span>Quote</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Form Content -->
+            <form onsubmit="event.preventDefault(); saveFavoriteItem();" class="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="favEditId">
+                <input type="hidden" id="favEditType" value="photo">
+
+                <!-- PHOTO FIELDS -->
+                <div id="favPhotoContainer" class="space-y-3">
+                    <!-- Photo URL & File Upload -->
+                    <div class="space-y-1.5">
+                        <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                            Photo Image *
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <label class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 rounded-xl text-xs font-mono cursor-pointer flex items-center gap-2 transition-all shrink-0">
+                                <i class="fa-solid fa-cloud-arrow-up text-cyan-400"></i>
+                                <span>Choose Image File</span>
+                                <input type="file" id="favPhotoFileInput" accept="image/*" onchange="handleFavoriteFileUpload(event)" class="hidden">
+                            </label>
+                            <span id="favFileName" class="text-[11px] font-mono text-slate-400 truncate flex-1"></span>
+                        </div>
+
+                        <div class="relative mt-2">
+                            <i class="fa-solid fa-link absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                            <input type="text" id="favPhotoUrlInput" oninput="previewFavoritePhoto()" placeholder="Or paste Image URL (https://...)" class="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-mono focus:border-cyan-500 focus:outline-none transition-colors">
+                        </div>
+
+                        <!-- Image Preview Box -->
+                        <div id="favPhotoPreviewBox" class="hidden relative rounded-2xl overflow-hidden border border-surface-700 h-44 bg-surface-950 flex items-center justify-center mt-2">
+                            <img id="favPhotoPreviewImg" src="" alt="Preview" class="w-full h-full object-cover">
+                            <button type="button" onclick="clearFavoritePhotoPreview()" class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-surface-950/80 hover:bg-rose-600 text-white flex items-center justify-center transition-colors">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Photo Caption / Title -->
+                    <div class="space-y-1.5">
+                        <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                            Caption / Title (Optional)
+                        </label>
+                        <input type="text" id="favPhotoCaptionInput" placeholder="e.g. Vacation with Family, Executive Retreat..." class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-cyan-500 focus:outline-none transition-colors">
+                    </div>
+                </div>
+
+                <!-- QUOTE FIELDS -->
+                <div id="favQuoteContainer" class="space-y-3 hidden">
+                    <div class="space-y-1.5">
+                        <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                            Quote / Words of Wisdom *
+                        </label>
+                        <textarea id="favContentInput" rows="4" placeholder="Enter the inspiring quote or thought here..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans leading-relaxed focus:border-amber-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                            Author / Speaker (Optional)
+                        </label>
+                        <div class="relative">
+                            <i class="fa-solid fa-feather-pointed absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                            <input type="text" id="favAuthorInput" placeholder="e.g. Warren Buffett, Steve Jobs, Self..." class="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-amber-500 focus:outline-none transition-colors">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-surface-800">
+                    <button type="button" onclick="closeModal('favoriteModal')" class="px-4 py-2 rounded-xl border border-surface-700 text-slate-400 hover:text-white hover:bg-surface-800 text-xs font-mono transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-brand-500 hover:bg-brand-400 text-surface-950 font-bold rounded-xl text-xs font-mono transition-all flex items-center gap-2 shadow-lg cursor-pointer">
+                        <i class="fa-solid fa-check text-xs"></i>
+                        <span id="favSaveBtnText">Save</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FAVORITES PHOTO LIGHTBOX MODAL (VIEW, EDIT & DELETE) -->
+    <div id="favoritePhotoLightboxModal" class="fixed inset-0 z-[150] bg-surface-950/95 backdrop-blur-xl hidden flex items-center justify-center p-3 sm:p-6" onclick="closeModal('favoritePhotoLightboxModal')">
+        <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
+            <!-- Close Button -->
+            <button onclick="closeModal('favoritePhotoLightboxModal')" class="absolute -top-12 right-0 sm:right-0 w-9 h-9 rounded-xl bg-surface-900/80 hover:bg-surface-800 border border-surface-700 text-white flex items-center justify-center transition-all cursor-pointer shadow-lg z-20">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+
+            <!-- Image Frame -->
+            <div class="relative rounded-2xl overflow-hidden border border-surface-700/80 bg-surface-900 shadow-2xl max-h-[75vh] flex items-center justify-center w-full">
+                <img id="lightboxFavPhotoImg" src="" alt="Favorite Photo" class="max-h-[75vh] w-auto max-w-full object-contain">
+            </div>
+
+            <!-- Image Info Bar & Actions -->
+            <div class="w-full mt-3 p-3.5 bg-surface-900/90 border border-surface-800 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-slate-200">
+                <div>
+                    <h4 id="lightboxFavPhotoTitle" class="font-display font-bold text-sm text-white">Photo</h4>
+                    <p id="lightboxFavPhotoDate" class="text-[10px] font-mono text-slate-400 mt-0.5"></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="lightboxFavPhotoEditBtn" onclick="" class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-cyan-300 hover:text-white rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                        <span>Edit</span>
+                    </button>
+                    <button id="lightboxFavPhotoDeleteBtn" onclick="" class="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                        <span>Delete</span>
+                    </button>
+                    <a id="lightboxFavPhotoDownload" href="#" target="_blank" class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-slate-300 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                        <span>Full Image</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAVORITES QUOTE VIEWER MODAL (READ, EDIT, COPY, DELETE) -->
+    <div id="favoriteQuoteViewModal" class="fixed inset-0 z-[150] bg-surface-950/95 backdrop-blur-xl hidden flex items-center justify-center p-3 sm:p-6" onclick="closeModal('favoriteQuoteViewModal')">
+        <div class="relative max-w-xl w-full bg-surface-900 border border-surface-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <!-- Top bar -->
+            <div class="flex items-center justify-between pb-4 border-b border-surface-800">
+                <div class="flex items-center gap-2 text-amber-400">
+                    <span class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-quote-left"></i>
+                    </span>
+                    <span class="font-mono text-xs text-slate-400">Quote Reader</span>
+                </div>
+                <button onclick="closeModal('favoriteQuoteViewModal')" class="w-8 h-8 rounded-xl bg-surface-800/80 hover:bg-surface-700 border border-surface-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Quote Body -->
+            <div class="my-6">
+                <p id="viewFavQuoteContent" class="text-base sm:text-lg font-sans italic text-slate-100 leading-relaxed pl-4 border-l-4 border-amber-500/80 font-light"></p>
+                <div class="mt-4 flex items-center justify-between text-xs pt-3">
+                    <span id="viewFavQuoteAuthor" class="font-bold text-amber-300 font-sans tracking-wide"></span>
+                    <span id="viewFavQuoteDate" class="font-mono text-slate-500 text-[11px]"></span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="pt-4 border-t border-surface-800 flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                    <button id="viewFavQuoteCopyBtn" onclick="" class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 text-slate-200 hover:text-white rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="fa-regular fa-copy text-xs"></i>
+                        <span>Copy</span>
+                    </button>
+                    <button id="viewFavQuoteEditBtn" onclick="" class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 text-cyan-300 hover:text-white rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                        <span>Edit</span>
+                    </button>
+                </div>
+                <button id="viewFavQuoteDeleteBtn" onclick="" class="px-3.5 py-2 bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                    <span>Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCUMENT UPLOAD & ATTACHMENT MODAL -->
+    <div id="documentUploadModal" class="fixed inset-0 z-50 bg-surface-950/95 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-xl w-full p-6 sm:p-7 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto custom-scrollbar">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-surface-800 pb-3.5">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-lg text-white font-bold tracking-tight">Upload Document or Photo</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Encrypted PDF, Image &amp; Media Vault</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('documentUploadModal')" class="text-slate-500 hover:text-white p-1 text-base transition-colors cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Drag & Drop Upload Zone -->
+            <div id="modalDocDropzone" ondragover="handleModalDocDragOver(event)" ondragleave="handleModalDocDragLeave(event)" ondrop="handleModalDocDrop(event)" onclick="document.getElementById('modalDocFileInput').click()" class="border-2 border-dashed border-emerald-500/40 hover:border-emerald-400 bg-surface-900/50 hover:bg-emerald-500/5 p-6 rounded-2xl text-center space-y-2 cursor-pointer transition-all">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-inner">
+                    <i class="fa-solid fa-file-arrow-up text-xl"></i>
+                </div>
+                <div class="text-xs font-semibold text-white">Click to browse or drop file here</div>
+                <div class="text-[10px] font-mono text-slate-400">PDF, JPG, PNG, WEBP, SVG • Maximum 10MB per item</div>
+                <input type="file" id="modalDocFileInput" onchange="handleModalDocFileSelect(event)" class="hidden" accept=".pdf,image/*,.doc,.docx,.txt">
+                
+                <!-- Selected File Display Chip -->
+                <div id="modalDocSelectedFileInfo" class="hidden mt-3 p-2.5 rounded-xl bg-surface-950/80 border border-emerald-500/30 flex items-center justify-between text-left">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <i id="modalDocSelectedIcon" class="fa-solid fa-file-pdf text-rose-400 text-sm shrink-0"></i>
+                        <div class="truncate">
+                            <div id="modalDocSelectedName" class="text-xs font-mono text-white font-medium truncate">document.pdf</div>
+                            <div id="modalDocSelectedMeta" class="text-[10px] font-mono text-slate-400">2.4 MB • PDF Document</div>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-mono text-emerald-400 font-bold shrink-0">Ready</span>
+                </div>
+            </div>
+
+            <!-- Metadata Form Fields -->
+            <div class="space-y-3.5 text-xs">
+                <!-- 1. Document Title -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Document Title / Name *</label>
+                    <input type="text" id="modalDocTitleInput" placeholder="e.g. Passport - Riyas Madathil / Villa Deed" class="w-full px-3.5 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
+                </div>
+
+                <!-- 2. Category & Date in 2 Cols -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Category *</label>
+                        <select id="modalDocCategorySelect" class="w-full px-3 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs cursor-pointer">
+                            <option value="identity">Identity &amp; Passports</option>
+                            <option value="legal">Legal &amp; Property Deeds</option>
+                            <option value="financial">Financial &amp; Tax Records</option>
+                            <option value="business">Business &amp; Ventures</option>
+                            <option value="receipts">Invoices &amp; Receipts</option>
+                            <option value="personal">Photos &amp; Personal Media</option>
+                            <option value="medical">Medical &amp; Insurance</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Document Date</label>
+                        <input type="date" id="modalDocDateInput" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- 3. Tags & Keywords -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Tags / Keywords (comma separated)</label>
+                    <input type="text" id="modalDocTagsInput" placeholder="#Passport, #Calicut, #Deed, #Tax2026" class="w-full px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
+                </div>
+
+                <!-- 4. Confidential Toggle & Notes -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/60 border border-surface-800">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-amber-400 text-xs"></i>
+                            <span class="font-mono text-[11px] text-slate-300">Mark as Executive Confidential</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="modalDocConfidentialCheck" class="sr-only peer">
+                            <div class="w-9 h-5 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Executive Notes / Reference</label>
+                        <textarea id="modalDocNotesInput" rows="2" placeholder="Key details, renewal dates, policy numbers, or property notes..." class="w-full px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-surface-800">
+                <button type="button" onclick="closeModal('documentUploadModal')" class="px-4 py-2 bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-mono rounded-xl transition-all cursor-pointer">Cancel</button>
+                <button type="button" onclick="saveDocumentItem()" id="btnSaveDocSubmit" class="px-6 py-2 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_15px_rgba(0,255,157,0.3)] flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                    <span>Save to Vault</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN RICH DOCUMENT & MEDIA VIEWER MODAL -->
+    <div id="documentViewerModal" class="fixed inset-0 z-[60] bg-surface-950/95 backdrop-blur-xl hidden flex items-center justify-center p-2 sm:p-4 md:p-6">
+        <div class="premium-card max-w-6xl w-full h-[94vh] p-4 sm:p-6 shadow-2xl flex flex-col justify-between space-y-3 relative overflow-hidden">
+            <!-- Header Bar -->
+            <div class="flex items-center justify-between pb-3 border-b border-surface-800/80 shrink-0">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div id="docViewerTypeIcon" class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-sm shrink-0">
+                        <i class="fa-solid fa-file text-base"></i>
+                    </div>
+                    <div class="truncate">
+                        <div class="flex items-center gap-2">
+                            <h3 id="docViewerTitle" class="font-display text-lg text-white font-bold truncate">Document Preview</h3>
+                            <span id="docViewerConfidentialBadge" class="hidden px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-[9px] uppercase tracking-widest font-semibold shrink-0">Confidential</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[10px] font-mono text-slate-400 mt-0.5">
+                            <span id="docViewerCategory" class="text-emerald-400 font-medium uppercase">General</span>
+                            <span>•</span>
+                            <span id="docViewerDate">Date</span>
+                            <span>•</span>
+                            <span id="docViewerSize">0 KB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="docViewerDownloadBtn" class="px-3.5 py-1.5 rounded-xl bg-surface-800 hover:bg-surface-700 text-emerald-300 border border-surface-700 text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer" title="Download File">
+                        <i class="fa-solid fa-download text-xs"></i>
+                        <span class="hidden sm:inline">Download</span>
+                    </button>
+                    <button onclick="closeModal('documentViewerModal')" class="w-8 h-8 rounded-xl bg-surface-800/80 hover:bg-surface-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
+                        <i class="fa-solid fa-xmark text-base"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Viewer Main Stage -->
+            <div id="docViewerStage" class="flex-1 flex items-center justify-center overflow-auto rounded-2xl bg-surface-950/90 border border-surface-800/60 p-2 relative">
+                <!-- Dynamically injected PDF iframe, high-res Image, or file fallback -->
+            </div>
+
+            <!-- Footer Meta & Notes Toolbar -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-surface-800/80 shrink-0 text-xs">
+                <div id="docViewerNotesContainer" class="flex-1 min-w-0">
+                    <div id="docViewerNotesText" class="text-slate-300 font-mono text-[11px] truncate">No additional notes recorded.</div>
+                    <div id="docViewerTagsContainer" class="flex items-center gap-1.5 flex-wrap mt-1"></div>
+                </div>
+
+                <div class="flex items-center gap-2 justify-end shrink-0">
+                    <button id="docViewerEditBtn" class="px-3 py-1.5 rounded-xl bg-surface-800 hover:bg-surface-700 text-cyan-300 border border-surface-700 text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                        <span>Edit Details</span>
+                    </button>
+                    <button id="docViewerDeleteBtn" class="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                        <span>Delete</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT DOCUMENT METADATA MODAL -->
+    <div id="documentEditModal" class="fixed inset-0 z-50 bg-surface-950/95 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-3">
+                <h3 class="font-display text-base text-white font-bold">Edit Document Details</h3>
+                <button onclick="closeModal('documentEditModal')" class="text-slate-500 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="editDocIdInput">
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Title</label>
+                    <input type="text" id="editDocTitleInput" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Category</label>
+                    <select id="editDocCategorySelect" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none cursor-pointer">
+                        <option value="identity">Identity &amp; Passports</option>
+                        <option value="legal">Legal &amp; Property Deeds</option>
+                        <option value="financial">Financial &amp; Tax Records</option>
+                        <option value="business">Business &amp; Ventures</option>
+                        <option value="receipts">Invoices &amp; Receipts</option>
+                        <option value="personal">Photos &amp; Personal Media</option>
+                        <option value="medical">Medical &amp; Insurance</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Tags</label>
+                    <input type="text" id="editDocTagsInput" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Notes</label>
+                    <textarea id="editDocNotesInput" rows="2" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none resize-none"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-surface-800">
+                <button onclick="closeModal('documentEditModal')" class="px-3.5 py-1.5 bg-surface-800 text-slate-300 text-xs font-mono rounded-xl">Cancel</button>
+                <button onclick="submitEditDocument()" class="px-5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-surface-950 font-bold text-xs font-mono rounded-xl">Save Changes</button>
             </div>
         </div>
     </div>

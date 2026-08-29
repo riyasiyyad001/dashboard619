@@ -32,6 +32,51 @@ function switchGoalSubTab(tabKey) {
 }
 window.switchGoalSubTab = switchGoalSubTab;
 
+function getGoalPriorityWeight(priority) {
+    const p = (priority || 'Medium').toLowerCase().trim();
+    if (p === 'critical' || p === 'urgent') return 4;
+    if (p === 'high') return 3;
+    if (p === 'medium' || p === 'normal') return 2;
+    if (p === 'low') return 1;
+    return 2;
+}
+window.getGoalPriorityWeight = getGoalPriorityWeight;
+
+function getGoalPriorityBadge(priority) {
+    const p = (priority || 'Medium').toLowerCase().trim();
+    if (p === 'critical' || p === 'urgent') {
+        return '<span class="w-6 h-6 rounded-md border border-rose-500/50 bg-rose-500/20 text-rose-400 inline-flex items-center justify-center shadow-[0_0_8px_rgba(244,63,94,0.25)] transition-transform" title="Critical Priority (Click to cycle)"><i class="fa-solid fa-angles-up text-[10px]"></i></span>';
+    }
+    if (p === 'high') {
+        return '<span class="w-6 h-6 rounded-md border border-amber-500/50 bg-amber-500/20 text-amber-400 inline-flex items-center justify-center transition-transform" title="High Priority (Click to cycle)"><i class="fa-solid fa-angle-up text-[11px] font-bold"></i></span>';
+    }
+    if (p === 'low') {
+        return '<span class="w-6 h-6 rounded-md border border-slate-700 bg-surface-900 text-slate-400 inline-flex items-center justify-center transition-transform" title="Low Priority (Click to cycle)"><i class="fa-solid fa-angle-down text-[10px]"></i></span>';
+    }
+    return '<span class="w-6 h-6 rounded-md border border-brand-500/40 bg-brand-500/15 text-brand-400 inline-flex items-center justify-center transition-transform" title="Medium Priority (Click to cycle)"><i class="fa-solid fa-minus text-[10px]"></i></span>';
+}
+window.getGoalPriorityBadge = getGoalPriorityBadge;
+
+function cycleGoalPriority(goalId, e) {
+    if (e) e.stopPropagation();
+    if (!db.goals) return;
+    const g = db.goals.find(x => x.id === goalId);
+    if (!g) return;
+    const current = (g.priority || 'Medium').toLowerCase().trim();
+    let next = 'Medium';
+    if (current === 'critical' || current === 'urgent') next = 'High';
+    else if (current === 'high') next = 'Medium';
+    else if (current === 'medium' || current === 'normal') next = 'Low';
+    else if (current === 'low') next = 'Critical';
+    else next = 'High';
+
+    g.priority = next;
+    saveDatabase();
+    renderGoalsTable();
+    showToast(`Priority updated to ${next}`);
+}
+window.cycleGoalPriority = cycleGoalPriority;
+
 function renderGoalsTable() {
     const categories = ['financial', 'business', 'personal', 'books', 'travel', 'ziyara'];
     
@@ -72,6 +117,28 @@ function renderGoalsTable() {
         const activeGoals = catGoals.filter(g => !g.completed);
         const completedGoals = catGoals.filter(g => g.completed);
 
+        // PRIORITY-BASED SORTING: Critical > High > Medium > Low
+        activeGoals.sort((a, b) => {
+            const weightA = getGoalPriorityWeight(a.priority);
+            const weightB = getGoalPriorityWeight(b.priority);
+            if (weightB !== weightA) {
+                return weightB - weightA; // Higher priority on top
+            }
+            if (a.targetDate && b.targetDate) {
+                return (a.targetDate || '').localeCompare(b.targetDate || '');
+            }
+            return (b.id || '').localeCompare(a.id || '');
+        });
+
+        completedGoals.sort((a, b) => {
+            const weightA = getGoalPriorityWeight(a.priority);
+            const weightB = getGoalPriorityWeight(b.priority);
+            if (weightB !== weightA) {
+                return weightB - weightA;
+            }
+            return (b.id || '').localeCompare(a.id || '');
+        });
+
         if (compCountBadge) compCountBadge.innerText = completedGoals.length.toString();
         if (compBadgeCount) compBadgeCount.innerText = `${completedGoals.length} Items`;
 
@@ -80,6 +147,7 @@ function renderGoalsTable() {
             tr.className = 'group hover:bg-surface-800/20 transition-colors border-b border-surface-800/40 last:border-0';
 
             const statusBadge = getStatusBadge(g.status, isComp);
+            const priorityBadge = getGoalPriorityBadge(g.priority);
             
             let progressPct = parseInt(g.progress) || 0;
             if (cat === 'financial') {
@@ -130,9 +198,13 @@ function renderGoalsTable() {
                 const paid = parseFloat(g.paid || 0);
                 tr.innerHTML = `
                     <td class="py-3 px-3 w-12 text-center font-mono text-xs text-slate-400">${idx + 1}</td>
+                    <td class="py-3 px-3 w-16 text-center">
+                        <button onclick="cycleGoalPriority('${g.id}', event)" class="cursor-pointer hover:scale-105 active:scale-95 transition-transform" title="Click to change priority">
+                            ${priorityBadge}
+                        </button>
+                    </td>
                     <td class="py-3 px-3">
                         <div class="font-semibold text-slate-100 ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
-                        ${(g.notes || g.desc) ? `<div class="text-[10px] text-slate-400 font-light mt-0.5">${g.notes || g.desc}</div>` : ''}
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-400">${g.startDate || '-'}</td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300 font-medium">${g.targetDate || '-'}</td>
@@ -147,9 +219,13 @@ function renderGoalsTable() {
                 const secondaryVal = g.genre || g.category || '-';
                 tr.innerHTML = `
                     <td class="py-3 px-3 w-12 text-center font-mono text-xs text-slate-400">${idx + 1}</td>
+                    <td class="py-3 px-3 w-16 text-center">
+                        <button onclick="cycleGoalPriority('${g.id}', event)" class="cursor-pointer hover:scale-105 active:scale-95 transition-transform" title="Click to change priority">
+                            ${priorityBadge}
+                        </button>
+                    </td>
                     <td class="py-3 px-3">
                         <div class="font-semibold text-slate-100 ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
-                        ${(g.notes || g.desc) ? `<div class="text-[10px] text-slate-400 font-light mt-0.5">${g.notes || g.desc}</div>` : ''}
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${secondaryVal}</td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${g.targetDate || '-'}</td>
@@ -167,7 +243,7 @@ function renderGoalsTable() {
             completedGoals.forEach((g, idx) => completedTableBody.appendChild(renderRow(g, idx, true)));
         }
 
-        const colSpan = cat === 'financial' ? 10 : 8;
+        const colSpan = cat === 'financial' ? 11 : 9;
         if (activeGoals.length === 0) {
             activeTableBody.innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> No active milestones in this track. Click Add Goal to create one.</td></tr>`;
         }
@@ -412,8 +488,17 @@ function renderGoalAnalytics() {
         activeTable.innerHTML = '';
         const activeList = db.goals.filter(g => !g.completed);
 
+        // Sort trajectory by priority
+        activeList.sort((a, b) => {
+            const weightA = getGoalPriorityWeight(a.priority);
+            const weightB = getGoalPriorityWeight(b.priority);
+            if (weightB !== weightA) return weightB - weightA;
+            if (a.targetDate && b.targetDate) return (a.targetDate || '').localeCompare(b.targetDate || '');
+            return (b.id || '').localeCompare(a.id || '');
+        });
+
         if (activeList.length === 0) {
-            activeTable.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> All milestones completed or no active targets logged.</td></tr>`;
+            activeTable.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500 font-light text-xs"><i class="fa-solid fa-flag-checkered text-2xl mb-2 block opacity-40"></i> All milestones completed or no active targets logged.</td></tr>`;
         } else {
             activeList.slice(0, 10).forEach((g, idx) => {
                 const tr = document.createElement('tr');
@@ -427,12 +512,17 @@ function renderGoalAnalytics() {
                 }
 
                 const catName = capitalize(g.category || 'Financial');
+                const priorityBadge = getGoalPriorityBadge(g.priority);
                 
                 tr.innerHTML = `
                     <td class="py-3 px-3 w-12 text-center font-mono text-xs text-slate-400">${idx + 1}</td>
+                    <td class="py-3 px-3 w-16 text-center">
+                        <button onclick="cycleGoalPriority('${g.id}', event)" class="cursor-pointer hover:scale-105 active:scale-95 transition-transform" title="Click to change priority">
+                            ${priorityBadge}
+                        </button>
+                    </td>
                     <td class="py-3 px-3">
                         <div class="font-semibold text-slate-100">${g.title}</div>
-                        ${(g.notes || g.desc) ? `<div class="text-[10px] text-slate-400 font-light mt-0.5">${g.notes || g.desc}</div>` : ''}
                     </td>
                     <td class="py-3 px-3">
                         <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-surface-800 text-brand-400 border border-surface-700">${catName}</span>
@@ -504,6 +594,7 @@ function openGoalModal(param = null) {
     const idEl = document.getElementById('goalId');
     const titleEl = document.getElementById('goalModalTitle');
     const catEl = document.getElementById('goalCategoryInput');
+    const prioEl = document.getElementById('goalPriorityInput');
     const nameEl = document.getElementById('goalTitleInput');
     const genreEl = document.getElementById('goalGenreInput');
     const startEl = document.getElementById('goalStartDateInput');
@@ -527,6 +618,7 @@ function openGoalModal(param = null) {
         if (idEl) idEl.value = goal.id;
         if (titleEl) titleEl.innerText = 'Edit Milestone';
         if (catEl) catEl.value = capitalize(goal.category || 'Financial');
+        if (prioEl) prioEl.value = goal.priority || 'Medium';
         if (nameEl) nameEl.value = goal.title || '';
         if (genreEl) genreEl.value = goal.genre || '';
         if (startEl) startEl.value = goal.startDate || '';
@@ -551,6 +643,7 @@ function openGoalModal(param = null) {
             }
             catEl.value = catName;
         }
+        if (prioEl) prioEl.value = 'Medium';
         if (nameEl) nameEl.value = '';
         if (genreEl) genreEl.value = '';
         if (startEl) startEl.value = todayStr.toLocaleDateString('en-GB');
@@ -571,6 +664,8 @@ function saveGoal() {
     const id = idEl ? idEl.value : '';
     const catEl = document.getElementById('goalCategoryInput');
     const category = catEl ? catEl.value : 'Financial';
+    const prioEl = document.getElementById('goalPriorityInput');
+    const priority = prioEl ? prioEl.value : 'Medium';
     const titleEl = document.getElementById('goalTitleInput');
     const title = titleEl ? (titleEl.value.trim() || 'Milestone') : 'Milestone';
     const genreEl = document.getElementById('goalGenreInput');
@@ -597,6 +692,7 @@ function saveGoal() {
         const g = db.goals.find(x => x.id === id);
         if (g) {
             g.category = category;
+            g.priority = priority;
             g.title = title;
             g.genre = genre;
             g.startDate = startDate;
@@ -613,6 +709,7 @@ function saveGoal() {
         db.goals.push({
             id: Date.now().toString(),
             category,
+            priority,
             title,
             genre,
             startDate,
@@ -788,10 +885,6 @@ function saveMilestoneNotes() {
     const textContent = editor ? (editor.innerText || editor.textContent || '') : '';
 
     g.detailedNotes = htmlContent;
-    if (!g.notes || g.notes === g.desc) {
-        g.notes = textContent.slice(0, 120);
-        g.desc = g.notes;
-    }
     if (fontSizeSelect) g.notesFontSize = fontSizeSelect.value;
 
     saveDatabase();
@@ -1203,7 +1296,13 @@ function renderNotesList() {
             const pinA = !!a.pinned;
             const pinB = !!b.pinned;
             if (pinA !== pinB) return pinA ? -1 : 1;
-            return (b.id || '').localeCompare(a.id || '');
+            const idxA = db.notes.indexOf(a);
+            const idxB = db.notes.indexOf(b);
+            return idxA - idxB;
+        } else if (sortBy === 'custom') {
+            const idxA = db.notes.indexOf(a);
+            const idxB = db.notes.indexOf(b);
+            return idxA - idxB;
         } else if (sortBy === 'newest') {
             return (b.id || '').localeCompare(a.id || '');
         } else if (sortBy === 'oldest') {
@@ -1244,8 +1343,15 @@ function renderNotesList() {
 
                 const card = document.createElement('div');
                 card.className = `p-6 rounded-2xl bg-surface-900/80 border ${theme.border} shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between gap-4 group cursor-pointer relative overflow-hidden`;
+                card.setAttribute('draggable', 'true');
+                card.setAttribute('data-note-id', note.id);
+                card.ondragstart = (e) => handleNoteDragStart(e, note.id);
+                card.ondragover = (e) => handleNoteDragOver(e);
+                card.ondragleave = (e) => handleNoteDragLeave(e);
+                card.ondrop = (e) => handleNoteDrop(e, note.id);
+                card.ondragend = (e) => handleNoteDragEnd(e);
                 card.onclick = (e) => {
-                    if (e.target.closest('button')) return;
+                    if (e.target.closest('button') || e.target.closest('.note-drag-handle')) return;
                     openNoteReader(note.id);
                 };
 
@@ -1256,6 +1362,9 @@ function renderNotesList() {
                     <div class="space-y-3">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-center gap-2 min-w-0">
+                                <span class="note-drag-handle cursor-grab active:cursor-grabbing text-slate-500/60 hover:text-amber-400 p-1 -ml-1 transition-colors shrink-0" title="Drag to rearrange" onclick="event.stopPropagation()">
+                                    <i class="fa-solid fa-grip-vertical text-xs"></i>
+                                </span>
                                 ${isPinned ? `<span class="w-5 h-5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-[10px] shrink-0" title="Pinned Note"><i class="fa-solid fa-thumbtack"></i></span>` : ''}
                                 <h4 class="font-display text-lg font-bold text-slate-100 group-hover:text-amber-400 transition-colors line-clamp-1 ${fontClass}">${note.title || 'Untitled Note'}</h4>
                             </div>
@@ -1308,16 +1417,28 @@ function renderNotesList() {
 
                 const tr = document.createElement('tr');
                 tr.className = 'group hover:bg-surface-800/20 transition-colors cursor-pointer';
+                tr.setAttribute('draggable', 'true');
+                tr.setAttribute('data-note-id', note.id);
+                tr.ondragstart = (e) => handleNoteDragStart(e, note.id);
+                tr.ondragover = (e) => handleNoteDragOver(e);
+                tr.ondragleave = (e) => handleNoteDragLeave(e);
+                tr.ondrop = (e) => handleNoteDrop(e, note.id);
+                tr.ondragend = (e) => handleNoteDragEnd(e);
                 tr.onclick = (e) => {
-                    if (e.target.closest('button')) return;
+                    if (e.target.closest('button') || e.target.closest('.note-drag-handle')) return;
                     openNoteReader(note.id);
                 };
 
                 tr.innerHTML = `
                     <td class="p-4 text-center" onclick="event.stopPropagation()">
-                        <button onclick="toggleNotePin('${note.id}')" class="p-1 text-slate-500 hover:text-amber-400 transition-colors cursor-pointer">
-                            <i class="fa-solid fa-thumbtack ${isPinned ? 'text-amber-400' : 'opacity-30'}"></i>
-                        </button>
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span class="note-drag-handle cursor-grab active:cursor-grabbing text-slate-500/60 hover:text-amber-400 p-1 transition-colors" title="Drag to rearrange">
+                                <i class="fa-solid fa-grip-vertical text-xs"></i>
+                            </span>
+                            <button onclick="toggleNotePin('${note.id}')" class="p-1 text-slate-500 hover:text-amber-400 transition-colors cursor-pointer">
+                                <i class="fa-solid fa-thumbtack ${isPinned ? 'text-amber-400' : 'opacity-30'}"></i>
+                            </button>
+                        </div>
                     </td>
                     <td class="p-4">
                         <div class="font-semibold text-slate-100 group-hover:text-amber-400 transition-colors ${fontClass}">${note.title || 'Untitled Note'}</div>
@@ -1346,6 +1467,92 @@ function renderNotesList() {
     }
 }
 window.renderNotesList = renderNotesList;
+
+// NOTE DRAG AND DROP REORDER HANDLERS
+let draggedNoteId = null;
+
+function handleNoteDragStart(e, noteId) {
+    draggedNoteId = noteId;
+    if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', noteId);
+    }
+    
+    const el = e.currentTarget;
+    if (el) {
+        setTimeout(() => {
+            el.classList.add('opacity-40', 'scale-[0.98]', 'ring-2', 'ring-amber-500/50');
+        }, 0);
+    }
+}
+window.handleNoteDragStart = handleNoteDragStart;
+
+function handleNoteDragOver(e) {
+    e.preventDefault();
+    if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'move';
+    }
+    const target = e.currentTarget;
+    if (target && !target.classList.contains('note-drag-target')) {
+        target.classList.add('note-drag-target', 'border-amber-400', 'ring-2', 'ring-amber-400/50', 'scale-[1.01]', '-translate-y-0.5');
+    }
+}
+window.handleNoteDragOver = handleNoteDragOver;
+
+function handleNoteDragLeave(e) {
+    const target = e.currentTarget;
+    if (target) {
+        target.classList.remove('note-drag-target', 'border-amber-400', 'ring-2', 'ring-amber-400/50', 'scale-[1.01]', '-translate-y-0.5');
+    }
+}
+window.handleNoteDragLeave = handleNoteDragLeave;
+
+function handleNoteDrop(e, targetNoteId) {
+    e.preventDefault();
+    const target = e.currentTarget;
+    if (target) {
+        target.classList.remove('note-drag-target', 'border-amber-400', 'ring-2', 'ring-amber-400/50', 'scale-[1.01]', '-translate-y-0.5');
+    }
+
+    const sourceId = (e.dataTransfer ? e.dataTransfer.getData('text/plain') : null) || draggedNoteId;
+    if (!sourceId || !targetNoteId || sourceId === targetNoteId) {
+        return;
+    }
+
+    if (!db.notes || !Array.isArray(db.notes)) return;
+
+    const fromIndex = db.notes.findIndex(n => n.id === sourceId);
+    const toIndex = db.notes.findIndex(n => n.id === targetNoteId);
+
+    if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+        const [movedNote] = db.notes.splice(fromIndex, 1);
+        db.notes.splice(toIndex, 0, movedNote);
+
+        const sortSelect = document.getElementById('notesSortSelect');
+        if (sortSelect && sortSelect.value !== 'pinned' && sortSelect.value !== 'custom') {
+            sortSelect.value = 'custom';
+        }
+
+        saveDatabase();
+        renderNotesList();
+        if (typeof showToast === 'function') {
+            showToast('✋ Note rearranged');
+        }
+    }
+}
+window.handleNoteDrop = handleNoteDrop;
+
+function handleNoteDragEnd(e) {
+    draggedNoteId = null;
+    document.querySelectorAll('.note-drag-target').forEach(el => {
+        el.classList.remove('note-drag-target', 'border-amber-400', 'ring-2', 'ring-amber-400/50', 'scale-[1.01]', '-translate-y-0.5');
+    });
+    const el = e.currentTarget;
+    if (el) {
+        el.classList.remove('opacity-40', 'scale-[0.98]', 'ring-2', 'ring-amber-500/50');
+    }
+}
+window.handleNoteDragEnd = handleNoteDragEnd;
 
 function setNoteAccentColor(colorKey) {
     const hidden = document.getElementById('noteAccentColor');
@@ -1396,9 +1603,15 @@ function toggleCurrentNotePin() {
         if (nextState) {
             btn.className = 'px-3 py-1.5 rounded-xl border border-amber-500/50 bg-amber-500/20 text-amber-300 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm';
             label.innerText = 'Pinned';
+            icon.className = 'fa-solid fa-thumbtack text-xs text-amber-300';
+            btn.setAttribute('title', 'Click to unpin note');
+            if (typeof showToast === 'function') showToast('📌 Note will be pinned to top');
         } else {
             btn.className = 'px-3 py-1.5 rounded-xl border border-surface-700 bg-surface-900 text-slate-400 hover:text-amber-400 hover:border-amber-500/50 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm';
             label.innerText = 'Pin';
+            icon.className = 'fa-solid fa-thumbtack text-xs';
+            btn.setAttribute('title', 'Pin Note to Top');
+            if (typeof showToast === 'function') showToast('Note will be unpinned');
         }
     }
 }
@@ -1410,10 +1623,47 @@ function toggleNotePin(id) {
         note.pinned = !note.pinned;
         saveDatabase();
         renderNotesList();
-        showToast(note.pinned ? 'Note pinned to top' : 'Note unpinned');
+        
+        // Synchronize Note Reader UI if currently viewing this note
+        const curIdEl = document.getElementById('currentViewNoteId');
+        if (curIdEl && curIdEl.value === id) {
+            const pinBadge = document.getElementById('viewNotePinBadge');
+            const pinBtn = document.getElementById('btnToggleViewNotePin');
+            const pinIcon = document.getElementById('viewNotePinBtnIcon');
+            if (pinBadge) {
+                if (note.pinned) pinBadge.classList.remove('hidden');
+                else pinBadge.classList.add('hidden');
+            }
+            if (pinBtn && pinIcon) {
+                if (note.pinned) {
+                    pinBtn.classList.remove('border-surface-700', 'text-slate-400');
+                    pinBtn.classList.add('border-amber-500/50', 'bg-amber-500/20', 'text-amber-300');
+                    pinBtn.setAttribute('title', 'Unpin Note');
+                    pinIcon.className = 'fa-solid fa-thumbtack text-sm md:text-base text-amber-300';
+                } else {
+                    pinBtn.classList.remove('border-amber-500/50', 'bg-amber-500/20', 'text-amber-300');
+                    pinBtn.classList.add('border-surface-700', 'text-slate-400');
+                    pinBtn.setAttribute('title', 'Pin Note to Top');
+                    pinIcon.className = 'fa-solid fa-thumbtack text-sm md:text-base';
+                }
+            }
+        }
+
+        if (typeof showToast === 'function') {
+            showToast(note.pinned ? '📌 Note pinned to top' : '📌 Note unpinned');
+        }
     }
 }
 window.toggleNotePin = toggleNotePin;
+
+function toggleCurrentViewNotePin() {
+    const idEl = document.getElementById('currentViewNoteId');
+    const id = idEl ? idEl.value : null;
+    if (id) {
+        toggleNotePin(id);
+    }
+}
+window.toggleCurrentViewNotePin = toggleCurrentViewNotePin;
 
 function formatNoteText(cmd, val = null) {
     const editor = document.getElementById('noteEditor');
@@ -1486,9 +1736,201 @@ function updateNoteStats() {
 }
 window.updateNoteStats = updateNoteStats;
 
+// AUTO-CAPITALIZATION HANDLERS FOR NOTES
+function capitalizeFirstLetter(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+window.capitalizeFirstLetter = capitalizeFirstLetter;
+
+function handleNoteTitleInput(el) {
+    if (!el) return;
+    const val = el.value;
+    if (!val) return;
+
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+
+    // Auto-capitalize the first letter and letters after sentence terminators (. ! ? :)
+    const newVal = val.replace(/(^\s*|[.!?:]\s+)([a-z\u00E0-\u00FC])/g, (match, prefix, letter) => {
+        return prefix + letter.toUpperCase();
+    });
+
+    if (newVal !== val) {
+        el.value = newVal;
+        if (start !== null && end !== null) {
+            el.setSelectionRange(start, end);
+        }
+    }
+}
+window.handleNoteTitleInput = handleNoteTitleInput;
+
+function handleNoteEditorInput(e) {
+    // If deletion or history undo/redo, only update stats
+    if (e && e.inputType && (e.inputType.startsWith('delete') || e.inputType.startsWith('history'))) {
+        updateNoteStats();
+        return;
+    }
+
+    try {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0 && sel.isCollapsed) {
+            const node = sel.anchorNode;
+            const offset = sel.anchorOffset;
+
+            if (node && node.nodeType === Node.TEXT_NODE && offset > 0) {
+                const text = node.nodeValue || '';
+                const charTyped = text.charAt(offset - 1);
+
+                // If the character just typed is a lowercase letter
+                if (charTyped && charTyped.toLowerCase() !== charTyped.toUpperCase() && charTyped === charTyped.toLowerCase()) {
+                    const before = text.substring(0, offset - 1);
+                    
+                    // Check if at start of text (allowing leading whitespace)
+                    const isStart = /^\s*$/.test(before);
+                    // Check if after punctuation (. ! ? :) followed by optional spaces
+                    const isAfterPunct = /[.!?:\n]\s*$/.test(before);
+
+                    // Check if parent block is beginning of a new paragraph/div/li
+                    let isBlockStart = false;
+                    if (isStart) {
+                        let p = node.parentNode;
+                        while (p && p.id !== 'noteEditor') {
+                            if (/^(P|DIV|LI|H1|H2|H3|H4|BLOCKQUOTE|SECTION)$/i.test(p.tagName)) {
+                                isBlockStart = true;
+                                break;
+                            }
+                            p = p.parentNode;
+                        }
+                        if (!p || p.id === 'noteEditor') isBlockStart = true;
+                    }
+
+                    if (isStart || isAfterPunct || isBlockStart) {
+                        const upper = charTyped.toUpperCase();
+                        const newText = before + upper + text.substring(offset);
+                        node.nodeValue = newText;
+
+                        // Seamlessly restore cursor position right after the capitalized character
+                        const range = document.createRange();
+                        range.setStart(node, offset);
+                        range.collapse(true);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('Note auto-capitalization error handled:', err);
+    }
+
+    updateNoteStats();
+}
+window.handleNoteEditorInput = handleNoteEditorInput;
+
+// NOTE MODAL MAXIMIZE / FULLSCREEN TOGGLE
+let isNoteModalMaximized = false;
+let isNoteViewModalMaximized = false;
+
+function toggleNoteModalMaximize(forceState = null) {
+    if (forceState !== null) {
+        isNoteModalMaximized = forceState;
+    } else {
+        isNoteModalMaximized = !isNoteModalMaximized;
+    }
+
+    const modal = document.getElementById('noteModal');
+    const container = document.getElementById('noteModalContainer');
+    const icon = document.getElementById('noteModalMaxIcon');
+    const btn = document.getElementById('btnToggleNoteModalMaximize');
+
+    if (!container || !modal) return;
+
+    if (isNoteModalMaximized) {
+        modal.classList.remove('p-2', 'sm:p-4', 'md:p-6');
+        modal.classList.add('p-0');
+        
+        container.classList.remove('max-w-6xl', 'h-[94vh]', 'max-h-[960px]', 'rounded-2xl', 'md:rounded-3xl', 'm-auto');
+        container.classList.add('max-w-none', 'w-full', 'h-full', 'max-h-none', 'rounded-none', 'border-0');
+        
+        if (icon) {
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress');
+        }
+        if (btn) btn.setAttribute('title', 'Restore Modal Window');
+        try { localStorage.setItem('note_modal_maximized', 'true'); } catch(e) {}
+    } else {
+        modal.classList.remove('p-0');
+        modal.classList.add('p-2', 'sm:p-4', 'md:p-6');
+        
+        container.classList.remove('max-w-none', 'max-h-none', 'rounded-none', 'border-0');
+        container.classList.add('max-w-6xl', 'w-full', 'h-[94vh]', 'max-h-[960px]');
+        
+        if (icon) {
+            icon.classList.remove('fa-compress');
+            icon.classList.add('fa-expand');
+        }
+        if (btn) btn.setAttribute('title', 'Maximize to Full Page');
+        try { localStorage.setItem('note_modal_maximized', 'false'); } catch(e) {}
+    }
+}
+window.toggleNoteModalMaximize = toggleNoteModalMaximize;
+
+function toggleNoteViewModalMaximize(forceState = null) {
+    if (forceState !== null) {
+        isNoteViewModalMaximized = forceState;
+    } else {
+        isNoteViewModalMaximized = !isNoteViewModalMaximized;
+    }
+
+    const modal = document.getElementById('noteViewModal');
+    const wrapper = document.getElementById('viewNoteWrapper');
+    const icon = document.getElementById('noteViewMaxIcon');
+    const btn = document.getElementById('btnToggleNoteViewMaximize');
+
+    if (!wrapper || !modal) return;
+
+    if (isNoteViewModalMaximized) {
+        modal.classList.remove('p-2', 'sm:p-4', 'md:p-6', 'lg:p-8', 'p-3', 'md:p-8');
+        modal.classList.add('p-0');
+        
+        wrapper.classList.remove('max-w-6xl', 'xl:max-w-7xl', 'max-w-4xl', 'max-h-[92vh]', 'max-h-[88vh]', 'rounded-[2rem]');
+        wrapper.classList.add('max-w-none', 'h-full', 'max-h-none', 'rounded-none');
+        
+        if (icon) {
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress');
+        }
+        if (btn) btn.setAttribute('title', 'Restore Reader Window');
+    } else {
+        modal.classList.remove('p-0');
+        modal.classList.add('p-2', 'sm:p-4', 'md:p-6', 'lg:p-8');
+        
+        wrapper.classList.remove('max-w-none', 'max-h-none', 'rounded-none');
+        wrapper.classList.add('max-w-6xl', 'xl:max-w-7xl', 'w-full', 'h-full', 'max-h-[92vh]', 'rounded-[2rem]');
+        
+        if (icon) {
+            icon.classList.remove('fa-compress');
+            icon.classList.add('fa-expand');
+        }
+        if (btn) btn.setAttribute('title', 'Maximize to Full Page');
+    }
+}
+window.toggleNoteViewModalMaximize = toggleNoteViewModalMaximize;
+
 function openNoteModal(id = null) {
     const idEl = document.getElementById('noteId');
     if (idEl) idEl.value = id || '';
+    
+    // Check saved maximize preference
+    try {
+        const savedMax = localStorage.getItem('note_modal_maximized');
+        if (savedMax === 'true') {
+            toggleNoteModalMaximize(true);
+        } else {
+            toggleNoteModalMaximize(false);
+        }
+    } catch(e) {}
     
     const titleModal = document.getElementById('noteModalTitle');
     const titleInput = document.getElementById('noteTitleInput');
@@ -1501,7 +1943,7 @@ function openNoteModal(id = null) {
         const n = (db.notes || []).find(x => x.id === id);
         if (n) {
             if (titleModal) titleModal.innerText = 'Edit Executive Note';
-            if (titleInput) titleInput.value = n.title || '';
+            if (titleInput) titleInput.value = capitalizeFirstLetter(n.title || '');
             if (catInput) catInput.value = n.category || 'general';
             setNoteAccentColor(n.accentColor || 'gold');
             
@@ -1569,7 +2011,7 @@ function saveNote() {
     const idEl = document.getElementById('noteId');
     const id = idEl ? idEl.value : '';
     const titleInput = document.getElementById('noteTitleInput');
-    const title = titleInput ? (titleInput.value.trim() || 'Untitled Note') : 'Untitled Note';
+    const title = titleInput ? capitalizeFirstLetter(titleInput.value.trim() || 'Untitled Note') : 'Untitled Note';
     const catInput = document.getElementById('noteCategoryInput');
     const category = catInput ? catInput.value : 'general';
     const colorInput = document.getElementById('noteAccentColor');
@@ -1631,6 +2073,8 @@ function openNoteReader(id) {
     const contentEl = document.getElementById('viewNoteContent');
     const curIdEl = document.getElementById('currentViewNoteId');
     const pinBadge = document.getElementById('viewNotePinBadge');
+    const pinBtn = document.getElementById('btnToggleViewNotePin');
+    const pinIcon = document.getElementById('viewNotePinBtnIcon');
     const wordCountEl = document.getElementById('viewNoteWordCount');
     const wrapper = document.getElementById('viewNoteWrapper');
     const glow = document.getElementById('viewNoteGlow');
@@ -1640,7 +2084,11 @@ function openNoteReader(id) {
     const fontClass = noteFontMap[n.fontFamily] || 'note-font-inter';
 
     if (wrapper) {
-        wrapper.className = `max-w-4xl w-full h-full max-h-[88vh] rounded-[2rem] p-[2px] bg-gradient-to-br ${theme.gradient} shadow-[0_0_60px_rgba(201,164,107,0.25)] relative group`;
+        if (isNoteViewModalMaximized) {
+            wrapper.className = `max-w-none w-full h-full max-h-none rounded-none p-[2px] bg-gradient-to-br ${theme.gradient} shadow-none relative group`;
+        } else {
+            wrapper.className = `max-w-6xl xl:max-w-7xl w-full h-full max-h-[92vh] rounded-[2rem] p-[2px] bg-gradient-to-br ${theme.gradient} shadow-[0_0_60px_rgba(201,164,107,0.25)] relative group transition-all duration-300`;
+        }
     }
     if (glow) {
         glow.className = `absolute inset-0 bg-gradient-to-br ${theme.gradient} rounded-[2rem] blur-2xl opacity-25 group-hover:opacity-45 transition-opacity duration-700 -z-10`;
@@ -1649,6 +2097,20 @@ function openNoteReader(id) {
     if (pinBadge) {
         if (n.pinned) pinBadge.classList.remove('hidden');
         else pinBadge.classList.add('hidden');
+    }
+
+    if (pinBtn && pinIcon) {
+        if (n.pinned) {
+            pinBtn.classList.remove('border-surface-700', 'text-slate-400');
+            pinBtn.classList.add('border-amber-500/50', 'bg-amber-500/20', 'text-amber-300');
+            pinBtn.setAttribute('title', 'Unpin Note');
+            pinIcon.className = 'fa-solid fa-thumbtack text-sm md:text-base text-amber-300';
+        } else {
+            pinBtn.classList.remove('border-amber-500/50', 'bg-amber-500/20', 'text-amber-300');
+            pinBtn.classList.add('border-surface-700', 'text-slate-400');
+            pinBtn.setAttribute('title', 'Pin Note to Top');
+            pinIcon.className = 'fa-solid fa-thumbtack text-sm md:text-base';
+        }
     }
 
     if (catEl) {
@@ -1716,8 +2178,9 @@ let currentReminderViewMode = localStorage.getItem('executive_reminder_view_mode
 
 function isReminderOverdue(r) {
     if (r.completed || r.status === 'completed') return false;
-    if (!r.date) return false;
-    let dStr = r.date;
+    const targetDate = r.remindDate || r.date;
+    if (!targetDate) return false;
+    let dStr = targetDate;
     if (dStr.includes('/')) {
         const p = dStr.split('/');
         if (p.length === 3) dStr = `${p[2]}-${p[1]}-${p[0]}`;
@@ -1728,8 +2191,9 @@ function isReminderOverdue(r) {
 }
 
 function isReminderToday(r) {
-    if (!r.date) return false;
-    let dStr = r.date;
+    const targetDate = r.remindDate || r.date;
+    if (!targetDate) return false;
+    let dStr = targetDate;
     if (dStr.includes('/')) {
         const p = dStr.split('/');
         if (p.length === 3) dStr = `${p[2]}-${p[1]}-${p[0]}`;
@@ -1740,15 +2204,27 @@ function isReminderToday(r) {
 
 function setReminderFilter(filter) {
     currentReminderFilter = filter;
-    ['all', 'active', 'high', 'overdue', 'completed'].forEach(f => {
-        const btn = document.getElementById(`btnReminderFilter-${f}`);
-        if (!btn) return;
-        if (f === filter) {
-            btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-medium bg-brand-500/15 text-brand-300 border border-brand-500/30 transition-all whitespace-nowrap cursor-pointer shadow-sm';
-        } else {
-            btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 transition-all whitespace-nowrap cursor-pointer';
+    
+    // Highlight active sub-navigation heading button
+    const mapBtn = {
+        all: 'btnReminderSubAll',
+        active: 'btnReminderSubActive',
+        high: 'btnReminderSubHigh',
+        overdue: 'btnReminderSubOverdue',
+        completed: 'btnReminderSubCompleted'
+    };
+
+    Object.keys(mapBtn).forEach(f => {
+        const btn = document.getElementById(mapBtn[f]);
+        if (btn) {
+            if (f === filter) {
+                btn.className = 'px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-brand-600 to-brand-700 text-surface-950 font-bold transition-all whitespace-nowrap shadow-[0_4px_15px_rgba(201,164,107,0.25)] flex items-center gap-2 border border-brand-500/30 cursor-pointer';
+            } else {
+                btn.className = 'px-4 py-2 rounded-xl text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-surface-900 to-surface-800 border border-surface-700/80 text-slate-400 hover:text-white transition-all whitespace-nowrap flex items-center gap-2 shadow-sm cursor-pointer';
+            }
         }
     });
+
     renderRemindersTable();
 }
 window.setReminderFilter = setReminderFilter;
@@ -1793,8 +2269,9 @@ function postponeReminder(id, days = 1) {
     if (!r) return;
 
     let baseDate = new Date();
-    if (r.date) {
-        let dStr = r.date;
+    const targetDate = r.remindDate || r.date;
+    if (targetDate) {
+        let dStr = targetDate;
         if (dStr.includes('/')) {
             const p = dStr.split('/');
             if (p.length === 3) dStr = `${p[2]}-${p[1]}-${p[0]}`;
@@ -1807,7 +2284,9 @@ function postponeReminder(id, days = 1) {
 
     baseDate.setDate(baseDate.getDate() + days);
     const newDDMMYYYY = baseDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    r.remindDate = newDDMMYYYY;
     r.date = newDDMMYYYY;
+    r.notified24h = false;
     r.notifiedDue = false;
     
     saveDatabase();
@@ -1832,31 +2311,20 @@ function renderRemindersTable() {
     const totalCompleted = db.reminders.filter(r => r.completed || r.status === 'completed').length;
     const completionRate = totalAll > 0 ? Math.round((totalCompleted / totalAll) * 100) : 0;
 
-    // Update KPI Elements
+    // Update Sub-navigation Counts & stats
+    const allStat = document.getElementById('remindersAllStat');
     const activeStat = document.getElementById('remindersActiveStat');
     const highStat = document.getElementById('remindersHighStat');
     const overdueStat = document.getElementById('remindersOverdueStat');
     const completedStat = document.getElementById('remindersCompletedStat');
     const completionRateEl = document.getElementById('remindersCompletionRate');
 
+    if (allStat) allStat.innerText = totalAll.toString();
     if (activeStat) activeStat.innerText = totalActive.toString();
     if (highStat) highStat.innerText = totalHigh.toString();
     if (overdueStat) overdueStat.innerText = totalOverdue.toString();
     if (completedStat) completedStat.innerText = totalCompleted.toString();
     if (completionRateEl) completionRateEl.innerText = `${completionRate}% Done`;
-
-    // Update Count Badges on Filters
-    const cntAll = document.getElementById('cntFilterAll');
-    const cntAct = document.getElementById('cntFilterActive');
-    const cntHigh = document.getElementById('cntFilterHigh');
-    const cntOverdue = document.getElementById('cntFilterOverdue');
-    const cntComp = document.getElementById('cntFilterCompleted');
-
-    if (cntAll) cntAll.innerText = totalAll.toString();
-    if (cntAct) cntAct.innerText = totalActive.toString();
-    if (cntHigh) cntHigh.innerText = totalHigh.toString();
-    if (cntOverdue) cntOverdue.innerText = totalOverdue.toString();
-    if (cntComp) cntComp.innerText = totalCompleted.toString();
 
     // Search query & clear button visibility
     const searchInput = document.getElementById('reminderSearchInput');
@@ -1867,14 +2335,16 @@ function renderRemindersTable() {
         else clearBtn.classList.add('hidden');
     }
 
-    // Sort by Date & Priority
+    // Sort by Remind Date & Priority
     let list = [...db.reminders].sort((a, b) => {
         const isCompA = a.completed || a.status === 'completed';
         const isCompB = b.completed || b.status === 'completed';
         if (isCompA !== isCompB) return isCompA ? 1 : -1;
 
-        const dateA = a.date ? (a.date.includes('/') ? a.date.split('/').reverse().join('-') : a.date) : '';
-        const dateB = b.date ? (b.date.includes('/') ? b.date.split('/').reverse().join('-') : b.date) : '';
+        const dateTargetA = a.remindDate || a.date || '';
+        const dateTargetB = b.remindDate || b.date || '';
+        const dateA = dateTargetA ? (dateTargetA.includes('/') ? dateTargetA.split('/').reverse().join('-') : dateTargetA) : '';
+        const dateB = dateTargetB ? (dateTargetB.includes('/') ? dateTargetB.split('/').reverse().join('-') : dateTargetB) : '';
         return (dateA + (a.time || '')) > (dateB + (b.time || '')) ? 1 : -1;
     });
 
@@ -1894,6 +2364,8 @@ function renderRemindersTable() {
         list = list.filter(r => 
             (r.title && r.title.toLowerCase().includes(q)) || 
             (r.notes && r.notes.toLowerCase().includes(q)) ||
+            (r.remindDate && r.remindDate.toLowerCase().includes(q)) ||
+            (r.entryDate && r.entryDate.toLowerCase().includes(q)) ||
             (r.date && r.date.toLowerCase().includes(q)) ||
             (r.priority && r.priority.toLowerCase().includes(q))
         );
@@ -1920,13 +2392,15 @@ function renderRemindersTable() {
                 const isComp = r.completed || r.status === 'completed';
                 const isOverdue = isReminderOverdue(r);
                 const isToday = isReminderToday(r);
+                const remindDateStr = r.remindDate || r.date || '';
+                const entryDateStr = r.entryDate || (r.createdAt ? formatToDDMMYYYY(r.createdAt.split('T')[0]) : remindDateStr);
 
                 // Date Parsing for Date Box
                 let dayNum = '--';
-                let monthStr = 'DATE';
+                let monthStr = 'ALERT';
                 let dayOfWeek = '';
-                if (r.date) {
-                    let dStr = r.date;
+                if (remindDateStr) {
+                    let dStr = remindDateStr;
                     if (dStr.includes('/')) {
                         const p = dStr.split('/');
                         if (p.length === 3) dStr = `${p[2]}-${p[1]}-${p[0]}`;
@@ -1998,11 +2472,15 @@ function renderRemindersTable() {
                             
                             <!-- Date, Time & Repeat Meta -->
                             <div class="flex flex-wrap items-center gap-3 text-[11px] font-mono text-slate-400 mt-1">
-                                <span class="flex items-center gap-1.5 text-slate-300">
-                                    <i class="fa-regular fa-calendar text-[10px] text-brand-400"></i>
-                                    <span>${dayOfWeek ? dayOfWeek + ', ' : ''}${formatToDDMMYYYY(r.date)}</span>
+                                <span class="flex items-center gap-1.5 text-brand-300 font-semibold" title="Remind Date (Alert Date)">
+                                    <i class="fa-regular fa-bell text-[10px] text-amber-400"></i>
+                                    <span>Remind: ${dayOfWeek ? dayOfWeek + ', ' : ''}${formatToDDMMYYYY(remindDateStr)}</span>
                                 </span>
-                                ${r.time ? `<span class="flex items-center gap-1 text-slate-400"><i class="fa-regular fa-clock text-[9px] text-brand-400"></i>${r.time}</span>` : ''}
+                                ${r.time ? `<span class="flex items-center gap-1 text-slate-300"><i class="fa-regular fa-clock text-[9px] text-brand-400"></i>${r.time}</span>` : ''}
+                                <span class="flex items-center gap-1 text-slate-500 text-[10px]" title="Entry Date (Data logged)">
+                                    <i class="fa-solid fa-pen-nib text-[9px] text-slate-500"></i>
+                                    <span>Entry: ${formatToDDMMYYYY(entryDateStr)}</span>
+                                </span>
                                 ${r.repeat && r.repeat !== 'None' ? `<span class="flex items-center gap-1 text-brand-400/80 bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20 text-[10px]"><i class="fa-solid fa-arrows-rotate text-[9px]"></i>${r.repeat}</span>` : ''}
                             </div>
                         </div>
@@ -2032,11 +2510,13 @@ function renderRemindersTable() {
     if (body) {
         body.innerHTML = '';
         if (list.length === 0) {
-            body.innerHTML = `<tr><td colspan="5" class="p-12 text-center text-slate-500 font-light text-xs"><i class="fa-regular fa-calendar-check text-3xl mb-3 block opacity-40"></i> No reminders found matching the current filter.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-500 font-light text-xs"><i class="fa-regular fa-calendar-check text-3xl mb-3 block opacity-40"></i> No reminders found matching the current filter.</td></tr>`;
         } else {
             list.forEach(r => {
                 const isComp = r.completed || r.status === 'completed';
                 const isOverdue = isReminderOverdue(r);
+                const remindDateStr = r.remindDate || r.date || '';
+                const entryDateStr = r.entryDate || (r.createdAt ? formatToDDMMYYYY(r.createdAt.split('T')[0]) : remindDateStr);
 
                 let prioBadgeClass = 'border-slate-700 bg-surface-900 text-slate-400';
                 const prio = (r.priority || r.category || 'Medium').toLowerCase();
@@ -2060,12 +2540,18 @@ function renderRemindersTable() {
                         </div>
                     </td>
                     <td class="py-3 px-4 font-mono text-xs">
-                        <div class="flex items-center gap-1.5 text-slate-300">
-                            <i class="fa-regular fa-calendar text-[10px] text-brand-400"></i>
-                            <span>${formatToDDMMYYYY(r.date)}</span>
+                        <div class="flex items-center gap-1.5 text-brand-300 font-semibold">
+                            <i class="fa-regular fa-bell text-[10px] text-amber-400"></i>
+                            <span>${formatToDDMMYYYY(remindDateStr)}</span>
                         </div>
                         ${r.time ? `<div class="flex items-center gap-1.5 text-slate-400 text-[11px] mt-0.5"><i class="fa-regular fa-clock text-[9px] text-brand-400"></i><span>${r.time}</span></div>` : ''}
                         ${isOverdue && !isComp ? `<span class="inline-block mt-1 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold font-mono uppercase tracking-wider">Overdue</span>` : ''}
+                    </td>
+                    <td class="py-3 px-4 font-mono text-xs text-slate-400">
+                        <div class="flex items-center gap-1.5 text-slate-400">
+                            <i class="fa-solid fa-pen-nib text-[9px] text-slate-500"></i>
+                            <span>${formatToDDMMYYYY(entryDateStr)}</span>
+                        </div>
                     </td>
                     <td class="py-3 px-4">
                         <span class="px-2.5 py-1 rounded-md text-[10px] font-mono uppercase tracking-wider font-bold border ${prioBadgeClass}">
@@ -2104,7 +2590,9 @@ function openReminderModal(id = null) {
     if (idEl) idEl.value = id || '';
     const titleEl = document.getElementById('reminderModalTitle');
     const titleInput = document.getElementById('reminderTitleInput');
-    const dateInput = document.getElementById('reminderDateInput');
+    const entryDateInput = document.getElementById('reminderEntryDateInput');
+    const dueDateInput = document.getElementById('reminderDueDateInput');
+    const legacyDateInput = document.getElementById('reminderDateInput');
     const timeInput = document.getElementById('reminderTimeInput');
     const prioInput = document.getElementById('reminderPriorityInput');
     const repInput = document.getElementById('reminderRepeatInput');
@@ -2117,13 +2605,26 @@ function openReminderModal(id = null) {
         if (r) {
             if (titleEl) titleEl.innerText = 'Edit Reminder';
             if (titleInput) titleInput.value = r.title || '';
-            if (dateInput) {
-                if (dateInput._flatpickr) {
-                    dateInput._flatpickr.setDate(r.date && r.date.includes('-') ? r.date.split('-').reverse().join('/') : (r.date || todayFormatted));
+            
+            const rEntry = r.entryDate || (r.createdAt ? formatToDDMMYYYY(r.createdAt.split('T')[0]) : (r.date || todayFormatted));
+            const rDue = r.remindDate || r.date || todayFormatted;
+
+            if (entryDateInput) {
+                if (entryDateInput._flatpickr) {
+                    entryDateInput._flatpickr.setDate(rEntry.includes('-') ? rEntry.split('-').reverse().join('/') : rEntry);
                 } else {
-                    dateInput.value = r.date || todayFormatted;
+                    entryDateInput.value = rEntry;
                 }
             }
+            if (dueDateInput) {
+                if (dueDateInput._flatpickr) {
+                    dueDateInput._flatpickr.setDate(rDue.includes('-') ? rDue.split('-').reverse().join('/') : rDue);
+                } else {
+                    dueDateInput.value = rDue;
+                }
+            }
+            if (legacyDateInput) legacyDateInput.value = rDue;
+
             if (timeInput) timeInput.value = r.time || '';
             if (prioInput) prioInput.value = r.priority || r.category || 'Medium';
             if (repInput) repInput.value = r.repeat || 'None';
@@ -2132,14 +2633,22 @@ function openReminderModal(id = null) {
     } else {
         if (titleEl) titleEl.innerText = 'Add Reminder';
         if (titleInput) titleInput.value = '';
-        if (dateInput) {
-            if (dateInput._flatpickr) {
-                dateInput._flatpickr.setDate(new Date());
+        if (entryDateInput) {
+            if (entryDateInput._flatpickr) {
+                entryDateInput._flatpickr.setDate(new Date());
             } else {
-                dateInput.value = todayFormatted;
+                entryDateInput.value = todayFormatted;
             }
         }
-        if (timeInput) timeInput.value = '';
+        if (dueDateInput) {
+            if (dueDateInput._flatpickr) {
+                dueDateInput._flatpickr.setDate(new Date());
+            } else {
+                dueDateInput.value = todayFormatted;
+            }
+        }
+        if (legacyDateInput) legacyDateInput.value = todayFormatted;
+        if (timeInput) timeInput.value = '09:00';
         if (prioInput) prioInput.value = 'Medium';
         if (repInput) repInput.value = 'None';
         if (notesInput) notesInput.value = '';
@@ -2224,6 +2733,9 @@ function playNotificationSound(force = false) {
     try {
         const ctx = getAudioContext();
         if (!ctx) return;
+        if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+        }
 
         const now = ctx.currentTime;
 
@@ -2235,7 +2747,7 @@ function playNotificationSound(force = false) {
             osc.frequency.setValueAtTime(freq, startTime);
 
             gain.gain.setValueAtTime(0.0001, startTime);
-            gain.gain.exponentialRampToValueAtTime(gainLevel, startTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(gainLevel, startTime + 0.015);
             gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
             osc.connect(gain);
@@ -2245,11 +2757,23 @@ function playNotificationSound(force = false) {
             osc.stop(startTime + duration);
         };
 
-        // Modern harmonic 2-tone executive bell chime (E5 -> A5 with sparkling overtones)
-        playTone(659.25, now, 0.35, 0.22, 'sine');
-        playTone(987.77, now + 0.015, 0.22, 0.06, 'triangle');
-        playTone(880.00, now + 0.12, 0.55, 0.26, 'sine');
-        playTone(1318.51, now + 0.135, 0.38, 0.07, 'triangle');
+        // Multi-Pulse Executive Alert Alarm Sound (Crisp, resonant & recognizable alert chime)
+        // Pulse 1: Alert intro pulse
+        playTone(784.00, now, 0.12, 0.32, 'sine'); // G5
+        playTone(1568.00, now, 0.09, 0.10, 'triangle');
+
+        // Pulse 2: Rising alert pulse
+        playTone(880.00, now + 0.13, 0.13, 0.35, 'sine'); // A5
+        playTone(1760.00, now + 0.13, 0.09, 0.10, 'triangle');
+
+        // Pulse 3: Secondary alert pulse
+        playTone(880.00, now + 0.28, 0.14, 0.36, 'sine'); // A5
+        playTone(1760.00, now + 0.28, 0.10, 0.11, 'triangle');
+
+        // Pulse 4: Resonant Bright Alarm Ring Finale (High C6 with E6 harmony and crystalline overtone)
+        playTone(1046.50, now + 0.44, 0.75, 0.40, 'sine'); // C6
+        playTone(1318.51, now + 0.46, 0.58, 0.16, 'sine'); // E6
+        playTone(2093.00, now + 0.44, 0.45, 0.14, 'triangle'); // C7 overtone
     } catch (err) {
         console.warn('Audio playback not permitted or unavailable:', err);
     }
@@ -2289,17 +2813,31 @@ window.pushNotification = pushNotification;
 function saveReminder() {
     const idEl = document.getElementById('reminderId');
     const id = idEl ? idEl.value : '';
-    const dateInput = document.getElementById('reminderDateInput');
-    const dateRaw = dateInput ? dateInput.value.trim() : '';
-    let date = dateRaw;
-    if (dateRaw && dateRaw.includes('-')) {
-        const p = dateRaw.split('-');
-        if (p.length === 3) date = `${p[2]}/${p[1]}/${p[0]}`;
+    
+    // Entry Date (Date of data logging)
+    const entryDateInput = document.getElementById('reminderEntryDateInput');
+    let entryDate = entryDateInput ? entryDateInput.value.trim() : '';
+    if (entryDate && entryDate.includes('-')) {
+        const p = entryDate.split('-');
+        if (p.length === 3) entryDate = `${p[2]}/${p[1]}/${p[0]}`;
     }
+
+    // Remind Date (Date when reminder alert is targeted)
+    const dueDateInput = document.getElementById('reminderDueDateInput') || document.getElementById('reminderDateInput');
+    let remindDate = dueDateInput ? dueDateInput.value.trim() : '';
+    if (remindDate && remindDate.includes('-')) {
+        const p = remindDate.split('-');
+        if (p.length === 3) remindDate = `${p[2]}/${p[1]}/${p[0]}`;
+    }
+
+    const todayFormatted = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    if (!entryDate) entryDate = todayFormatted;
+    if (!remindDate) remindDate = entryDate || todayFormatted;
+
     const titleInput = document.getElementById('reminderTitleInput');
     const title = titleInput ? (titleInput.value.trim() || 'Reminder') : 'Reminder';
     const timeInput = document.getElementById('reminderTimeInput');
-    const time = timeInput ? timeInput.value.trim() : '';
+    const time = timeInput ? (timeInput.value.trim() || '09:00') : '09:00';
     const prioInput = document.getElementById('reminderPriorityInput');
     const priority = prioInput ? prioInput.value : 'Medium';
     const repInput = document.getElementById('reminderRepeatInput');
@@ -2314,18 +2852,24 @@ function saveReminder() {
     if (id) {
         const r = db.reminders.find(x => x.id === id);
         if (r) {
-            r.date = date;
+            r.entryDate = entryDate;
+            r.remindDate = remindDate;
+            r.date = remindDate; // maintain compatibility
             r.time = time;
             r.title = title;
             r.priority = priority;
             r.category = priority;
             r.repeat = repeat;
             r.notes = notes;
+            r.notified24h = false;
+            r.notifiedDue = false;
         }
     } else {
         db.reminders.push({
             id: Date.now().toString(),
-            date,
+            entryDate,
+            remindDate,
+            date: remindDate,
             time,
             title,
             priority,
@@ -2334,23 +2878,19 @@ function saveReminder() {
             notes,
             status: 'active',
             completed: false,
+            notified24h: false,
+            notifiedDue: false,
             createdAt: new Date().toISOString()
         });
     }
 
-    // Reflect directly in Notification Hub with chime
-    pushNotification({
-        title: isNew ? `New Reminder: ${title}` : `Updated Reminder: ${title}`,
-        desc: `${date}${time ? ' at ' + time : ''} • Priority: ${priority}${repeat !== 'None' ? ' • Repeat: ' + repeat : ''}`,
-        type: 'reminder',
-        category: 'reminder',
-        linkPage: 'reminders',
-        playSound: isNew
-    });
+    saveDatabase();
+    // Re-check reminders so if the created reminder is already within the 24h window, it gets triggered properly
+    if (typeof checkReminders === 'function') checkReminders();
 
     renderRemindersTable();
     closeModal('reminderModal');
-    showToast(isNew ? 'Reminder created & added to Notification Hub' : 'Reminder updated');
+    showToast(isNew ? 'Reminder scheduled' : 'Reminder updated');
 }
 window.saveReminder = saveReminder;
 
@@ -2363,7 +2903,7 @@ function toggleReminderStatus(id) {
     if (r.completed) {
         pushNotification({
             title: `Reminder Completed: ${r.title}`,
-            desc: `Scheduled for ${r.date} marked as completed`,
+            desc: `Target date ${r.remindDate || r.date} marked as completed`,
             type: 'reminder',
             category: 'reminder',
             linkPage: 'reminders',
@@ -2403,23 +2943,47 @@ window.deleteReminder = deleteReminder;
 function checkReminders() {
     if (!db.reminders) return;
     const now = new Date();
+    const nowTime = now.getTime();
     let triggerCount = 0;
 
     db.reminders.forEach(r => {
-        if (!r.completed && r.status !== 'completed' && r.date) {
+        if (!r.completed && r.status !== 'completed') {
+            const targetDateStr = r.remindDate || r.date;
+            if (!targetDateStr) return;
+
             let d;
-            if (r.date.includes('/')) {
-                const p = r.date.split('/');
-                d = new Date(`${p[2]}-${p[1]}-${p[0]}T${r.time || '23:59'}:00`);
+            if (targetDateStr.includes('/')) {
+                const p = targetDateStr.split('/');
+                if (p.length === 3) d = new Date(`${p[2]}-${p[1]}-${p[0]}T${r.time || '09:00'}:00`);
             } else {
-                d = new Date(`${r.date}T${r.time || '23:59'}:00`);
+                d = new Date(`${targetDateStr}T${r.time || '09:00'}:00`);
             }
 
-            if (!isNaN(d.getTime()) && d <= now && !r.notifiedDue) {
+            if (!d || isNaN(d.getTime())) return;
+
+            const dueTime = d.getTime();
+            const alert24hTime = dueTime - (24 * 60 * 60 * 1000); // 24 hours before target time
+
+            // 1. Advance 24-hour reminder notification
+            if (nowTime >= alert24hTime && nowTime < dueTime && !r.notified24h) {
+                r.notified24h = true;
+                pushNotification({
+                    title: `⏰ 24h Advance Alert: ${r.title}`,
+                    desc: `Due tomorrow (${formatToDDMMYYYY(targetDateStr)})${r.time ? ' at ' + r.time : ''} • Priority: ${r.priority || 'Medium'}`,
+                    type: 'reminder',
+                    category: 'reminder',
+                    linkPage: 'reminders',
+                    playSound: false
+                });
+                triggerCount++;
+            }
+
+            // 2. Due Date/Time reminder notification
+            if (nowTime >= dueTime && !r.notifiedDue) {
                 r.notifiedDue = true;
                 pushNotification({
-                    title: `Reminder Due: ${r.title}`,
-                    desc: `${r.date}${r.time ? ' at ' + r.time : ''} • Priority: ${r.priority || 'Medium'}`,
+                    title: `🔔 Reminder Due: ${r.title}`,
+                    desc: `Due now (${formatToDDMMYYYY(targetDateStr)})${r.time ? ' at ' + r.time : ''} • Priority: ${r.priority || 'Medium'}`,
                     type: 'reminder',
                     category: 'reminder',
                     linkPage: 'reminders',
@@ -2442,12 +3006,14 @@ window.checkReminders = checkReminders;
 function renderNotifications() {
     const list = document.getElementById('notificationsList');
     const badge = document.getElementById('notificationBadge');
-    if (!list) return;
+    const homeBellContainer = document.getElementById('homeNotificationBellContainer');
+    const homeUnreadCount = document.getElementById('homeNotificationUnreadCount');
+    const homeFlyoutList = document.getElementById('homeNotificationFlyoutList');
 
-    list.innerHTML = '';
     const notifs = db.notifications || [];
     const unreadCount = notifs.filter(n => !n.read).length;
 
+    // Update Global Badge
     if (badge) {
         if (unreadCount > 0) {
             badge.innerText = unreadCount.toString();
@@ -2457,46 +3023,131 @@ function renderNotifications() {
         }
     }
 
+    // Update Home Small Red Bell Icon (Visible ONLY when active / unread > 0)
+    if (homeBellContainer) {
+        if (unreadCount > 0) {
+            homeBellContainer.classList.remove('hidden');
+            if (homeUnreadCount) homeUnreadCount.innerText = unreadCount.toString();
+            const homeHeaderCount = document.getElementById('homeNotificationHeaderCount');
+            if (homeHeaderCount) homeHeaderCount.innerText = unreadCount.toString();
+        } else {
+            homeBellContainer.classList.add('hidden');
+            const flyout = document.getElementById('homeNotificationFlyout');
+            if (flyout) flyout.classList.add('hidden');
+        }
+    }
+
+    // Render Home Flyout List (Spacious Double-Size View)
+    if (homeFlyoutList) {
+        homeFlyoutList.innerHTML = '';
+        if (notifs.length === 0) {
+            homeFlyoutList.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm font-light rounded-2xl border border-dashed border-white/[0.1] bg-surface-900/40"><i class="fa-regular fa-bell-slash text-2xl mb-2 block text-slate-500"></i> No pending notifications or alerts at this time.</div>`;
+        } else {
+            notifs.forEach(n => {
+                const item = document.createElement('div');
+                const isRead = !!n.read;
+                item.className = `p-3.5 sm:p-4 rounded-2xl border flex items-start justify-between gap-3.5 transition-all duration-200 ${
+                    isRead 
+                    ? 'bg-surface-900/40 border-white/[0.06] text-slate-400 hover:border-white/[0.12]' 
+                    : 'bg-surface-900/90 border-rose-500/35 text-slate-100 shadow-[0_4px_16px_rgba(244,63,94,0.12)] hover:border-rose-400/60'
+                }`;
+
+                let iconClass = 'fa-solid fa-bell text-rose-400';
+                let iconBg = 'bg-rose-500/15 border-rose-500/30';
+                if (n.category === 'reminder' || n.type === 'reminder') {
+                    iconClass = 'fa-solid fa-clock-rotate-left text-amber-400';
+                    iconBg = 'bg-amber-500/15 border-amber-500/30';
+                } else if (n.category === 'transaction' || n.type === 'transaction') {
+                    iconClass = 'fa-solid fa-receipt text-emerald-400';
+                    iconBg = 'bg-emerald-500/15 border-emerald-500/30';
+                } else if (n.category === 'goal' || n.type === 'goal') {
+                    iconClass = 'fa-solid fa-bullseye text-brand-400';
+                    iconBg = 'bg-brand-500/15 border-brand-500/30';
+                }
+
+                item.innerHTML = `
+                    <div class="flex items-start gap-3 flex-1 min-w-0 cursor-pointer group/item" onclick="handleNotificationClick('${n.id}', '${n.linkPage || ''}')">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${iconBg} border flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover/item:scale-105 transition-transform">
+                            <i class="${iconClass} text-sm sm:text-base"></i>
+                        </div>
+                        <div class="space-y-1 flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <h5 class="text-xs sm:text-sm font-semibold ${isRead ? 'text-slate-400' : 'text-white'} truncate group-hover/item:text-brand-300 transition-colors">${n.title}</h5>
+                                <span class="font-mono text-[10px] sm:text-[11px] text-slate-400 shrink-0 bg-surface-950 px-2 py-0.5 rounded-md border border-white/[0.06]">${n.date || 'Now'}</span>
+                            </div>
+                            ${n.desc ? `<p class="text-xs sm:text-sm font-light ${isRead ? 'text-slate-400' : 'text-slate-200'} leading-relaxed line-clamp-3">${n.desc}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0 self-center pl-2">
+                        ${!isRead ? `<button onclick="toggleSingleNotificationRead('${n.id}')" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-surface-800 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-300 border border-white/[0.08] hover:border-emerald-500/40 flex items-center justify-center transition-all cursor-pointer shadow-sm" title="Mark as Read"><i class="fa-solid fa-check text-xs"></i></button>` : ''}
+                        <button onclick="deleteNotification('${n.id}')" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-surface-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-white/[0.08] hover:border-rose-500/40 flex items-center justify-center transition-all cursor-pointer shadow-sm" title="Delete"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    </div>
+                `;
+                homeFlyoutList.appendChild(item);
+            });
+        }
+    }
+
+    if (!list) return;
+
+    list.innerHTML = '';
+
     notifs.forEach(n => {
         const item = document.createElement('div');
         const isRead = !!n.read;
-        item.className = `p-4 rounded-xl border flex items-start justify-between gap-3 transition-all ${
+        item.className = `p-3 sm:p-3.5 rounded-2xl border flex items-start justify-between gap-3 transition-all duration-200 ${
             isRead 
-            ? 'bg-surface-900/40 border-surface-800/60 text-slate-500 hover:border-surface-700' 
-            : 'bg-surface-900/80 border-surface-700 text-slate-200 shadow-md hover:border-amber-500/40'
+            ? 'bg-surface-950/35 border-emerald-500/15 text-slate-400 hover:border-emerald-500/30' 
+            : 'bg-surface-900/70 border-emerald-500/30 text-slate-100 shadow-[0_4px_16px_rgba(0,255,157,0.06)] hover:border-emerald-400/60'
         }`;
 
-        let iconClass = 'fa-solid fa-bell text-indigo-400';
-        if (n.category === 'transaction' || n.type === 'transaction') iconClass = 'fa-solid fa-receipt text-emerald-400';
-        else if (n.category === 'goal' || n.type === 'goal') iconClass = 'fa-solid fa-bullseye text-brand-500';
+        let iconClass = 'fa-solid fa-bell text-emerald-400';
+        if (n.category === 'reminder' || n.type === 'reminder') iconClass = 'fa-solid fa-clock-rotate-left text-emerald-400';
+        else if (n.category === 'transaction' || n.type === 'transaction') iconClass = 'fa-solid fa-receipt text-emerald-400';
+        else if (n.category === 'goal' || n.type === 'goal') iconClass = 'fa-solid fa-bullseye text-brand-400';
         else if (n.category === 'asset' || n.type === 'asset') iconClass = 'fa-solid fa-vault text-accent-cyan';
 
         item.innerHTML = `
-            <div class="flex items-start gap-3 flex-1 min-w-0 cursor-pointer" onclick="handleNotificationClick('${n.id}', '${n.linkPage || ''}')">
-                <div class="w-8 h-8 rounded-lg bg-surface-800/80 border border-surface-700 flex items-center justify-center shrink-0 mt-0.5">
-                    <i class="${iconClass} text-xs"></i>
+            <div class="flex items-start gap-2.5 flex-1 min-w-0 cursor-pointer" onclick="handleNotificationClick('${n.id}', '${n.linkPage || ''}')">
+                <div class="w-7 h-7 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                    <i class="${iconClass} text-[11px]"></i>
                 </div>
-                <div class="space-y-1 flex-1 min-w-0">
+                <div class="space-y-0.5 flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-2">
                         <h5 class="text-xs font-semibold ${isRead ? 'text-slate-400' : 'text-slate-100'} truncate">${n.title}</h5>
-                        <span class="font-mono text-[9px] text-slate-500 shrink-0">${n.date}</span>
+                        <span class="font-mono text-[9px] text-emerald-500/70 shrink-0">${n.date || 'Today'}</span>
                     </div>
-                    ${n.desc ? `<p class="text-[11px] font-light ${isRead ? 'text-slate-500' : 'text-slate-400'} line-clamp-2 leading-relaxed">${n.desc}</p>` : ''}
+                    ${n.desc ? `<p class="text-[11px] font-light ${isRead ? 'text-slate-500' : 'text-slate-300'} line-clamp-2 leading-tight">${n.desc}</p>` : ''}
                 </div>
             </div>
-            <div class="flex items-center gap-1.5 shrink-0 self-center">
-                ${!isRead ? `<button onclick="toggleSingleNotificationRead('${n.id}')" class="p-1 text-slate-500 hover:text-amber-400 transition-colors" title="Mark Read"><i class="fa-solid fa-circle-check text-xs"></i></button>` : ''}
-                <button onclick="deleteNotification('${n.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition-colors" title="Delete"><i class="fa-solid fa-xmark text-xs"></i></button>
+            <div class="flex items-center gap-1 shrink-0 self-center">
+                ${!isRead ? `<button onclick="toggleSingleNotificationRead('${n.id}')" class="p-1 text-slate-500 hover:text-emerald-400 transition-colors cursor-pointer" title="Mark Read"><i class="fa-solid fa-circle-check text-xs"></i></button>` : ''}
+                <button onclick="deleteNotification('${n.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition-colors cursor-pointer" title="Delete"><i class="fa-solid fa-xmark text-xs"></i></button>
             </div>
         `;
         list.appendChild(item);
     });
 
     if (notifs.length === 0) {
-        list.innerHTML = `<div class="p-10 text-center text-slate-500 text-xs font-light"><i class="fa-regular fa-bell text-2xl mb-2 block opacity-30"></i> No notifications yet. Reminders and milestone updates will appear here.</div>`;
+        list.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs font-light rounded-2xl border border-dashed border-emerald-500/20 bg-surface-950/25"><i class="fa-regular fa-bell text-xl mb-1.5 block text-emerald-400/50"></i> No pending notifications. Reminders and milestone updates will appear here.</div>`;
     }
 }
 window.renderNotifications = renderNotifications;
+
+function toggleHomeNotificationFlyout(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const flyout = document.getElementById('homeNotificationFlyout');
+    if (flyout) flyout.classList.toggle('hidden');
+}
+window.toggleHomeNotificationFlyout = toggleHomeNotificationFlyout;
+
+document.addEventListener('click', (e) => {
+    const container = document.getElementById('homeNotificationBellContainer');
+    const flyout = document.getElementById('homeNotificationFlyout');
+    if (flyout && !flyout.classList.contains('hidden') && container && !container.contains(e.target)) {
+        flyout.classList.add('hidden');
+    }
+});
 
 function handleNotificationClick(notifId, linkPage) {
     if (db.notifications) {
@@ -2616,6 +3267,13 @@ function executeUniversalSearch() {
         }
     });
 
+    // Search Qatar Assets
+    (db.qatarAssets || []).forEach(qa => {
+        if ((qa.assetIdentity && qa.assetIdentity.toLowerCase().includes(q)) || (qa.category && qa.category.toLowerCase().includes(q)) || (qa.remarks && qa.remarks.toLowerCase().includes(q))) {
+            results.push({ page: 'assets', tab: 'qatarvaluation', label: `Qatar Asset: ${qa.assetIdentity} (${qa.category || 'Asset'}) - QR ${qa.valueQr}` });
+        }
+    });
+
     (db.loans || []).forEach(l => {
         if ((l.loanName && l.loanName.toLowerCase().includes(q)) || (l.bankName && l.bankName.toLowerCase().includes(q))) {
             results.push({ page: 'assets', tab: 'liabilities', label: `Liability: ${l.loanName || l.bankName}` });
@@ -2672,52 +3330,482 @@ window.executeUniversalSearch = executeUniversalSearch;
 window.handleUniversalSearch = executeUniversalSearch;
 
 function renderGrowthChart() {
-    const canvas = document.getElementById('growthChartCanvas');
-    if (!canvas) return;
+    renderFinancialIntelligencePage();
+}
 
-    const ctx = canvas.getContext('2d');
-    if (window.growthChartInst) window.growthChartInst.destroy();
+function renderFinancialIntelligencePage() {
+    const pageEl = document.getElementById('page-graphs');
+    if (!pageEl) return;
 
-    const labels = ['2021', '2022', '2023', '2024', '2025', '2026 (Live)'];
-    const data = [1200000, 2400000, 4800000, 8500000, 14200000, 21850000];
+    const QAR_TO_INR_RATE = 23.5;
+    const formatINR = (val) => '₹' + (Number(val) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const formatQAR = (val) => 'QR ' + (Number(val) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-    window.growthChartInst = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Consolidated Wealth Trajectory (INR)',
-                data: data,
-                borderColor: '#C9A46B',
-                backgroundColor: 'rgba(201, 164, 107, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#C9A46B',
-                pointBorderColor: '#070A0F',
-                pointBorderWidth: 2,
-                pointRadius: 5
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { grid: chartGridOptions },
-                y: {
-                    grid: chartGridOptions,
-                    ticks: {
-                        callback: function(val) {
-                            return '₹' + (val / 100000).toFixed(1) + 'L';
+    // 1. Calculate Liquid Bank Cash
+    let bankLiquidINR = 0;
+    let bankLiquidQAR = 0;
+    if (db.bankAccounts && Array.isArray(db.bankAccounts)) {
+        db.bankAccounts.forEach(b => {
+            const bal = parseFloat(b.balance) || 0;
+            if (b.currency === 'QAR') {
+                bankLiquidQAR += bal;
+            } else {
+                bankLiquidINR += bal;
+            }
+        });
+    }
+    const totalLiquidINR = bankLiquidINR + (bankLiquidQAR * QAR_TO_INR_RATE);
+
+    // 2. Mutual Funds
+    let mfTotalINR = 0;
+    if (db.assetMutualFunds && Array.isArray(db.assetMutualFunds)) {
+        db.assetMutualFunds.forEach(mf => {
+            const qty = parseFloat(mf.qty) || 0;
+            const ltp = parseFloat(mf.ltp) || 0;
+            mfTotalINR += (qty * ltp);
+        });
+    }
+
+    // 3. Equities / Share Market
+    let equityTotalINR = 0;
+    if (db.indiaOps && Array.isArray(db.indiaOps.shareMarket)) {
+        db.indiaOps.shareMarket.forEach(stk => {
+            const qty = parseFloat(stk.qty) || 0;
+            const price = parseFloat(stk.ltp) || parseFloat(stk.avgPrice) || 0;
+            equityTotalINR += (qty * price);
+        });
+    }
+
+    // 4. Physical Assets
+    let physicalTotalINR = 0;
+    if (db.assetLogs && Array.isArray(db.assetLogs)) {
+        db.assetLogs.forEach(log => {
+            physicalTotalINR += parseFloat(log.value) || 0;
+        });
+    }
+
+    // 5. Total Assets
+    const totalAssetsINR = totalLiquidINR + mfTotalINR + equityTotalINR + physicalTotalINR;
+
+    // 6. Total Liabilities / Loans
+    let totalLiabilitiesINR = 0;
+    if (db.loans && Array.isArray(db.loans)) {
+        db.loans.forEach(l => {
+            const amt = parseFloat(l.amount) || 0;
+            const rep = parseFloat(l.repaid) || 0;
+            totalLiabilitiesINR += Math.max(0, amt - rep);
+        });
+    }
+
+    // 7. Net Worth
+    const netWorthINR = totalAssetsINR - totalLiabilitiesINR;
+
+    // 8. Monthly Budgets & Spends
+    let budgetQAR = 0;
+    if (db.budget && Array.isArray(db.budget.QAR)) {
+        db.budget.QAR.forEach(b => budgetQAR += (parseFloat(b.amount) || 0));
+    }
+
+    let budgetINR = 0;
+    if (db.budget && Array.isArray(db.budget.INR)) {
+        db.budget.INR.forEach(b => budgetINR += (parseFloat(b.amount) || 0));
+    }
+
+    let spentQAR = 0;
+    let spentINR = 0;
+    if (db.dailyExpenses && Array.isArray(db.dailyExpenses)) {
+        db.dailyExpenses.forEach(exp => {
+            const amt = parseFloat(exp.amount) || 0;
+            if (exp.currency === 'QAR') spentQAR += amt;
+            else spentINR += amt;
+        });
+    }
+
+    const totalMonthlySpendINR = spentINR + (spentQAR * QAR_TO_INR_RATE);
+    const totalMonthlyBudgetINR = budgetINR + (budgetQAR * QAR_TO_INR_RATE);
+
+    // 9. Compute Ratios & KPIs
+    // Asset/Debt Coverage
+    let assetCoverageText = '0.0x';
+    let assetCoverageNum = 0;
+    if (totalLiabilitiesINR === 0 && totalAssetsINR > 0) {
+        assetCoverageText = 'Debt Free (∞)';
+        assetCoverageNum = 99;
+    } else if (totalLiabilitiesINR > 0) {
+        assetCoverageNum = totalAssetsINR / totalLiabilitiesINR;
+        assetCoverageText = assetCoverageNum.toFixed(1) + 'x';
+    }
+
+    // Emergency Runway
+    let runwayMonths = '12+';
+    let runwayNum = 12;
+    if (totalMonthlySpendINR > 0) {
+        runwayNum = totalLiquidINR / totalMonthlySpendINR;
+        runwayMonths = runwayNum.toFixed(1);
+    } else if (totalMonthlyBudgetINR > 0) {
+        runwayNum = totalLiquidINR / totalMonthlyBudgetINR;
+        runwayMonths = runwayNum.toFixed(1);
+    }
+
+    // Health Score (0 - 100)
+    let healthScore = 75;
+    if (totalLiabilitiesINR === 0 && totalAssetsINR > 0) healthScore += 15;
+    else if (assetCoverageNum >= 3) healthScore += 10;
+    else if (assetCoverageNum < 1.5 && assetCoverageNum > 0) healthScore -= 15;
+
+    if (runwayNum >= 6) healthScore += 10;
+    else if (runwayNum < 2) healthScore -= 10;
+
+    if (totalMonthlySpendINR > 0 && totalMonthlySpendINR <= totalMonthlyBudgetINR) healthScore += 5;
+    else if (totalMonthlySpendINR > totalMonthlyBudgetINR && totalMonthlyBudgetINR > 0) healthScore -= 10;
+
+    healthScore = Math.max(25, Math.min(99, Math.round(healthScore)));
+
+    let healthBadgeText = 'Optimal';
+    let healthBadgeClass = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400';
+    let healthBarClass = 'bg-gradient-to-r from-emerald-500 to-accent-cyan h-full rounded-full transition-all duration-700';
+    let healthDescText = 'Robust balance sheet fundamentals and healthy reserves';
+
+    if (healthScore < 60) {
+        healthBadgeText = 'Caution';
+        healthBadgeClass = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 border border-rose-500/30 text-rose-400';
+        healthBarClass = 'bg-gradient-to-r from-rose-500 to-amber-500 h-full rounded-full transition-all duration-700';
+        healthDescText = 'High debt exposure or tight liquidity runway detected';
+    } else if (healthScore < 80) {
+        healthBadgeText = 'Balanced';
+        healthBadgeClass = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-sky-500/15 border border-sky-500/30 text-sky-400';
+        healthBarClass = 'bg-gradient-to-r from-sky-500 to-emerald-400 h-full rounded-full transition-all duration-700';
+        healthDescText = 'Stable asset backing with manageable liabilities';
+    }
+
+    // Update DOM KPI elements
+    const elHealthScore = document.getElementById('intelHealthScore');
+    const elHealthBadge = document.getElementById('intelHealthBadge');
+    const elHealthBar = document.getElementById('intelHealthBar');
+    const elHealthDesc = document.getElementById('intelHealthDesc');
+    if (elHealthScore) elHealthScore.innerText = healthScore;
+    if (elHealthBadge) {
+        elHealthBadge.innerText = healthBadgeText;
+        elHealthBadge.className = healthBadgeClass;
+    }
+    if (elHealthBar) {
+        elHealthBar.style.width = `${healthScore}%`;
+        elHealthBar.className = healthBarClass;
+    }
+    if (elHealthDesc) elHealthDesc.innerText = healthDescText;
+
+    const elAssetRatio = document.getElementById('intelAssetRatio');
+    const elAssetRatioSub = document.getElementById('intelAssetRatioSub');
+    if (elAssetRatio) elAssetRatio.innerText = assetCoverageText;
+    if (elAssetRatioSub) {
+        elAssetRatioSub.innerText = totalLiabilitiesINR === 0 ? 'Zero active debt recorded' : `Covers ${formatINR(totalLiabilitiesINR)} total liabilities`;
+    }
+
+    const elLiquidBuffer = document.getElementById('intelLiquidBuffer');
+    const elLiquidBufferSub = document.getElementById('intelLiquidBufferSub');
+    if (elLiquidBuffer) elLiquidBuffer.innerText = formatINR(totalLiquidINR);
+    if (elLiquidBufferSub) {
+        elLiquidBufferSub.innerText = `INR: ${formatINR(bankLiquidINR)} | QAR: ${formatQAR(bankLiquidQAR)}`;
+    }
+
+    const elRunwayMonths = document.getElementById('intelRunwayMonths');
+    const elRunwayDesc = document.getElementById('intelRunwayDesc');
+    if (elRunwayMonths) elRunwayMonths.innerText = runwayMonths;
+    if (elRunwayDesc) {
+        elRunwayDesc.innerText = `Monthly burn: ${formatINR(totalMonthlySpendINR || totalMonthlyBudgetINR)}`;
+    }
+
+    const elNetWorthPill = document.getElementById('intelNetWorthPill');
+    if (elNetWorthPill) elNetWorthPill.innerText = `Net Worth: ${formatINR(netWorthINR)}`;
+
+    // Budget Adherence Rate
+    const elAdherenceRate = document.getElementById('intelAdherenceRate');
+    if (elAdherenceRate) {
+        if (totalMonthlyBudgetINR > 0) {
+            const spentPct = (totalMonthlySpendINR / totalMonthlyBudgetINR) * 100;
+            if (spentPct <= 100) {
+                elAdherenceRate.innerText = `${(100 - spentPct).toFixed(0)}% Under Limit`;
+                elAdherenceRate.className = 'font-bold text-emerald-400';
+            } else {
+                elAdherenceRate.innerText = `${(spentPct - 100).toFixed(0)}% Over Budget`;
+                elAdherenceRate.className = 'font-bold text-rose-400';
+            }
+        } else {
+            elAdherenceRate.innerText = 'No Budget Limit Set';
+            elAdherenceRate.className = 'font-bold text-slate-400';
+        }
+    }
+
+    // 10. Render Charts
+    // Chart 1: Wealth Trajectory Line Chart
+    const growthCanvas = document.getElementById('intelGrowthChart') || document.getElementById('growthComboChart');
+    if (growthCanvas) {
+        const ctx = growthCanvas.getContext('2d');
+        if (window.intelGrowthChartInst) window.intelGrowthChartInst.destroy();
+
+        // Calculate reasonable trajectory points based on current Net Worth
+        const baseNW = Math.max(netWorthINR, 100000);
+        const y2023 = Math.round(baseNW * 0.55);
+        const y2024 = Math.round(baseNW * 0.72);
+        const y2025 = Math.round(baseNW * 0.88);
+        const y2026 = Math.round(netWorthINR);
+        const y2027_proj = Math.round(netWorthINR * 1.15);
+        const y2028_proj = Math.round(netWorthINR * 1.32);
+
+        window.intelGrowthChartInst = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['2023', '2024', '2025', '2026 (Live)', '2027 (Proj)', '2028 (Proj)'],
+                datasets: [
+                    {
+                        label: 'Consolidated Wealth Trajectory',
+                        data: [y2023, y2024, y2025, y2026, y2027_proj, y2028_proj],
+                        borderColor: '#C9A46B',
+                        backgroundColor: 'rgba(201, 164, 107, 0.08)',
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: ['#C9A46B', '#C9A46B', '#C9A46B', '#00ff9d', '#b829ff', '#38bdf8'],
+                        pointBorderColor: '#070A0F',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        segment: {
+                            borderDash: ctx => ctx.p0DataIndex >= 3 ? [6, 6] : undefined,
+                            borderColor: ctx => ctx.p0DataIndex >= 3 ? '#b829ff' : '#C9A46B'
+                        }
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                scales: {
+                    x: { grid: chartGridOptions },
+                    y: {
+                        grid: chartGridOptions,
+                        ticks: {
+                            callback: function(val) {
+                                if (val >= 10000000) return '₹' + (val / 10000000).toFixed(1) + 'Cr';
+                                if (val >= 100000) return '₹' + (val / 100000).toFixed(1) + 'L';
+                                return '₹' + val;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ' Net Worth: ' + formatINR(context.raw);
+                            }
                         }
                     }
                 }
-            },
-            plugins: {
-                legend: { display: false }
             }
+        });
+    }
+
+    // Chart 2: Capital Allocation Mix Doughnut Chart
+    const allocCanvas = document.getElementById('intelAllocationChart');
+    if (allocCanvas) {
+        const ctx = allocCanvas.getContext('2d');
+        if (window.intelAllocationChartInst) window.intelAllocationChartInst.destroy();
+
+        const labels = ['Liquid Banks', 'Mutual Funds', 'Equities', 'Physical Assets'];
+        const values = [totalLiquidINR, mfTotalINR, equityTotalINR, physicalTotalINR];
+        const colors = ['#38bdf8', '#34d399', '#a855f7', '#f59e0b'];
+
+        window.intelAllocationChartInst = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values.map(v => Math.max(0, v)),
+                    backgroundColor: colors,
+                    borderColor: '#0b1320',
+                    borderWidth: 2,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = values.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? ((context.raw / total) * 100).toFixed(1) : '0';
+                                return ` ${context.label}: ${formatINR(context.raw)} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Summary pills below donut chart
+        const allocSummaryEl = document.getElementById('intelAllocationSummary');
+        if (allocSummaryEl) {
+            const total = values.reduce((a, b) => a + b, 0) || 1;
+            allocSummaryEl.innerHTML = `
+                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#38bdf8]"></span> <span>Banks: ${(totalLiquidINR/total*100).toFixed(0)}%</span></div>
+                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#34d399]"></span> <span>MFs: ${(mfTotalINR/total*100).toFixed(0)}%</span></div>
+                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#a855f7]"></span> <span>Equities: ${(equityTotalINR/total*100).toFixed(0)}%</span></div>
+                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#f59e0b]"></span> <span>Physical: ${(physicalTotalINR/total*100).toFixed(0)}%</span></div>
+            `;
         }
-    });
+    }
+
+    // Chart 3: Monthly Cashflow Velocity Bar Chart
+    const cashflowCanvas = document.getElementById('intelCashflowChart');
+    if (cashflowCanvas) {
+        const ctx = cashflowCanvas.getContext('2d');
+        if (window.intelCashflowChartInst) window.intelCashflowChartInst.destroy();
+
+        window.intelCashflowChartInst = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Qatar (QAR)', 'India (₹ Lakhs)'],
+                datasets: [
+                    {
+                        label: 'Budget Limit',
+                        data: [budgetQAR, (budgetINR / 100000)],
+                        backgroundColor: 'rgba(56, 189, 248, 0.4)',
+                        borderColor: '#38bdf8',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Actual Spend',
+                        data: [spentQAR, (spentINR / 100000)],
+                        backgroundColor: 'rgba(244, 63, 94, 0.5)',
+                        borderColor: '#f43f5e',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: chartGridOptions },
+                    y: { grid: chartGridOptions }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { boxWidth: 10, font: { size: 9 }, color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+    }
+
+    // 11. Dynamic AI Audits & Strategic Recommendations Grid
+    const auditGridEl = document.getElementById('intelAuditGrid');
+    if (auditGridEl) {
+        let auditCardsHtml = '';
+
+        // Audit 1: Liquidity Safety
+        const isRunwaySafe = runwayNum >= 6;
+        auditCardsHtml += `
+            <div class="p-4 rounded-xl bg-surface-900/40 border border-surface-800 flex items-start gap-3">
+                <div class="w-7 h-7 rounded-lg ${isRunwaySafe ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'} flex items-center justify-center shrink-0 mt-0.5">
+                    <i class="fa-solid fa-shield-heart text-xs"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs font-semibold text-white">Liquidity Reserve Health</span>
+                        <span class="text-[10px] font-mono font-bold ${isRunwaySafe ? 'text-emerald-400' : 'text-amber-400'}">${runwayMonths} Mo Runway</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-light leading-relaxed">
+                        ${totalLiquidINR > 0 ? `Liquid buffer of ${formatINR(totalLiquidINR)} across banks provides adequate runway against current burns.` : 'No liquid cash balances recorded in bank accounts.'}
+                    </p>
+                </div>
+            </div>
+        `;
+
+        // Audit 2: Debt & Liability Health
+        const isDebtClean = totalLiabilitiesINR === 0 || assetCoverageNum >= 3;
+        auditCardsHtml += `
+            <div class="p-4 rounded-xl bg-surface-900/40 border border-surface-800 flex items-start gap-3">
+                <div class="w-7 h-7 rounded-lg ${isDebtClean ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} flex items-center justify-center shrink-0 mt-0.5">
+                    <i class="fa-solid fa-scale-unbalanced text-xs"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs font-semibold text-white">Liabilities & Leverage</span>
+                        <span class="text-[10px] font-mono font-bold ${isDebtClean ? 'text-emerald-400' : 'text-rose-400'}">${totalLiabilitiesINR === 0 ? 'Zero Debt' : assetCoverageText}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-light leading-relaxed">
+                        ${totalLiabilitiesINR > 0 ? `Active debt obligation is ${formatINR(totalLiabilitiesINR)} against ${formatINR(totalAssetsINR)} total assets.` : 'Zero outstanding debt liabilities. Portfolio is fully unleveraged.'}
+                    </p>
+                </div>
+            </div>
+        `;
+
+        // Audit 3: Investment Diversification
+        const isDiversified = (mfTotalINR > 0 || equityTotalINR > 0) && (totalLiquidINR > 0 || physicalTotalINR > 0);
+        auditCardsHtml += `
+            <div class="p-4 rounded-xl bg-surface-900/40 border border-surface-800 flex items-start gap-3">
+                <div class="w-7 h-7 rounded-lg ${isDiversified ? 'bg-accent-cyan/10 text-accent-cyan' : 'bg-slate-700/30 text-slate-400'} flex items-center justify-center shrink-0 mt-0.5">
+                    <i class="fa-solid fa-chart-pie text-xs"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs font-semibold text-white">Asset Allocation Mix</span>
+                        <span class="text-[10px] font-mono font-bold text-accent-cyan">${isDiversified ? 'Diversified' : 'Concentrated'}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-light leading-relaxed">
+                        ${mfTotalINR + equityTotalINR > 0 ? `Growth assets (MFs & Equities) comprise ${formatINR(mfTotalINR + equityTotalINR)} of wealth.` : 'Consider increasing exposure to mutual funds or equities for inflation protection.'}
+                    </p>
+                </div>
+            </div>
+        `;
+
+        // Audit 4: Milestone & Goals Velocity
+        const totalGoals = (db.goals || []).length;
+        const compGoals = (db.goals || []).filter(g => g.status === 'Completed' || (g.current && g.target && Number(g.current) >= Number(g.target))).length;
+        auditCardsHtml += `
+            <div class="p-4 rounded-xl bg-surface-900/40 border border-surface-800 flex items-start gap-3">
+                <div class="w-7 h-7 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <i class="fa-solid fa-bullseye text-xs"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs font-semibold text-white">Strategic Milestones</span>
+                        <span class="text-[10px] font-mono font-bold text-brand-400">${compGoals}/${totalGoals} Done</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-light leading-relaxed">
+                        ${totalGoals > 0 ? `Tracking ${totalGoals} strategic financial goals with ${compGoals} milestones successfully achieved.` : 'No milestones registered. Add wealth targets in the Milestone page.'}
+                    </p>
+                </div>
+            </div>
+        `;
+
+        auditGridEl.innerHTML = auditCardsHtml;
+    }
+
+    // Executive Summary
+    const execSummaryEl = document.getElementById('intelExecutiveSummary');
+    if (execSummaryEl) {
+        if (netWorthINR > 0) {
+            execSummaryEl.innerText = `Portfolio net worth stands at ${formatINR(netWorthINR)} with a ${healthBadgeText.toLowerCase()} balance sheet score of ${healthScore}/100. Liquid bank reserves of ${formatINR(totalLiquidINR)} afford a ${runwayMonths}-month emergency runway. Capital is distributed across liquid banking, mutual funds, equities, and tangible assets.`;
+        } else {
+            execSummaryEl.innerText = `Add your bank balances, mutual funds, and assets in the Portfolio page to activate full real-time predictive analytics and trajectory intelligence.`;
+        }
+    }
 }
+window.renderFinancialIntelligencePage = renderFinancialIntelligencePage;
+window.renderGrowthChart = renderGrowthChart;
+window.exportDashboardToExcel = exportToExcel;
+window.importDataFromExcel = importFromExcel;
 
 function exportToExcel() {
     const wb = XLSX.utils.book_new();
@@ -3121,3 +4209,806 @@ async function triggerManualPullFromCloud() {
         showToast("Cloud connection offline or not ready.");
     }
 }
+
+// =========================================================================
+// DOCUMENTS & MEDIA VAULT ENGINE
+// =========================================================================
+let docActiveCategoryFilter = 'all';
+let docActiveSubCategory = 'all';
+let docViewMode = 'grid';
+let modalDocStagedFile = null;
+
+function setDocumentCategoryFilter(cat) {
+    docActiveCategoryFilter = cat;
+    renderDocumentsPage();
+}
+window.setDocumentCategoryFilter = setDocumentCategoryFilter;
+
+function setDocumentSubCategory(subCat) {
+    docActiveSubCategory = subCat;
+
+    const cats = ['all', 'identity', 'legal', 'financial', 'business', 'receipts', 'personal'];
+    cats.forEach(c => {
+        const btn = document.getElementById(`btnDocCat-${c}`);
+        if (btn) {
+            if (c === subCat) {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer whitespace-nowrap';
+            } else {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap';
+            }
+        }
+    });
+
+    renderDocumentsPage();
+}
+window.setDocumentSubCategory = setDocumentSubCategory;
+
+function setDocumentViewMode(mode) {
+    docViewMode = mode;
+    const gridBtn = document.getElementById('btnDocViewGrid');
+    const listBtn = document.getElementById('btnDocViewList');
+    const gridContainer = document.getElementById('documentsGridContainer');
+    const listContainer = document.getElementById('documentsListContainer');
+
+    if (mode === 'grid') {
+        if (gridBtn) gridBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-mono transition-all bg-surface-800 text-emerald-300 shadow-sm cursor-pointer flex items-center gap-1';
+        if (listBtn) listBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-mono transition-all text-slate-400 hover:text-white cursor-pointer flex items-center gap-1';
+        if (gridContainer) gridContainer.classList.remove('hidden');
+        if (listContainer) listContainer.classList.add('hidden');
+    } else {
+        if (gridBtn) gridBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-mono transition-all text-slate-400 hover:text-white cursor-pointer flex items-center gap-1';
+        if (listBtn) listBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-mono transition-all bg-surface-800 text-emerald-300 shadow-sm cursor-pointer flex items-center gap-1';
+        if (gridContainer) gridContainer.classList.add('hidden');
+        if (listContainer) listContainer.classList.remove('hidden');
+    }
+}
+window.setDocumentViewMode = setDocumentViewMode;
+
+function openDocumentUploadModal(prefillCategory = null) {
+    modalDocStagedFile = null;
+    const titleInput = document.getElementById('modalDocTitleInput');
+    const catSelect = document.getElementById('modalDocCategorySelect');
+    const dateInput = document.getElementById('modalDocDateInput');
+    const tagsInput = document.getElementById('modalDocTagsInput');
+    const confCheck = document.getElementById('modalDocConfidentialCheck');
+    const notesInput = document.getElementById('modalDocNotesInput');
+    const fileInput = document.getElementById('modalDocFileInput');
+    const fileChip = document.getElementById('modalDocSelectedFileInfo');
+
+    if (titleInput) titleInput.value = '';
+    if (catSelect) catSelect.value = prefillCategory || (docActiveCategoryFilter !== 'all' ? docActiveCategoryFilter : 'identity');
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    if (tagsInput) tagsInput.value = '';
+    if (confCheck) confCheck.checked = false;
+    if (notesInput) notesInput.value = '';
+    if (fileInput) fileInput.value = '';
+    if (fileChip) fileChip.classList.add('hidden');
+
+    openModal('documentUploadModal');
+}
+window.openDocumentUploadModal = openDocumentUploadModal;
+
+function handleModalDocFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    stageDocumentFile(file);
+}
+window.handleModalDocFileSelect = handleModalDocFileSelect;
+
+function handleModalDocDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('modalDocDropzone');
+    if (el) el.classList.add('border-emerald-400', 'bg-emerald-500/10');
+}
+window.handleModalDocDragOver = handleModalDocDragOver;
+
+function handleModalDocDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('modalDocDropzone');
+    if (el) el.classList.remove('border-emerald-400', 'bg-emerald-500/10');
+}
+window.handleModalDocDragLeave = handleModalDocDragLeave;
+
+function handleModalDocDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('modalDocDropzone');
+    if (el) el.classList.remove('border-emerald-400', 'bg-emerald-500/10');
+
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        stageDocumentFile(e.dataTransfer.files[0]);
+    }
+}
+window.handleModalDocDrop = handleModalDocDrop;
+
+function handleDocDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('docDirectDropzone');
+    if (el) el.classList.add('border-emerald-400', 'bg-emerald-500/10');
+}
+window.handleDocDragOver = handleDocDragOver;
+
+function handleDocDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('docDirectDropzone');
+    if (el) el.classList.remove('border-emerald-400', 'bg-emerald-500/10');
+}
+window.handleDocDragLeave = handleDocDragLeave;
+
+function handleDocDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('docDirectDropzone');
+    if (el) el.classList.remove('border-emerald-400', 'bg-emerald-500/10');
+
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        openDocumentUploadModal();
+        stageDocumentFile(e.dataTransfer.files[0]);
+    }
+}
+window.handleDocDrop = handleDocDrop;
+
+function stageDocumentFile(file) {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+        showToast('File too large! Max 10MB allowed per file.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const isImg = file.type.startsWith('image/');
+
+        modalDocStagedFile = {
+            name: file.name,
+            size: file.size,
+            type: isPdf ? 'pdf' : (isImg ? 'photo' : 'other'),
+            mimeType: file.type || (isPdf ? 'application/pdf' : 'application/octet-stream'),
+            data: evt.target.result
+        };
+
+        const fileChip = document.getElementById('modalDocSelectedFileInfo');
+        const fileNameEl = document.getElementById('modalDocSelectedName');
+        const fileMetaEl = document.getElementById('modalDocSelectedMeta');
+        const fileIcon = document.getElementById('modalDocSelectedIcon');
+        const titleInput = document.getElementById('modalDocTitleInput');
+
+        if (fileNameEl) fileNameEl.innerText = file.name;
+        if (fileMetaEl) fileMetaEl.innerText = `${(file.size / 1024).toFixed(1)} KB • ${file.type || 'Document'}`;
+        if (fileIcon) {
+            fileIcon.className = isPdf ? 'fa-solid fa-file-pdf text-rose-400 text-sm shrink-0' : (isImg ? 'fa-solid fa-image text-cyan-400 text-sm shrink-0' : 'fa-solid fa-file-lines text-emerald-400 text-sm shrink-0');
+        }
+        if (fileChip) fileChip.classList.remove('hidden');
+
+        // Auto populate title if blank
+        if (titleInput && !titleInput.value.trim()) {
+            const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+            titleInput.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+function saveDocumentItem() {
+    const titleInput = document.getElementById('modalDocTitleInput');
+    const catSelect = document.getElementById('modalDocCategorySelect');
+    const dateInput = document.getElementById('modalDocDateInput');
+    const tagsInput = document.getElementById('modalDocTagsInput');
+    const confCheck = document.getElementById('modalDocConfidentialCheck');
+    const notesInput = document.getElementById('modalDocNotesInput');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    if (!title) {
+        showToast('Please enter a document title or description');
+        return;
+    }
+
+    if (!Array.isArray(db.documents)) db.documents = [];
+
+    const tags = (tagsInput ? tagsInput.value : '')
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0)
+        .map(t => t.startsWith('#') ? t : `#${t}`);
+
+    const newDoc = {
+        id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        title: title,
+        category: catSelect ? catSelect.value : 'identity',
+        fileType: modalDocStagedFile ? modalDocStagedFile.type : 'pdf',
+        mimeType: modalDocStagedFile ? modalDocStagedFile.mimeType : 'application/pdf',
+        fileData: modalDocStagedFile ? modalDocStagedFile.data : null,
+        fileSize: modalDocStagedFile ? modalDocStagedFile.size : 124000,
+        date: dateInput ? (dateInput.value || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
+        tags: tags,
+        notes: notesInput ? notesInput.value.trim() : '',
+        isConfidential: confCheck ? confCheck.checked : false,
+        createdAt: new Date().toISOString()
+    };
+
+    db.documents.unshift(newDoc);
+    saveDatabase();
+    closeModal('documentUploadModal');
+    renderDocumentsPage();
+    showToast(`Saved "${title}" to Documents Vault`);
+}
+window.saveDocumentItem = saveDocumentItem;
+
+function renderDocumentsPage() {
+    if (!Array.isArray(db.documents)) db.documents = [];
+
+    const docs = db.documents;
+    const searchVal = (document.getElementById('docSearchInput') ? document.getElementById('docSearchInput').value : '').toLowerCase().trim();
+
+    // 1. Filter list
+    let filtered = docs.filter(d => {
+        // Top category filter
+        if (docActiveCategoryFilter === 'pdf' && !(d.fileType === 'pdf' || (d.mimeType && d.mimeType.includes('pdf')))) return false;
+        if (docActiveCategoryFilter === 'photo' && !(d.fileType === 'photo' || (d.mimeType && d.mimeType.startsWith('image/')))) return false;
+        if (docActiveCategoryFilter === 'identity' && d.category !== 'identity') return false;
+        if (docActiveCategoryFilter === 'financial' && d.category !== 'financial' && d.category !== 'receipts') return false;
+
+        // Subcategory pill filter
+        if (docActiveSubCategory !== 'all' && d.category !== docActiveSubCategory) return false;
+
+        // Search filter
+        if (searchVal) {
+            const matchTitle = (d.title || '').toLowerCase().includes(searchVal);
+            const matchNotes = (d.notes || '').toLowerCase().includes(searchVal);
+            const matchCat = (d.category || '').toLowerCase().includes(searchVal);
+            const matchTags = Array.isArray(d.tags) && d.tags.some(t => t.toLowerCase().includes(searchVal));
+            if (!matchTitle && !matchNotes && !matchCat && !matchTags) return false;
+        }
+
+        return true;
+    });
+
+    // 2. Render Grid View
+    const gridContainer = document.getElementById('documentsGridContainer');
+    const tableBody = document.getElementById('documentsTableBody');
+
+    if (gridContainer) {
+        gridContainer.innerHTML = '';
+        if (filtered.length === 0) {
+            gridContainer.innerHTML = `
+                <div class="col-span-full py-16 text-center space-y-3">
+                    <div class="w-14 h-14 mx-auto rounded-2xl bg-surface-900 border border-surface-800 flex items-center justify-center text-slate-500">
+                        <i class="fa-solid fa-folder-open text-2xl"></i>
+                    </div>
+                    <div class="text-white font-medium text-sm">No documents found</div>
+                    <p class="text-xs font-mono text-slate-500 max-w-sm mx-auto">No files match your current category or search criteria. Click upload to secure new assets.</p>
+                    <button onclick="openDocumentUploadModal()" class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-mono transition-all">
+                        + Upload Document
+                    </button>
+                </div>
+            `;
+        } else {
+            filtered.forEach(d => {
+                const isPdf = d.fileType === 'pdf' || (d.mimeType && d.mimeType.includes('pdf'));
+                const isImg = d.fileType === 'photo' || (d.mimeType && d.mimeType.startsWith('image/'));
+                const sizeText = d.fileSize ? (d.fileSize > 1024 * 1024 ? `${(d.fileSize / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(d.fileSize / 1024)} KB`) : 'PDF Doc';
+
+                const catBadge = getDocCategoryBadge(d.category);
+                const tagPills = Array.isArray(d.tags) ? d.tags.slice(0, 3).map(t => `<span class="px-2 py-0.5 rounded-md bg-surface-900 border border-white/[0.04] text-[9px] font-mono text-slate-400">${t}</span>`).join('') : '';
+
+                const card = document.createElement('div');
+                card.className = 'premium-card p-4 flex flex-col justify-between group/dcard hover:border-emerald-500/50 transition-all duration-300 relative overflow-hidden';
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <!-- Top Bar: Category & Confidential badge -->
+                        <div class="flex items-center justify-between gap-2">
+                            ${catBadge}
+                            <div class="flex items-center gap-1.5">
+                                ${d.isConfidential ? '<span class="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-[10px]" title="Executive Confidential"><i class="fa-solid fa-lock"></i></span>' : ''}
+                                <span class="text-[10px] font-mono text-slate-500">${d.date || 'Active'}</span>
+                            </div>
+                        </div>
+
+                        <!-- Center Media Preview / Icon -->
+                        <div onclick="previewDocumentItem('${d.id}')" class="h-32 w-full rounded-xl bg-surface-950/80 border border-surface-800/80 flex flex-col items-center justify-center p-2 relative overflow-hidden group-hover/dcard:border-emerald-500/30 transition-all cursor-pointer">
+                            ${isImg && d.fileData ? `
+                                <img src="${d.fileData}" alt="${d.title}" class="w-full h-full object-cover rounded-lg group-hover/dcard:scale-105 transition-transform duration-300">
+                                <div class="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-transparent to-transparent flex items-end p-2 opacity-0 group-hover/dcard:opacity-100 transition-opacity">
+                                    <span class="text-[10px] font-mono text-emerald-300 flex items-center gap-1"><i class="fa-solid fa-eye text-[9px]"></i> View Full Image</span>
+                                </div>
+                            ` : `
+                                <div class="w-12 h-12 rounded-2xl ${isPdf ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'} flex items-center justify-center shadow-sm group-hover/dcard:scale-110 transition-transform">
+                                    <i class="fa-solid ${isPdf ? 'fa-file-pdf' : 'fa-file-shield'} text-2xl"></i>
+                                </div>
+                                <span class="text-[10px] font-mono text-slate-400 mt-2 flex items-center gap-1">
+                                    <i class="fa-solid fa-expand text-[9px] text-emerald-400"></i> ${isPdf ? 'Open PDF Preview' : 'Preview Document'}
+                                </span>
+                            `}
+                        </div>
+
+                        <!-- Title & Meta -->
+                        <div>
+                            <h4 onclick="previewDocumentItem('${d.id}')" class="font-display text-sm font-bold text-white group-hover/dcard:text-emerald-300 transition-colors line-clamp-1 cursor-pointer" title="${d.title}">${d.title}</h4>
+                            <p class="text-[10px] font-mono text-slate-400 mt-0.5">${sizeText} • ${isPdf ? 'PDF Document' : (isImg ? 'High-Res Photo' : 'Secure File')}</p>
+                            ${d.notes ? `<p class="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed font-light">${d.notes}</p>` : ''}
+                        </div>
+
+                        <!-- Tags -->
+                        ${tagPills ? `<div class="flex items-center gap-1 flex-wrap pt-1">${tagPills}</div>` : ''}
+                    </div>
+
+                    <!-- Footer Action Bar (Revealed smoothly on hover) -->
+                    <div class="flex items-center justify-between pt-3 mt-3 border-t border-surface-800/80 text-xs">
+                        <button onclick="previewDocumentItem('${d.id}')" class="text-slate-400 hover:text-emerald-300 text-[11px] font-mono flex items-center gap-1.5 transition-colors cursor-pointer">
+                            <i class="fa-regular fa-eye text-xs"></i> Preview
+                        </button>
+                        <div class="flex items-center gap-1 opacity-0 group-hover/dcard:opacity-100 transition-opacity duration-200">
+                            <button onclick="downloadDocumentItem('${d.id}')" class="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Download File">
+                                <i class="fa-solid fa-download text-xs"></i>
+                            </button>
+                            <button onclick="openDocumentEditModal('${d.id}')" class="p-1.5 text-slate-400 hover:text-cyan-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Edit Metadata">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteDocumentItem('${d.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer" title="Delete Document">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                gridContainer.appendChild(card);
+            });
+        }
+    }
+
+    // 4. Render Table List View
+    if (tableBody) {
+        tableBody.innerHTML = '';
+        if (filtered.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-light text-xs">No documents match the active filter.</td></tr>`;
+        } else {
+            filtered.forEach(d => {
+                const isPdf = d.fileType === 'pdf' || (d.mimeType && d.mimeType.includes('pdf'));
+                const isImg = d.fileType === 'photo' || (d.mimeType && d.mimeType.startsWith('image/'));
+                const sizeText = d.fileSize ? (d.fileSize > 1024 * 1024 ? `${(d.fileSize / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(d.fileSize / 1024)} KB`) : 'PDF';
+
+                const tr = document.createElement('tr');
+                tr.className = 'group hover:bg-surface-800/20 transition-colors border-b border-surface-800/40 last:border-0';
+                tr.innerHTML = `
+                    <td class="p-3.5">
+                        <div class="flex items-center gap-3 cursor-pointer" onclick="previewDocumentItem('${d.id}')">
+                            <div class="w-8 h-8 rounded-lg ${isPdf ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : (isImg ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20')} flex items-center justify-center shrink-0">
+                                <i class="fa-solid ${isPdf ? 'fa-file-pdf' : (isImg ? 'fa-image' : 'fa-file-lines')} text-xs"></i>
+                            </div>
+                            <div class="truncate">
+                                <div class="font-medium text-white group-hover:text-emerald-300 transition-colors truncate">${d.title}</div>
+                                <div class="text-[10px] font-mono text-slate-500 truncate">${d.notes || 'Encrypted record'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-3.5">${getDocCategoryBadge(d.category)}</td>
+                    <td class="p-3.5 font-mono text-xs text-slate-400">${isPdf ? 'PDF Document' : (isImg ? 'Media Photo' : 'Record File')}</td>
+                    <td class="p-3.5 font-mono text-xs text-slate-400">${sizeText}</td>
+                    <td class="p-3.5 font-mono text-xs text-slate-400">${d.date || '-'}</td>
+                    <td class="p-3.5 text-right">
+                        <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="previewDocumentItem('${d.id}')" class="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Preview">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                            <button onclick="downloadDocumentItem('${d.id}')" class="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Download">
+                                <i class="fa-solid fa-download text-xs"></i>
+                            </button>
+                            <button onclick="openDocumentEditModal('${d.id}')" class="p-1.5 text-slate-400 hover:text-cyan-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Edit">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteDocumentItem('${d.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer" title="Delete">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+    }
+}
+window.renderDocumentsPage = renderDocumentsPage;
+
+function getDocCategoryBadge(cat) {
+    switch ((cat || '').toLowerCase()) {
+        case 'identity':
+            return '<span class="px-2 py-0.5 rounded-md bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Identity</span>';
+        case 'legal':
+            return '<span class="px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/30 text-purple-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Legal Deed</span>';
+        case 'financial':
+            return '<span class="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Financial</span>';
+        case 'business':
+            return '<span class="px-2 py-0.5 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Business</span>';
+        case 'receipts':
+            return '<span class="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Receipts</span>';
+        case 'personal':
+            return '<span class="px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Personal</span>';
+        case 'medical':
+            return '<span class="px-2 py-0.5 rounded-md bg-teal-500/15 border border-teal-500/30 text-teal-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Medical</span>';
+        default:
+            return '<span class="px-2 py-0.5 rounded-md bg-surface-800 border border-surface-700 text-slate-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Document</span>';
+    }
+}
+
+async function previewDocumentItem(id) {
+    if (!Array.isArray(db.documents)) return;
+    const doc = db.documents.find(x => x.id === id);
+    if (!doc) return;
+
+    const iconEl = document.getElementById('docViewerTypeIcon');
+    const titleEl = document.getElementById('docViewerTitle');
+    const confBadge = document.getElementById('docViewerConfidentialBadge');
+    const catEl = document.getElementById('docViewerCategory');
+    const dateEl = document.getElementById('docViewerDate');
+    const sizeEl = document.getElementById('docViewerSize');
+    const stageEl = document.getElementById('docViewerStage');
+    const notesEl = document.getElementById('docViewerNotesText');
+    const tagsContainer = document.getElementById('docViewerTagsContainer');
+    const downloadBtn = document.getElementById('docViewerDownloadBtn');
+    const editBtn = document.getElementById('docViewerEditBtn');
+    const deleteBtn = document.getElementById('docViewerDeleteBtn');
+
+    const isPdf = doc.fileType === 'pdf' || (doc.mimeType && doc.mimeType.includes('pdf'));
+    const isImg = doc.fileType === 'photo' || (doc.mimeType && doc.mimeType.startsWith('image/'));
+
+    if (titleEl) titleEl.innerText = doc.title;
+    if (confBadge) {
+        if (doc.isConfidential) confBadge.classList.remove('hidden');
+        else confBadge.classList.add('hidden');
+    }
+    if (catEl) catEl.innerText = (doc.category || 'General').toUpperCase();
+    if (dateEl) dateEl.innerText = doc.date || 'Active';
+    if (sizeEl) sizeEl.innerText = doc.fileSize ? (doc.fileSize > 1024 * 1024 ? `${(doc.fileSize / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(doc.fileSize / 1024)} KB`) : 'Standard';
+
+    if (iconEl) {
+        iconEl.innerHTML = `<i class="fa-solid ${isPdf ? 'fa-file-pdf text-rose-400' : (isImg ? 'fa-image text-cyan-400' : 'fa-file-shield text-emerald-400')} text-base"></i>`;
+    }
+
+    if (notesEl) {
+        notesEl.innerText = doc.notes || 'No confidential executive notes logged for this document.';
+    }
+
+    if (tagsContainer) {
+        tagsContainer.innerHTML = Array.isArray(doc.tags) && doc.tags.length > 0
+            ? doc.tags.map(t => `<span class="px-2 py-0.5 rounded-md bg-surface-800 text-[10px] font-mono text-emerald-400 border border-emerald-500/20">${t}</span>`).join('')
+            : '';
+    }
+
+    if (downloadBtn) {
+        downloadBtn.onclick = () => downloadDocumentItem(doc.id);
+    }
+    if (editBtn) {
+        editBtn.onclick = () => {
+            closeModal('documentViewerModal');
+            openDocumentEditModal(doc.id);
+        };
+    }
+    if (deleteBtn) {
+        deleteBtn.onclick = () => {
+            closeModal('documentViewerModal');
+            deleteDocumentItem(doc.id);
+        };
+    }
+
+    // Open modal immediately
+    openModal('documentViewerModal');
+
+    // Asynchronously resolve file binary if not cached in memory
+    if (!doc.fileData && (doc.hasBinary || isPdf || isImg)) {
+        if (stageEl) {
+            stageEl.innerHTML = `
+                <div class="text-center space-y-3 py-16">
+                    <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-400"></i>
+                    <div class="text-xs font-mono text-slate-300">Decrypting & loading document binary...</div>
+                </div>
+            `;
+        }
+        if (window.getOrFetchVaultFile) {
+            const fetched = await window.getOrFetchVaultFile(doc.id);
+            if (fetched) doc.fileData = fetched;
+        }
+    }
+
+    // Render Stage
+    if (stageEl) {
+        stageEl.innerHTML = '';
+        if (isImg && doc.fileData) {
+            stageEl.innerHTML = `
+                <div class="w-full h-full flex items-center justify-center p-2">
+                    <img src="${doc.fileData}" alt="${doc.title}" class="max-h-[68vh] max-w-full rounded-xl shadow-2xl object-contain border border-surface-800">
+                </div>
+            `;
+        } else if (isPdf && doc.fileData) {
+            // Render High Fidelity Interactive PDF via PDF.js Canvas + Direct Native Controls
+            stageEl.innerHTML = `
+                <div class="w-full h-full flex flex-col items-center justify-between relative">
+                    <!-- PDF Controls Toolbar -->
+                    <div class="w-full flex items-center justify-between px-4 py-2 bg-surface-900/90 border-b border-surface-800/80 rounded-t-xl shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-mono text-emerald-400 font-semibold flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-pdf text-rose-400"></i> PDF Reader
+                            </span>
+                            <span id="pdfPageInfo" class="text-[11px] font-mono text-slate-400">Page 1</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="pdfPrevBtn" class="px-2.5 py-1 bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-mono rounded-lg transition-colors cursor-pointer" title="Previous Page">
+                                <i class="fa-solid fa-chevron-left text-[10px]"></i> Prev
+                            </button>
+                            <button id="pdfNextBtn" class="px-2.5 py-1 bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-mono rounded-lg transition-colors cursor-pointer" title="Next Page">
+                                Next <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                            </button>
+                            <button id="pdfZoomOutBtn" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs rounded-lg transition-colors cursor-pointer" title="Zoom Out">
+                                <i class="fa-solid fa-magnifying-glass-minus text-xs"></i>
+                            </button>
+                            <button id="pdfZoomInBtn" class="p-1.5 bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs rounded-lg transition-colors cursor-pointer" title="Zoom In">
+                                <i class="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                            </button>
+                            <button onclick="downloadDocumentItem('${doc.id}')" class="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-mono rounded-lg transition-colors cursor-pointer flex items-center gap-1">
+                                <i class="fa-solid fa-download text-xs"></i> Save
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PDF Canvas Area -->
+                    <div id="pdfCanvasContainer" class="flex-1 w-full overflow-auto flex items-center justify-center p-4 custom-scrollbar bg-surface-950/90">
+                        <div id="pdfLoadingSpinner" class="text-center space-y-2 py-10">
+                            <i class="fa-solid fa-circle-notch fa-spin text-2xl text-emerald-400"></i>
+                            <div class="text-xs font-mono text-slate-400">Rendering high-resolution document...</div>
+                        </div>
+                        <canvas id="pdfViewerCanvas" class="hidden shadow-2xl rounded-lg border border-surface-800 max-w-full bg-white"></canvas>
+                        <object id="pdfFallbackObject" data="${doc.fileData}" type="application/pdf" class="hidden w-full h-[62vh] rounded-xl border border-surface-800">
+                            <embed src="${doc.fileData}" type="application/pdf" class="w-full h-[62vh] rounded-xl" />
+                        </object>
+                    </div>
+                </div>
+            `;
+
+            // Initialize PDF.js Renderer
+            setTimeout(() => {
+                renderPdfDataWithPdfJs(doc.fileData);
+            }, 50);
+        } else {
+            stageEl.innerHTML = `
+                <div class="p-8 text-center space-y-4 max-w-md mx-auto">
+                    <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
+                        <i class="fa-solid ${isPdf ? 'fa-file-pdf text-rose-400' : 'fa-file-shield'} text-3xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-semibold text-base">${doc.title}</h4>
+                        <p class="text-xs font-mono text-slate-400 mt-1">Encrypted ${isPdf ? 'PDF Document' : 'Media Asset'} secured in your Private Vault.</p>
+                    </div>
+                    <button onclick="downloadDocumentItem('${doc.id}')" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-surface-950 font-bold rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-md">
+                        <i class="fa-solid fa-download mr-1.5"></i> Download File
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+window.previewDocumentItem = previewDocumentItem;
+
+// High-fidelity PDF rendering engine using PDF.js with canvas and interactive pagination
+let currentPdfDoc = null;
+let currentPdfPage = 1;
+let currentPdfScale = 1.3;
+
+function renderPdfDataWithPdfJs(pdfDataUri) {
+    const canvas = document.getElementById('pdfViewerCanvas');
+    const spinner = document.getElementById('pdfLoadingSpinner');
+    const fallbackObj = document.getElementById('pdfFallbackObject');
+    const pageInfo = document.getElementById('pdfPageInfo');
+    const prevBtn = document.getElementById('pdfPrevBtn');
+    const nextBtn = document.getElementById('pdfNextBtn');
+    const zoomInBtn = document.getElementById('pdfZoomInBtn');
+    const zoomOutBtn = document.getElementById('pdfZoomOutBtn');
+
+    if (!window.pdfjsLib) {
+        // Fallback to native object tag if PDF.js library is not yet loaded
+        if (spinner) spinner.classList.add('hidden');
+        if (fallbackObj) fallbackObj.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        // Convert Base64 dataURI to Uint8Array if necessary
+        let loadingTask;
+        if (pdfDataUri.startsWith('data:')) {
+            const rawBase64 = pdfDataUri.split(',')[1];
+            const raw = window.atob(rawBase64);
+            const rawLength = raw.length;
+            const array = new Uint8Array(new ArrayBuffer(rawLength));
+            for (let i = 0; i < rawLength; i++) {
+                array[i] = raw.charCodeAt(i);
+            }
+            loadingTask = window.pdfjsLib.getDocument({ data: array });
+        } else {
+            loadingTask = window.pdfjsLib.getDocument(pdfDataUri);
+        }
+
+        loadingTask.promise.then(pdf => {
+            currentPdfDoc = pdf;
+            currentPdfPage = 1;
+            currentPdfScale = 1.3;
+
+            function renderPage(pageNum) {
+                if (!currentPdfDoc || !canvas) return;
+                currentPdfDoc.getPage(pageNum).then(page => {
+                    const ctx = canvas.getContext('2d');
+                    const viewport = page.getViewport({ scale: currentPdfScale });
+
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    const renderContext = {
+                        canvasContext: ctx,
+                        viewport: viewport
+                    };
+
+                    page.render(renderContext).promise.then(() => {
+                        if (spinner) spinner.classList.add('hidden');
+                        if (canvas) canvas.classList.remove('hidden');
+                        if (pageInfo) pageInfo.innerText = `Page ${pageNum} of ${currentPdfDoc.numPages}`;
+                    });
+                });
+            }
+
+            renderPage(currentPdfPage);
+
+            if (prevBtn) {
+                prevBtn.onclick = () => {
+                    if (currentPdfPage <= 1) return;
+                    currentPdfPage--;
+                    renderPage(currentPdfPage);
+                };
+            }
+
+            if (nextBtn) {
+                nextBtn.onclick = () => {
+                    if (!currentPdfDoc || currentPdfPage >= currentPdfDoc.numPages) return;
+                    currentPdfPage++;
+                    renderPage(currentPdfPage);
+                };
+            }
+
+            if (zoomInBtn) {
+                zoomInBtn.onclick = () => {
+                    if (currentPdfScale >= 2.5) return;
+                    currentPdfScale += 0.25;
+                    renderPage(currentPdfPage);
+                };
+            }
+
+            if (zoomOutBtn) {
+                zoomOutBtn.onclick = () => {
+                    if (currentPdfScale <= 0.6) return;
+                    currentPdfScale -= 0.25;
+                    renderPage(currentPdfPage);
+                };
+            }
+        }).catch(err => {
+            console.error('PDF.js rendering exception, falling back to browser object', err);
+            if (spinner) spinner.classList.add('hidden');
+            if (fallbackObj) fallbackObj.classList.remove('hidden');
+        });
+    } catch (e) {
+        console.error('PDF loading error:', e);
+        if (spinner) spinner.classList.add('hidden');
+        if (fallbackObj) fallbackObj.classList.remove('hidden');
+    }
+}
+window.renderPdfDataWithPdfJs = renderPdfDataWithPdfJs;
+
+function openDocumentEditModal(id) {
+    if (!Array.isArray(db.documents)) return;
+    const doc = db.documents.find(x => x.id === id);
+    if (!doc) return;
+
+    const idInput = document.getElementById('editDocIdInput');
+    const titleInput = document.getElementById('editDocTitleInput');
+    const catSelect = document.getElementById('editDocCategorySelect');
+    const tagsInput = document.getElementById('editDocTagsInput');
+    const notesInput = document.getElementById('editDocNotesInput');
+
+    if (idInput) idInput.value = doc.id;
+    if (titleInput) titleInput.value = doc.title || '';
+    if (catSelect) catSelect.value = doc.category || 'identity';
+    if (tagsInput) tagsInput.value = Array.isArray(doc.tags) ? doc.tags.join(', ') : '';
+    if (notesInput) notesInput.value = doc.notes || '';
+
+    openModal('documentEditModal');
+}
+window.openDocumentEditModal = openDocumentEditModal;
+
+function submitEditDocument() {
+    const idInput = document.getElementById('editDocIdInput');
+    const titleInput = document.getElementById('editDocTitleInput');
+    const catSelect = document.getElementById('editDocCategorySelect');
+    const tagsInput = document.getElementById('editDocTagsInput');
+    const notesInput = document.getElementById('editDocNotesInput');
+
+    const id = idInput ? idInput.value : null;
+    if (!id || !Array.isArray(db.documents)) return;
+
+    const doc = db.documents.find(x => x.id === id);
+    if (!doc) return;
+
+    doc.title = titleInput ? titleInput.value.trim() || doc.title : doc.title;
+    doc.category = catSelect ? catSelect.value : doc.category;
+    doc.tags = (tagsInput ? tagsInput.value : '')
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0)
+        .map(t => t.startsWith('#') ? t : `#${t}`);
+    doc.notes = notesInput ? notesInput.value.trim() : '';
+
+    saveDatabase();
+    closeModal('documentEditModal');
+    renderDocumentsPage();
+    showToast(`Updated document "${doc.title}"`);
+}
+window.submitEditDocument = submitEditDocument;
+
+async function downloadDocumentItem(id) {
+    if (!Array.isArray(db.documents)) return;
+    const doc = db.documents.find(x => x.id === id);
+    if (!doc) return;
+
+    if (!doc.fileData && window.getOrFetchVaultFile) {
+        const fetched = await window.getOrFetchVaultFile(doc.id);
+        if (fetched) doc.fileData = fetched;
+    }
+
+    if (doc.fileData) {
+        const a = document.createElement('a');
+        a.href = doc.fileData;
+        a.download = doc.title ? `${doc.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${doc.fileType === 'photo' ? 'jpg' : 'pdf'}` : 'document';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast(`Downloading "${doc.title}"`);
+    } else {
+        // Fallback synthetic download if data is a seed or placeholder
+        const blob = new Blob([`Executive Document: ${doc.title}\nCategory: ${doc.category}\nDate: ${doc.date}\nNotes: ${doc.notes || 'None'}`], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${doc.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Exported "${doc.title}" summary record`);
+    }
+}
+window.downloadDocumentItem = downloadDocumentItem;
+
+function deleteDocumentItem(id) {
+    requireConfirmation('Delete this document from your vault?', () => {
+        if (!Array.isArray(db.documents)) return;
+        const item = db.documents.find(x => x.id === id);
+        const idx = db.documents.findIndex(x => x.id === id);
+
+        if (item && typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'document',
+                label: `Document: ${item.title || 'Document Record'}`,
+                data: JSON.parse(JSON.stringify(item)),
+                originalIndex: idx
+            });
+        }
+
+        // Remove from memory and cloud/local vault storage
+        if (window.vaultStorage) window.vaultStorage.deleteFile(id);
+        if (window.deleteVaultFileFromCloud) window.deleteVaultFileFromCloud(id);
+
+        db.documents = db.documents.filter(x => x.id !== id);
+        saveDatabase();
+        renderDocumentsPage();
+    });
+}
+window.deleteDocumentItem = deleteDocumentItem;
+
