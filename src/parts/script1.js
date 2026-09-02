@@ -331,25 +331,33 @@ function sanitizeDatabase(data) {
 
     if (!data.profile || typeof data.profile !== 'object') {
         data.profile = {
-            name: 'RIYAS MADATHIL',
+            name: 'Executive Leader',
+            subtitle: 'Financial Operating System',
+            headquartersBadge: 'Executive Headquarters',
+            protocolPillText: 'High-Net-Worth Wealth & Operations Protocol',
+            principlesTitle: 'Determine to Overcome',
             contact1: '',
             contact2: '',
             whatsapp: '',
             gmail: '',
             facebook: '',
             instagram: '',
-            photo: 'https://placehold.co/150x150/0284c7/ffffff?text=RM',
-            address: 'Madathil House, Calicut, Kerala, India - 673001 | Villa 42, Al Rayyan, Doha, Qatar'
+            photo: '',
+            address: ''
         };
     }
     if (data.profile) {
+        if (data.profile.name === undefined) data.profile.name = 'Executive Leader';
+        if (data.profile.subtitle === undefined) data.profile.subtitle = 'Financial Operating System';
+        if (data.profile.headquartersBadge === undefined) data.profile.headquartersBadge = 'Executive Headquarters';
+        if (data.profile.protocolPillText === undefined) data.profile.protocolPillText = 'High-Net-Worth Wealth & Operations Protocol';
+        if (data.profile.principlesTitle === undefined) data.profile.principlesTitle = 'Determine to Overcome';
         if (data.profile.contact1 === undefined) data.profile.contact1 = '';
         if (data.profile.contact2 === undefined) data.profile.contact2 = '';
         if (data.profile.whatsapp === undefined) data.profile.whatsapp = '';
         if (data.profile.gmail === undefined) data.profile.gmail = '';
         if (data.profile.facebook === undefined) data.profile.facebook = '';
         if (data.profile.instagram === undefined) data.profile.instagram = '';
-        if (!data.profile.principlesTitle) data.profile.principlesTitle = 'Determine to Overcome';
         if (!Array.isArray(data.profile.principles)) {
             data.profile.principles = [
                 'Set a highest goal',
@@ -359,6 +367,10 @@ function sanitizeDatabase(data) {
                 'Gradually will get the result'
             ];
         }
+    }
+    if (!data.uiState || typeof data.uiState !== 'object') data.uiState = {};
+    if (!data.uiState.notes || typeof data.uiState.notes !== 'object') {
+        data.uiState.notes = { viewMode: 'grid', category: 'all', color: 'all', sortBy: 'pinned' };
     }
     if (!data.preferences || typeof data.preferences !== 'object') data.preferences = {};
     if (!data.vault || typeof data.vault !== 'object') data.vault = { documents: [], captures: [] };
@@ -431,7 +443,8 @@ async function loadDatabase() {
                 indiaOps: { ...(db.indiaOps || {}), ...(parsed.indiaOps || {}) },
                 budget: { ...(db.budget || {}), ...(parsed.budget || {}) },
                 profile: { ...(db.profile || {}), ...(parsed.profile || {}) },
-                preferences: { ...(db.preferences || {}), ...(parsed.preferences || {}) }
+                preferences: { ...(db.preferences || {}), ...(parsed.preferences || {}) },
+                uiState: { ...(db.uiState || {}), ...(parsed.uiState || {}) }
             });
             if (localTs) db.lastUpdatedAt = localTs;
         } catch (e) {
@@ -452,7 +465,8 @@ async function loadDatabase() {
                         indiaOps: { ...(db.indiaOps || {}), ...(idbState.indiaOps || {}) },
                         budget: { ...(db.budget || {}), ...(idbState.budget || {}) },
                         profile: { ...(db.profile || {}), ...(idbState.profile || {}) },
-                        preferences: { ...(db.preferences || {}), ...(idbState.preferences || {}) }
+                        preferences: { ...(db.preferences || {}), ...(idbState.preferences || {}) },
+                        uiState: { ...(db.uiState || {}), ...(idbState.uiState || {}) }
                     });
                     if (idbTs) {
                         db.lastUpdatedAt = idbTs;
@@ -660,9 +674,9 @@ window.onload = async function() {
     // Restore Theme Settings
     if (db.theme) {
         const htmlEl = document.documentElement;
-        htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light');
-        if (db.theme === 'theme-green' || db.theme === 'theme-black') htmlEl.classList.add('dark');
-        htmlEl.classList.add(db.theme);
+        htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light', 'theme-military', 'theme-gradient');
+        if (db.theme === 'theme-green' || db.theme === 'theme-black' || db.theme === 'theme-military') htmlEl.classList.add('dark');
+        htmlEl.classList.add(db.theme === 'theme-gradient' ? 'theme-military' : db.theme);
         currentThemeIndex = themes.indexOf(db.theme);
         if(currentThemeIndex === -1) currentThemeIndex = 0;
         
@@ -671,6 +685,7 @@ window.onload = async function() {
             if(icon) {
                 if (db.theme === 'theme-green') icon.className = 'fa-solid fa-leaf fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
                 else if (db.theme === 'theme-black') icon.className = 'fa-solid fa-moon fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
+                else if (db.theme === 'theme-military' || db.theme === 'theme-gradient') icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
                 else icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
             }
         }, 100);
@@ -787,17 +802,17 @@ function removePasscode() {
     });
 }
 
-const themes = ['theme-green', 'theme-black', 'theme-light'];
+const themes = ['theme-green', 'theme-black', 'theme-light', 'theme-military'];
 let currentThemeIndex = 0;
 
 function toggleTheme() {
     const htmlEl = document.documentElement;
-    htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light');
+    htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light', 'theme-military', 'theme-gradient');
     
     currentThemeIndex = (currentThemeIndex + 1) % themes.length;
     const newTheme = themes[currentThemeIndex];
     
-    if (newTheme === 'theme-green' || newTheme === 'theme-black') {
+    if (newTheme === 'theme-green' || newTheme === 'theme-black' || newTheme === 'theme-military') {
         htmlEl.classList.add('dark');
     }
     htmlEl.classList.add(newTheme);
@@ -809,9 +824,12 @@ function toggleTheme() {
     } else if (newTheme === 'theme-black') {
         icon.className = 'fa-solid fa-moon fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
         showToast('OLED Black Theme Applied');
-    } else {
+    } else if (newTheme === 'theme-light') {
         icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
         showToast('Light Theme Applied');
+    } else if (newTheme === 'theme-military') {
+        icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
+        showToast('Tactical Military Theme Applied');
     }
     
     db.theme = newTheme;
@@ -1042,11 +1060,13 @@ function saveHomeProfile() {
     const subtitleEl = document.getElementById('homeProfileSubtitle');
     const hqBadgeEl = document.getElementById('homeHeadquartersBadge');
     const protocolPillEl = document.getElementById('homeProtocolPillText');
+    const titleEl = document.getElementById('homePrinciplesTitle');
 
     if (nameEl) db.profile.name = nameEl.innerText.trim();
     if (subtitleEl) db.profile.subtitle = subtitleEl.innerText.trim();
     if (hqBadgeEl) db.profile.headquartersBadge = hqBadgeEl.innerText.trim();
     if (protocolPillEl) db.profile.protocolPillText = protocolPillEl.innerText.trim();
+    if (titleEl) db.profile.principlesTitle = titleEl.innerText.trim();
 
     saveDatabase();
 }
@@ -1271,23 +1291,23 @@ function renderHomeProfile() {
     const fbEl = document.getElementById('homeProfileFacebook');
     const igEl = document.getElementById('homeProfileInstagram');
 
-    if (nameEl && db.profile.name && document.activeElement !== nameEl) {
-        nameEl.innerText = db.profile.name;
+    if (nameEl && document.activeElement !== nameEl) {
+        nameEl.innerText = db.profile.name !== undefined ? db.profile.name : 'Executive Leader';
     }
-    if (subtitleEl && db.profile.subtitle && document.activeElement !== subtitleEl) {
-        subtitleEl.innerText = db.profile.subtitle;
+    if (subtitleEl && document.activeElement !== subtitleEl) {
+        subtitleEl.innerText = db.profile.subtitle !== undefined ? db.profile.subtitle : 'Financial Operating System';
     }
-    if (hqBadgeEl && db.profile.headquartersBadge && document.activeElement !== hqBadgeEl) {
-        hqBadgeEl.innerText = db.profile.headquartersBadge;
+    if (hqBadgeEl && document.activeElement !== hqBadgeEl) {
+        hqBadgeEl.innerText = db.profile.headquartersBadge !== undefined ? db.profile.headquartersBadge : 'Executive Headquarters';
     }
-    if (protocolPillEl && db.profile.protocolPillText && document.activeElement !== protocolPillEl) {
-        protocolPillEl.innerText = db.profile.protocolPillText;
+    if (protocolPillEl && document.activeElement !== protocolPillEl) {
+        protocolPillEl.innerText = db.profile.protocolPillText !== undefined ? db.profile.protocolPillText : 'High-Net-Worth Wealth & Operations Protocol';
     }
     if (photoEl && db.profile.photo) {
         photoEl.src = db.profile.photo;
     }
-    if (titleEl && db.profile.principlesTitle && document.activeElement !== titleEl) {
-        titleEl.innerText = db.profile.principlesTitle;
+    if (titleEl && document.activeElement !== titleEl) {
+        titleEl.innerText = db.profile.principlesTitle !== undefined ? db.profile.principlesTitle : 'Determine to Overcome';
     }
 
     if (c1El && document.activeElement !== c1El) {

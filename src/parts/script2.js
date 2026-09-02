@@ -363,10 +363,10 @@ function renderAssetLogsTable() {
         tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(log.date)}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors"><i class="fa-solid ${iconClass} w-5"></i> ${log.assetName}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors"><i class="fa-solid ${iconClass} w-5"></i> <span class="font-display font-medium text-slate-100 tracking-normal">${log.assetName}</span></div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${log.category}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-slate-400">${log.activity}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${val >= 0 ? 'text-emerald-400' : 'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${val >= 0 ? 'text-emerald-400' : 'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
                     <button onclick="openAssetLogModal('${log.id}')" class="text-slate-500 hover:text-brand-500"><i class="fa-solid fa-pen"></i></button>
@@ -415,13 +415,13 @@ function renderAssetLogsTable() {
     const trQatar = document.createElement('tr');
     trQatar.className = 'group transition-colors';
     trQatar.innerHTML = `
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-amber-400"></i> Live</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-semibold text-amber-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-earth-asia w-5 mr-1"></i> Qatar Assets Valuation</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-slate-300 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">Qatar Offshore Holdings</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 font-bold ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-amber-400/80'} transition-colors">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-right font-bold font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-amber-400'} flex items-center justify-end h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center justify-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">
-            <button onclick="switchAssetSubTab('qatarvaluation')" class="text-amber-400 hover:text-amber-300 font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-amber-500/40 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-slate-300"></i> Live</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-slate-100 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors"><i class="fa-solid fa-earth-asia w-5 mr-1 text-slate-300"></i> <span class="font-display font-medium tracking-normal text-slate-100">Qatar Assets Valuation</span></div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-slate-300 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">Qatar Offshore Holdings</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-slate-200'} transition-colors font-mono">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-right font-medium font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-slate-100'} flex items-center justify-end h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl flex items-center justify-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">
+            <button onclick="switchAssetSubTab('qatarvaluation')" class="text-slate-300 hover:text-white font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-slate-400/50 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
     `;
     body.appendChild(trQatar);
@@ -431,10 +431,10 @@ function renderAssetLogsTable() {
     trMf.className = 'group transition-colors';
     trMf.innerHTML = `
         <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-emerald-400"></i> Live</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl font-semibold text-emerald-400 flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors"><i class="fa-solid fa-seedling w-5 mr-1"></i> Mutual Funds Portfolio</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl text-emerald-400 flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors"><i class="fa-solid fa-seedling w-5 mr-1"></i> <span class="font-display font-medium tracking-normal text-emerald-400">Mutual Funds Portfolio</span></div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl text-slate-300 flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors">Equities / Funds</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 font-bold text-emerald-400/70 transition-colors">Auto-Synced</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl text-right font-bold font-mono text-emerald-400 flex items-center justify-end h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors">₹${mfAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 text-emerald-400/70 transition-colors">Auto-Synced</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl text-right font-normal font-mono text-emerald-400 flex items-center justify-end h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors">₹${mfAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl flex items-center justify-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors">
             <button onclick="switchAssetSubTab('mutualfunds')" class="text-emerald-400 hover:text-emerald-300 font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-emerald-500/40 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
@@ -446,10 +446,10 @@ function renderAssetLogsTable() {
     trBank.className = 'group transition-colors';
     trBank.innerHTML = `
         <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-accent-blue"></i> Live</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl font-semibold text-accent-blue flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors"><i class="fa-solid fa-building-columns w-5 mr-1"></i> Consolidated Bank Balances</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl text-accent-blue flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors"><i class="fa-solid fa-building-columns w-5 mr-1"></i> <span class="font-display font-medium tracking-normal text-accent-blue">Consolidated Bank Balances</span></div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl text-slate-300 flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors">Liquid Assets</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 font-bold text-accent-blue/70 transition-colors">Auto-Synced</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl text-right font-bold font-mono text-accent-blue flex items-center justify-end h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors">₹${bankAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 text-accent-blue/70 transition-colors">Auto-Synced</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl text-right font-normal font-mono text-accent-blue flex items-center justify-end h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors">₹${bankAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl flex items-center justify-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors">
             <button onclick="switchAssetSubTab('banking')" class="text-accent-blue hover:text-accent-cyan font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-accent-blue/40 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
@@ -586,7 +586,7 @@ function renderQatarAssetsTable() {
             <tr>
                 <td colspan="8" class="py-12 text-center text-slate-500 font-mono text-xs">
                     <div class="flex flex-col items-center justify-center gap-2">
-                        <i class="fa-solid fa-earth-asia text-2xl text-amber-500/40"></i>
+                        <i class="fa-solid fa-earth-asia text-2xl text-[#8A1538]/60"></i>
                         <span>No Qatar asset records found. Click "Add Qatar Asset" to track offshore holdings.</span>
                     </div>
                 </td>
@@ -607,7 +607,7 @@ function renderQatarAssetsTable() {
             const isNegInr = inrVal < 0;
             const formattedQr = (isNegQr ? '-' : '') + 'QR ' + Math.abs(qrVal).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             const formattedInr = (isNegInr ? '-' : '') + '₹' + Math.abs(inrVal).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            const qrColorClass = isNegQr ? 'text-rose-400' : 'text-amber-400';
+            const qrColorClass = isNegQr ? 'text-rose-400' : 'text-[#C2385C]';
             const inrColorClass = isNegInr ? 'text-rose-400' : 'text-emerald-400';
 
             const tr = document.createElement('tr');
@@ -615,17 +615,17 @@ function renderQatarAssetsTable() {
             tr.innerHTML = `
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${index + 1}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(item.date)}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl font-semibold flex flex-col justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
-                    <span class="flex items-center gap-2 text-white"><i class="fa-solid ${iconClass} w-4 text-xs"></i> ${item.assetIdentity || 'Qatar Asset'}</span>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex flex-col justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                    <span class="flex items-center gap-2 text-white font-display font-medium tracking-normal"><i class="fa-solid ${iconClass} w-4 text-xs"></i> ${item.assetIdentity || 'Qatar Asset'}</span>
                     ${item.remarks ? `<span class="text-[10px] font-mono text-slate-400 font-normal mt-0.5 truncate max-w-xs">${item.remarks}</span>` : ''}
                 </div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs text-slate-300">${item.category || 'Asset'}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${qrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedQr}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${qrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedQr}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-mono text-slate-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs">₹${perQr.toFixed(2)}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${inrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedInr}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${inrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedInr}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                     <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
-                        <button onclick="openQatarAssetModal('${item.id}')" title="Edit" class="text-slate-400 hover:text-amber-400 transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="openQatarAssetModal('${item.id}')" title="Edit" class="text-slate-400 hover:text-[#C2385C] transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
                         <button onclick="deleteQatarAsset('${item.id}')" title="Delete" class="text-slate-400 hover:text-rose-500 transition-colors"><i class="fa-solid fa-trash text-xs"></i></button>
                     </div>
                 </div></td>
@@ -646,7 +646,7 @@ function renderQatarAssetsTable() {
 
     if (totalQrEl) {
         totalQrEl.innerText = totQrText;
-        totalQrEl.className = totQrIsNeg ? 'text-xl font-bold font-mono text-rose-400' : 'text-xl font-bold font-mono text-amber-400';
+        totalQrEl.className = totQrIsNeg ? 'text-xl font-bold font-mono text-rose-400' : 'text-xl font-bold font-mono text-[#C2385C]';
     }
     if (totalInrEl) {
         totalInrEl.innerText = totInrText;
@@ -661,7 +661,7 @@ function renderQatarAssetsTable() {
         foot.innerHTML = `
             <tr class="border-t border-surface-800 bg-surface-900/90 font-bold">
                 <td colspan="4" class="py-3.5 px-4 text-right uppercase tracking-widest text-slate-400 text-[10px]">Total Qatar Portfolio Valuation:</td>
-                <td class="py-3.5 px-4 text-right font-mono ${totQrIsNeg ? 'text-rose-400' : 'text-amber-400'} text-sm">${totQrText}</td>
+                <td class="py-3.5 px-4 text-right font-mono ${totQrIsNeg ? 'text-rose-400' : 'text-[#C2385C]'} text-sm">${totQrText}</td>
                 <td class="py-3.5 px-4 text-right font-mono text-slate-400 text-xs">Avg: ₹${avgRate}</td>
                 <td class="py-3.5 px-4 text-right font-mono ${totInrIsNeg ? 'text-rose-400' : 'text-emerald-400'} text-sm">${totInrText}</td>
                 <td></td>

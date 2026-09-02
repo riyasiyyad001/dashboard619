@@ -136,7 +136,7 @@
                     <!-- Left: Minimalist Executive Badge (Editable) -->
                     <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-surface-900/80 backdrop-blur-md border border-white/[0.08] shadow-sm">
                         <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
-                        <span id="homeHeadquartersBadge" contenteditable="true" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-brand-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit badge">Executive Headquarters</span>
+                        <span id="homeHeadquartersBadge" contenteditable="true" oninput="saveHomeProfile()" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-brand-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit badge">Executive Headquarters</span>
                     </div>
 
                     <!-- Right: Photo Controls & Notification Bell (to the right of delete button) -->
@@ -216,11 +216,11 @@
 
                     <!-- Ambient Center Identity (Subtle overlay when photo is active) -->
                     <div id="homeOvalCenterIdentity" class="flex flex-col items-center gap-2 pointer-events-auto">
-                        <h2 id="homeProfileName" contenteditable="true" onblur="saveHomeProfile()" class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wider outline-none cursor-text hover:text-brand-300 transition-colors drop-shadow-md" title="Click to edit name">
+                        <h2 id="homeProfileName" contenteditable="true" oninput="saveHomeProfile()" onblur="saveHomeProfile()" class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wider outline-none cursor-text hover:text-brand-300 transition-colors drop-shadow-md" title="Click to edit name">
                             Executive Leader
                         </h2>
                         <div class="flex items-center justify-center px-3.5 py-1.5 rounded-full bg-surface-950/60 backdrop-blur-md border border-white/[0.08] shadow-sm">
-                            <span id="homeProfileSubtitle" contenteditable="true" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.25em] text-slate-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit subtitle">Financial Operating System</span>
+                            <span id="homeProfileSubtitle" contenteditable="true" oninput="saveHomeProfile()" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.25em] text-slate-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit subtitle">Financial Operating System</span>
                         </div>
                     </div>
                 </div>
@@ -229,7 +229,7 @@
                 <div class="w-full flex items-center justify-center relative z-10">
                     <div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-950/60 backdrop-blur-md border border-white/[0.06] shadow-sm">
                         <i class="fa-solid fa-infinity text-brand-400 text-[10px]"></i>
-                        <span id="homeProtocolPillText" contenteditable="true" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono text-slate-300 tracking-widest uppercase outline-none cursor-text hover:text-white transition-colors" title="Click to edit protocol text">High-Net-Worth Wealth &amp; Operations Protocol</span>
+                        <span id="homeProtocolPillText" contenteditable="true" oninput="saveHomeProfile()" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono text-slate-300 tracking-widest uppercase outline-none cursor-text hover:text-white transition-colors" title="Click to edit protocol text">High-Net-Worth Wealth &amp; Operations Protocol</span>
                     </div>
                 </div>
             </div>
@@ -244,7 +244,7 @@
                             <i class="fa-solid fa-phone text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileContact1" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Number 1..."></div>
+                            <div id="homeProfileContact1" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Number 1..."></div>
                         </div>
                         <a id="homeProfileContact1Link" href="#" target="_blank" class="hidden text-slate-400 hover:text-emerald-400 p-1 text-[11px] transition-colors shrink-0" title="Call">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -257,7 +257,7 @@
                             <i class="fa-solid fa-mobile-screen-button text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileContact2" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Number 2..."></div>
+                            <div id="homeProfileContact2" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Number 2..."></div>
                         </div>
                         <a id="homeProfileContact2Link" href="#" target="_blank" class="hidden text-slate-400 hover:text-sky-400 p-1 text-[11px] transition-colors shrink-0" title="Call">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -270,7 +270,7 @@
                             <i class="fa-brands fa-whatsapp text-sm"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileWhatsapp" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="WhatsApp..."></div>
+                            <div id="homeProfileWhatsapp" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="WhatsApp..."></div>
                         </div>
                         <a id="homeProfileWhatsappLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-emerald-400 p-1 text-[11px] transition-colors shrink-0" title="Chat on WhatsApp">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -283,7 +283,7 @@
                             <i class="fa-solid fa-envelope text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileGmail" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Email..."></div>
+                            <div id="homeProfileGmail" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Email..."></div>
                         </div>
                         <a id="homeProfileGmailLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-red-400 p-1 text-[11px] transition-colors shrink-0" title="Send Email">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -296,7 +296,7 @@
                             <i class="fa-brands fa-facebook-f text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileFacebook" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Profile / Link..."></div>
+                            <div id="homeProfileFacebook" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Profile / Link..."></div>
                         </div>
                         <a id="homeProfileFacebookLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-blue-400 p-1 text-[11px] transition-colors shrink-0" title="Visit Facebook">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -309,7 +309,7 @@
                             <i class="fa-brands fa-instagram text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileInstagram" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Username / Link..."></div>
+                            <div id="homeProfileInstagram" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Username / Link..."></div>
                         </div>
                         <a id="homeProfileInstagramLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-pink-400 p-1 text-[11px] transition-colors shrink-0" title="Visit Instagram">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>

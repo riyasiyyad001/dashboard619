@@ -218,7 +218,7 @@ function renderOthersTable() {
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-[10px] text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-16">${(idx + 1).toString().padStart(2, '0')}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-24">${entry.year || '2026'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-32">${entry.month || 'February'}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[380px]"><div class="flex flex-col"><span class="font-medium text-slate-200">${entry.desc || '-'}</span>${entry.notes ? `<span class="text-[10px] text-slate-500 font-light mt-0.5 truncate max-w-md" title="${entry.notes}">${entry.notes}</span>` : ''}</div></div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[380px]"><div class="flex flex-col"><span class="font-display font-medium text-slate-200 tracking-normal">${entry.desc || '-'}</span>${entry.notes ? `<span class="text-[10px] text-slate-500 font-light mt-0.5 truncate max-w-md" title="${entry.notes}">${entry.notes}</span>` : ''}</div></div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-36">${inc > 0 ? `₹${inc.toLocaleString('en-IN', {minimumFractionDigits: 2})}` : '-'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono text-slate-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-36">${exp > 0 ? `₹${exp.toLocaleString('en-IN', {minimumFractionDigits: 2})}` : '-'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-36 ${netColor}">₹${Math.abs(net).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
@@ -231,7 +231,7 @@ function renderOthersTable() {
         card.innerHTML = `
             <div class="flex justify-between items-start">
                 <div>
-                    <h5 class="font-medium text-slate-200 text-sm mb-1">${entry.desc || '-'}</h5>
+                    <h5 class="font-display font-medium text-slate-200 text-sm mb-1 tracking-normal">${entry.desc || '-'}</h5>
                     <span class="font-mono text-[10px] uppercase tracking-widest text-slate-500 px-2 py-0.5 rounded border border-surface-700 bg-surface-800">${entry.month || 'February'} ${entry.year || '2026'}</span>
                 </div>
                 <div class="flex gap-2">

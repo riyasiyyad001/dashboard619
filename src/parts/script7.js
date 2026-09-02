@@ -204,12 +204,12 @@ function renderGoalsTable() {
                         </button>
                     </td>
                     <td class="py-3 px-3">
-                        <div class="font-semibold text-slate-100 ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
+                        <div class="font-display font-medium text-slate-100 tracking-normal ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-400">${g.startDate || '-'}</td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300 font-medium">${g.targetDate || '-'}</td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300 text-right">₹${est.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                    <td class="py-3 px-3 font-mono text-xs font-bold text-emerald-400 text-right">₹${paid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-3 font-mono text-xs font-normal text-emerald-400 text-right">₹${paid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                     <td class="py-3 px-3 text-center">${progressBarHtml}</td>
                     <td class="py-3 px-3">${statusBadge}</td>
                     <td class="py-3 px-3 text-center">${dataNotesHtml}</td>
@@ -225,7 +225,7 @@ function renderGoalsTable() {
                         </button>
                     </td>
                     <td class="py-3 px-3">
-                        <div class="font-semibold text-slate-100 ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
+                        <div class="font-display font-medium text-slate-100 tracking-normal ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${secondaryVal}</td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${g.targetDate || '-'}</td>
@@ -522,7 +522,7 @@ function renderGoalAnalytics() {
                         </button>
                     </td>
                     <td class="py-3 px-3">
-                        <div class="font-semibold text-slate-100">${g.title}</div>
+                        <div class="font-display font-medium text-slate-100 tracking-normal">${g.title}</div>
                     </td>
                     <td class="py-3 px-3">
                         <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-surface-800 text-brand-400 border border-surface-700">${catName}</span>
@@ -535,7 +535,7 @@ function renderGoalAnalytics() {
                                     ${progressPct >= 15 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/90 mr-1 shadow-sm"></span>' : ''}
                                 </div>
                             </div>
-                            <span class="text-xs font-mono font-bold text-slate-200 shrink-0 w-10 text-right">${progressPct}%</span>
+                            <span class="text-xs font-mono font-normal text-slate-200 shrink-0 w-10 text-right">${progressPct}%</span>
                         </div>
                     </td>
                     <td class="py-3 px-3 text-center">
@@ -1206,6 +1206,11 @@ const noteFontMap = {
 
 function setNotesViewMode(mode) {
     notesViewMode = mode;
+    if (!db.uiState) db.uiState = {};
+    if (!db.uiState.notes) db.uiState.notes = {};
+    db.uiState.notes.viewMode = mode;
+    saveDatabase();
+
     const btnGrid = document.getElementById('btnNoteViewGrid');
     const btnList = document.getElementById('btnNoteViewList');
     const gridContainer = document.getElementById('notesGridContainer');
@@ -1251,6 +1256,15 @@ function clearNotesSearch() {
 window.clearNotesSearch = clearNotesSearch;
 
 function filterNotes() {
+    if (!db.uiState) db.uiState = {};
+    if (!db.uiState.notes) db.uiState.notes = {};
+    const catEl = document.getElementById('notesCategoryFilter');
+    const colorEl = document.getElementById('notesColorFilter');
+    const sortEl = document.getElementById('notesSortSelect');
+    if (catEl) db.uiState.notes.category = catEl.value;
+    if (colorEl) db.uiState.notes.color = colorEl.value;
+    if (sortEl) db.uiState.notes.sortBy = sortEl.value;
+    saveDatabase();
     renderNotesList();
 }
 window.filterNotes = filterNotes;
@@ -1263,10 +1277,46 @@ function renderNotesList() {
     if (!db.notes) db.notes = [];
     if (countBadge) countBadge.innerText = db.notes.length.toString();
 
+    // Restore persisted UI state
+    const catEl = document.getElementById('notesCategoryFilter');
+    const colorEl = document.getElementById('notesColorFilter');
+    const sortEl = document.getElementById('notesSortSelect');
+
+    if (db.uiState && db.uiState.notes) {
+        if (catEl && db.uiState.notes.category && catEl.value !== db.uiState.notes.category) {
+            catEl.value = db.uiState.notes.category;
+        }
+        if (colorEl && db.uiState.notes.color && colorEl.value !== db.uiState.notes.color) {
+            colorEl.value = db.uiState.notes.color;
+        }
+        if (sortEl && db.uiState.notes.sortBy && sortEl.value !== db.uiState.notes.sortBy) {
+            sortEl.value = db.uiState.notes.sortBy;
+        }
+        if (db.uiState.notes.viewMode && db.uiState.notes.viewMode !== notesViewMode) {
+            notesViewMode = db.uiState.notes.viewMode;
+            const btnGrid = document.getElementById('btnNoteViewGrid');
+            const btnList = document.getElementById('btnNoteViewList');
+            const listContainer = document.getElementById('notesListContainer');
+            if (btnGrid && btnList) {
+                if (notesViewMode === 'grid') {
+                    btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+                    btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+                    if (gridContainer) gridContainer.classList.remove('hidden');
+                    if (listContainer) listContainer.classList.add('hidden');
+                } else {
+                    btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+                    btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+                    if (gridContainer) gridContainer.classList.add('hidden');
+                    if (listContainer) listContainer.classList.remove('hidden');
+                }
+            }
+        }
+    }
+
     // Read filters
-    const catFilter = (document.getElementById('notesCategoryFilter') ? document.getElementById('notesCategoryFilter').value : 'all') || 'all';
-    const colorFilter = (document.getElementById('notesColorFilter') ? document.getElementById('notesColorFilter').value : 'all') || 'all';
-    const sortBy = (document.getElementById('notesSortSelect') ? document.getElementById('notesSortSelect').value : 'pinned') || 'pinned';
+    const catFilter = (catEl ? catEl.value : 'all') || 'all';
+    const colorFilter = (colorEl ? colorEl.value : 'all') || 'all';
+    const sortBy = (sortEl ? sortEl.value : 'pinned') || 'pinned';
 
     let filtered = [...db.notes];
 

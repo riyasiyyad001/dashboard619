@@ -182,10 +182,10 @@ function renderShareMarketTable() {
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${sm.year || '2026'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-mono text-xs">${sm.month || 'February'}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]"><span class="font-bold text-accent-cyan tracking-wide">${formatTradeParticular(sm.script)}</span>${sm.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${sm.notes}">(${sm.notes})</span>` : ''}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-medium text-slate-300">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]"><span class="font-display font-medium text-accent-cyan tracking-normal">${formatTradeParticular(sm.script)}</span>${sm.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${sm.notes}">(${sm.notes})</span>` : ''}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-normal text-slate-300">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-16">
                 <button onclick="openTradeNotesModal('${sm.id}')" class="w-8 h-8 rounded-xl bg-surface-900/90 hover:bg-brand-500/20 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 transition-all inline-flex items-center justify-center cursor-pointer shadow-sm group/note" title="Open Trade Notes & Documentation">
                     <i class="fa-regular fa-note-sticky text-xs group-hover/note:scale-110 transition-transform ${hasNotes ? 'text-brand-400 font-bold' : ''}"></i>
@@ -225,7 +225,7 @@ function renderShareMarketTable() {
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <h5 class="font-bold text-white text-sm tracking-wide">${formatTradeParticular(sm.script)}</h5>
+                            <h5 class="font-display font-medium text-white text-sm tracking-normal">${formatTradeParticular(sm.script)}</h5>
                             <span class="font-mono text-[10px] uppercase tracking-widest text-slate-500 px-2 py-0.5 rounded border border-surface-700 bg-surface-800">${sm.month || 'February'} ${sm.year || '2026'}</span>
                         </div>
                         <div class="flex items-center gap-2">
@@ -837,14 +837,14 @@ function renderSegmentPerformanceMatrix(tradesList) {
                 <div class="w-6 h-6 rounded-lg ${seg.badgeClass} flex items-center justify-center text-xs">
                     <i class="fa-solid ${seg.icon}"></i>
                 </div>
-                <span class="font-bold text-white tracking-wide">${seg.name}</span>
+                <span class="font-normal text-white tracking-wide">${seg.name}</span>
             </td>
             <td class="py-3 px-4 text-center font-mono text-xs text-slate-300">${count}</td>
             <td class="py-3 px-4 text-center font-mono text-xs text-slate-400">${segWins}W / ${segLosses}L</td>
-            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-slate-300'} font-bold">${count > 0 ? winRate.toFixed(1) + '%' : '-'}</td>
+            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-slate-300'} font-normal">${count > 0 ? winRate.toFixed(1) + '%' : '-'}</td>
             <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">₹${avgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${segPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${segPnl >= 0 ? '+' : ''}₹${segPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${pnlPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${count > 0 ? (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%' : '-'}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-normal ${segPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${segPnl >= 0 ? '+' : ''}₹${segPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-normal ${pnlPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${count > 0 ? (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%' : '-'}</td>
             <td class="py-3 px-4 text-center">${statusBadge}</td>
         `;
         body.appendChild(tr);
@@ -912,12 +912,12 @@ function renderChronologicalMonthlyMatrix(tradesList) {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-surface-800/30 transition-colors';
         tr.innerHTML = `
-            <td class="py-3 px-4 font-bold text-white font-mono text-xs">${item.month} ${item.year}</td>
+            <td class="py-3 px-4 font-normal text-white font-mono text-xs">${item.month} ${item.year}</td>
             <td class="py-3 px-4 text-center font-mono text-xs text-slate-300">${item.trades}</td>
-            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-amber-400'} font-bold">${winRate.toFixed(1)}%</td>
+            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-amber-400'} font-normal">${winRate.toFixed(1)}%</td>
             <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">₹${avgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl >= 0 ? '+' : ''}₹${item.pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${yieldPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${yieldPct >= 0 ? '+' : ''}${yieldPct.toFixed(2)}%</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-normal ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl >= 0 ? '+' : ''}₹${item.pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-normal ${yieldPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${yieldPct >= 0 ? '+' : ''}${yieldPct.toFixed(2)}%</td>
         `;
         body.appendChild(tr);
     });
@@ -1624,16 +1624,34 @@ function deleteFavorite(id) {
     const index = db.favorites.findIndex(x => x.id === id);
     if (index === -1) return;
 
-    const deletedItem = db.favorites[index];
+    const item = db.favorites[index];
+    const typeLabel = item.type === 'photo' ? 'photo memory' : (item.type === 'quote' ? 'quote' : 'favorite item');
+    const confirmMsg = `Are you sure you want to delete this ${typeLabel}?`;
 
-    if (typeof pushUndoDelete === 'function') {
-        pushUndoDelete('favorite', deletedItem, index);
+    const doDelete = () => {
+        const curIdx = db.favorites.findIndex(x => x.id === id);
+        if (curIdx === -1) return;
+        const deletedItem = db.favorites[curIdx];
+
+        if (typeof pushUndoDelete === 'function') {
+            pushUndoDelete('favorite', deletedItem, curIdx);
+        }
+
+        db.favorites.splice(curIdx, 1);
+        saveDatabase();
+        renderFavoritesPage();
+        if (typeof closeModal === 'function') {
+            closeModal('favoritePhotoLightboxModal');
+            closeModal('favoriteQuoteViewModal');
+        }
+        showToast('Item deleted from favorites', true);
+    };
+
+    if (typeof requireConfirmation === 'function') {
+        requireConfirmation(confirmMsg, doDelete);
+    } else {
+        doDelete();
     }
-
-    db.favorites.splice(index, 1);
-    saveDatabase();
-    renderFavoritesPage();
-    showToast('Item deleted from favorites', true);
 }
 window.deleteFavorite = deleteFavorite;
 

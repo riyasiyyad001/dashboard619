@@ -268,6 +268,102 @@
                               linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
         }
 
+        /* MILITARY TACTICAL THEME OVERRIDES */
+        html.dark.theme-military body { 
+            background: radial-gradient(ellipse at 50% -10%, #162519 0%, #0d1710 50%, #080d09 100%) fixed; 
+            color: #d1dcd0;
+        }
+
+        /* Tactical Left Sidebar Navigation */
+        html.dark.theme-military #mainSidebar,
+        html.dark.theme-military .glass {
+            background: rgba(14, 23, 16, 0.94) !important;
+            backdrop-filter: blur(20px) saturate(140%) !important;
+            border-right: 1px solid rgba(138, 172, 130, 0.22) !important;
+            box-shadow: 6px 0 35px rgba(0, 0, 0, 0.7) !important;
+        }
+        html.dark.theme-military #mainSidebar > div > div.rounded-3xl,
+        html.dark.theme-military #mainSidebar .bg-surface-900\/40 {
+            background: rgba(18, 30, 20, 0.7) !important;
+            border: 1px solid rgba(138, 172, 130, 0.28) !important;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.65), 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+        }
+        html.dark.theme-military .nav-tab-active {
+            background: linear-gradient(135deg, rgba(46, 75, 50, 0.95) 0%, rgba(20, 36, 23, 0.98) 100%) !important;
+            border: 1px solid rgba(163, 201, 153, 0.5) !important;
+            box-shadow: inset 0 1px 2px 0 rgba(220, 252, 231, 0.35), inset 0 0 18px 0 rgba(110, 168, 98, 0.22), 0 8px 20px -4px rgba(0, 0, 0, 0.75) !important;
+            color: #f7fee7 !important;
+        }
+        html.dark.theme-military .nav-tab-inactive {
+            background: rgba(16, 27, 18, 0.45) !important;
+            border: 1px solid rgba(138, 172, 130, 0.12) !important;
+            color: #9cb396 !important;
+        }
+        html.dark.theme-military .nav-tab-inactive:hover {
+            background: rgba(32, 52, 36, 0.65) !important;
+            border-color: rgba(154, 196, 143, 0.38) !important;
+            color: #f0fdf4 !important;
+            box-shadow: inset 0 1px 1px 0 rgba(163, 201, 153, 0.18), 0 4px 14px rgba(0, 0, 0, 0.55) !important;
+        }
+        html.dark.theme-military #mainSidebar .text-brand-500 {
+            color: #a3c99a !important;
+        }
+        html.dark.theme-military #mainSidebar .bg-brand-500 {
+            background-color: #6b9360 !important;
+        }
+        html.dark.theme-military #mainSidebar .border-brand-500\/60 {
+            border-color: rgba(163, 201, 153, 0.6) !important;
+        }
+        html.dark.theme-military #mainSidebar .bg-surface-800\/60 {
+            background-color: rgba(30, 48, 34, 0.6) !important;
+        }
+
+        /* Surfaces & Layout Components */
+        html.dark.theme-military .bg-surface-950 { 
+            background-color: #0b120c !important; 
+        }
+        html.dark.theme-military .bg-surface-900 { 
+            background-color: #121d14 !important; 
+        }
+        html.dark.theme-military .bg-surface-900\/50,
+        html.dark.theme-military .bg-surface-900\/40,
+        html.dark.theme-military .bg-surface-900\/80,
+        html.dark.theme-military .bg-surface-900\/90 { 
+            background-color: rgba(18, 29, 20, 0.8) !important; 
+        }
+        html.dark.theme-military .bg-surface-800 { 
+            background-color: #1a2a1d !important; 
+        }
+        html.dark.theme-military .bg-surface-800\/50,
+        html.dark.theme-military .bg-surface-800\/40 { 
+            background-color: rgba(26, 42, 29, 0.6) !important; 
+        }
+        html.dark.theme-military .border-surface-800, 
+        html.dark.theme-military .border-surface-700 { 
+            border-color: rgba(120, 158, 114, 0.25) !important; 
+        }
+        html.dark.theme-military .border-slate-500\/25 { 
+            border-color: rgba(120, 158, 114, 0.22) !important; 
+        }
+        html.dark.theme-military .premium-card {
+            background: linear-gradient(145deg, #152217 0%, #0d160f 100%) !important;
+            border: 1px solid rgba(138, 176, 130, 0.26);
+            box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.7), 0 0 20px -4px rgba(95, 138, 90, 0.12);
+        }
+        html.dark.theme-military .premium-card::before { 
+            background: linear-gradient(90deg, transparent, rgba(163, 201, 153, 0.45), transparent); 
+        }
+        html.dark.theme-military .main-canvas-oval {
+            border-color: rgba(138, 176, 130, 0.32);
+            background: radial-gradient(circle at 50% 0%, rgba(32, 54, 36, 0.5) 0%, rgba(10, 17, 11, 0.95) 100%);
+            box-shadow: 0 12px 45px -10px rgba(0, 0, 0, 0.8), inset 0 1px 2px 0 rgba(200, 230, 192, 0.25), 0 0 30px -5px rgba(110, 150, 100, 0.15);
+        }
+        html.dark.theme-military .bg-pattern {
+            background-image: linear-gradient(to right, rgba(138, 176, 130, 0.06) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(138, 176, 130, 0.06) 1px, transparent 1px);
+            background-size: 36px 36px;
+        }
+
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
@@ -989,7 +1085,7 @@
                     <!-- Left: Minimalist Executive Badge (Editable) -->
                     <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-surface-900/80 backdrop-blur-md border border-white/[0.08] shadow-sm">
                         <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
-                        <span id="homeHeadquartersBadge" contenteditable="true" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-brand-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit badge">Executive Headquarters</span>
+                        <span id="homeHeadquartersBadge" contenteditable="true" oninput="saveHomeProfile()" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-brand-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit badge">Executive Headquarters</span>
                     </div>
 
                     <!-- Right: Photo Controls & Notification Bell (to the right of delete button) -->
@@ -1069,11 +1165,11 @@
 
                     <!-- Ambient Center Identity (Subtle overlay when photo is active) -->
                     <div id="homeOvalCenterIdentity" class="flex flex-col items-center gap-2 pointer-events-auto">
-                        <h2 id="homeProfileName" contenteditable="true" onblur="saveHomeProfile()" class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wider outline-none cursor-text hover:text-brand-300 transition-colors drop-shadow-md" title="Click to edit name">
+                        <h2 id="homeProfileName" contenteditable="true" oninput="saveHomeProfile()" onblur="saveHomeProfile()" class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wider outline-none cursor-text hover:text-brand-300 transition-colors drop-shadow-md" title="Click to edit name">
                             Executive Leader
                         </h2>
                         <div class="flex items-center justify-center px-3.5 py-1.5 rounded-full bg-surface-950/60 backdrop-blur-md border border-white/[0.08] shadow-sm">
-                            <span id="homeProfileSubtitle" contenteditable="true" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.25em] text-slate-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit subtitle">Financial Operating System</span>
+                            <span id="homeProfileSubtitle" contenteditable="true" oninput="saveHomeProfile()" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.25em] text-slate-300 outline-none cursor-text hover:text-white transition-colors" title="Click to edit subtitle">Financial Operating System</span>
                         </div>
                     </div>
                 </div>
@@ -1082,7 +1178,7 @@
                 <div class="w-full flex items-center justify-center relative z-10">
                     <div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-950/60 backdrop-blur-md border border-white/[0.06] shadow-sm">
                         <i class="fa-solid fa-infinity text-brand-400 text-[10px]"></i>
-                        <span id="homeProtocolPillText" contenteditable="true" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono text-slate-300 tracking-widest uppercase outline-none cursor-text hover:text-white transition-colors" title="Click to edit protocol text">High-Net-Worth Wealth &amp; Operations Protocol</span>
+                        <span id="homeProtocolPillText" contenteditable="true" oninput="saveHomeProfile()" onblur="saveHomeProfile()" class="text-[10px] sm:text-[11px] font-mono text-slate-300 tracking-widest uppercase outline-none cursor-text hover:text-white transition-colors" title="Click to edit protocol text">High-Net-Worth Wealth &amp; Operations Protocol</span>
                     </div>
                 </div>
             </div>
@@ -1097,7 +1193,7 @@
                             <i class="fa-solid fa-phone text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileContact1" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Number 1..."></div>
+                            <div id="homeProfileContact1" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Number 1..."></div>
                         </div>
                         <a id="homeProfileContact1Link" href="#" target="_blank" class="hidden text-slate-400 hover:text-emerald-400 p-1 text-[11px] transition-colors shrink-0" title="Call">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -1110,7 +1206,7 @@
                             <i class="fa-solid fa-mobile-screen-button text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileContact2" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Number 2..."></div>
+                            <div id="homeProfileContact2" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Number 2..."></div>
                         </div>
                         <a id="homeProfileContact2Link" href="#" target="_blank" class="hidden text-slate-400 hover:text-sky-400 p-1 text-[11px] transition-colors shrink-0" title="Call">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -1123,7 +1219,7 @@
                             <i class="fa-brands fa-whatsapp text-sm"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileWhatsapp" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="WhatsApp..."></div>
+                            <div id="homeProfileWhatsapp" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="WhatsApp..."></div>
                         </div>
                         <a id="homeProfileWhatsappLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-emerald-400 p-1 text-[11px] transition-colors shrink-0" title="Chat on WhatsApp">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -1136,7 +1232,7 @@
                             <i class="fa-solid fa-envelope text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileGmail" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Email..."></div>
+                            <div id="homeProfileGmail" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Email..."></div>
                         </div>
                         <a id="homeProfileGmailLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-red-400 p-1 text-[11px] transition-colors shrink-0" title="Send Email">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -1149,7 +1245,7 @@
                             <i class="fa-brands fa-facebook-f text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileFacebook" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Profile / Link..."></div>
+                            <div id="homeProfileFacebook" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Profile / Link..."></div>
                         </div>
                         <a id="homeProfileFacebookLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-blue-400 p-1 text-[11px] transition-colors shrink-0" title="Visit Facebook">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -1162,7 +1258,7 @@
                             <i class="fa-brands fa-instagram text-xs"></i>
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div id="homeProfileInstagram" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" onblur="saveHomeContacts()" data-placeholder="Username / Link..."></div>
+                            <div id="homeProfileInstagram" class="contact-placeholder font-['Outfit',sans-serif] text-[11px] sm:text-[12px] text-slate-200 tracking-wide outline-none cursor-text hover:text-white transition-colors truncate" contenteditable="true" oninput="saveHomeContacts()" onblur="saveHomeContacts()" data-placeholder="Username / Link..."></div>
                         </div>
                         <a id="homeProfileInstagramLink" href="#" target="_blank" class="hidden text-slate-400 hover:text-pink-400 p-1 text-[11px] transition-colors shrink-0" title="Visit Instagram">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -1305,7 +1401,7 @@
                     <div class="flex flex-wrap items-center justify-between border-b border-surface-800 pb-4 mb-4 gap-4">
                         <div>
                             <h3 class="font-display text-lg text-white tracking-wide flex items-center gap-2.5">
-                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#8A1538] animate-pulse"></span>
                                 Qatar Asset Valuation
                             </h3>
                         </div>
@@ -1313,7 +1409,7 @@
                             <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn px-3 py-2 bg-surface-800 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.3)] cursor-not-allowed">
                                 <i class="fa-solid fa-rotate-left text-[10px]"></i> Undo
                             </button>
-                            <button onclick="openQatarAssetModal()" class="px-4 py-2 bg-surface-800 border border-surface-700 hover:border-amber-500 text-amber-400 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
+                            <button onclick="openQatarAssetModal()" class="px-4 py-2 bg-surface-800 border border-surface-700 hover:border-[#8A1538] text-[#C2385C] rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
                                 <i class="fa-solid fa-plus text-[10px]"></i> Add Qatar Asset
                             </button>
                         </div>
@@ -1321,7 +1417,7 @@
                     <div class="overflow-x-auto rounded-xl border border-surface-800/50">
                         <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-surface-900/90 border-b border-surface-800">
-                                <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-amber-400 font-bold">
+                                <tr class="text-[11px] font-mono tracking-[0.15em] uppercase text-[#C2385C] font-bold">
                                     <th class="py-3 px-4 w-12 text-center">S.No.</th>
                                     <th class="py-3 px-4 w-[12%]">Date</th>
                                     <th class="py-3 px-4 min-w-[220px]">Asset Identity</th>
@@ -1484,8 +1580,8 @@
                                         <td id="repBankAssets" class="py-3 px-3 text-right font-mono font-medium text-white">₹0.00</td>
                                     </tr>
                                     <tr class="hover:bg-surface-800/30">
-                                        <td class="py-3 px-3 text-slate-300 font-light"><i class="fa-solid fa-earth-asia text-amber-400 mr-2 w-4"></i> Qatar Assets Valuation</td>
-                                        <td id="repQatarAssets" class="py-3 px-3 text-right font-mono font-medium text-amber-400">₹0.00</td>
+                                        <td class="py-3 px-3 text-slate-300 font-light"><i class="fa-solid fa-earth-asia text-slate-300 mr-2 w-4"></i> Qatar Assets Valuation</td>
+                                        <td id="repQatarAssets" class="py-3 px-3 text-right font-mono font-medium text-slate-200">₹0.00</td>
                                     </tr>
                                     <tr class="hover:bg-surface-800/30">
                                         <td class="py-3 px-3 text-slate-300 font-light"><i class="fa-solid fa-seedling text-emerald-400 mr-2 w-4"></i> Mutual Funds (Current Value)</td>

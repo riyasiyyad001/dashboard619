@@ -137,13 +137,13 @@ function renderBudgetBlock(curr, tableBodyId, tableFootId) {
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 font-medium flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.month || 'All'} ${b.year || '2026'}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold text-slate-100 flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[180px]">
-                <span>${b.category}</span>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-normal text-slate-100 flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[180px]">
+                <span class="font-display font-medium text-slate-100 tracking-normal">${b.category}</span>
                 ${b.notes ? `<span class="text-[10px] text-slate-500 font-normal italic">(${b.notes})</span>` : ''}
             </div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-slate-200 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${budgetAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-rose-400 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${spendAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${varClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${varDisplay}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal text-slate-200 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${budgetAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal text-rose-400 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${spendAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${varClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${varDisplay}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${statusBadge}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
@@ -650,9 +650,9 @@ function renderDailyExpensesLogTable() {
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${exp.date || '-'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currBadge}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-slate-300 font-medium flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${exp.category || 'General'}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-slate-200 font-display font-medium tracking-normal flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${exp.category || 'General'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-white font-medium flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[200px]">${particularText}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold text-slate-200 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${curr === 'QAR' ? 'QR ' : '₹'}${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-normal text-slate-200 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${curr === 'QAR' ? 'QR ' : '₹'}${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
                     <button onclick="openDailyExpenseModal('${curr}', '${exp.id}')" class="text-slate-500 hover:text-brand-500 transition-colors" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
@@ -959,21 +959,21 @@ function renderBudgetAnalysis() {
                     <td class="py-px px-1">
                         <div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                             <span class="w-2 h-2 rounded-full ${catUtil > 100 ? 'bg-rose-400' : (catUtil > 85 ? 'bg-amber-400' : 'bg-brand-400')}"></span>
-                            <span class="font-semibold text-slate-100 text-xs">${c.category}</span>
+                            <span class="font-display font-medium text-slate-100 text-xs tracking-normal">${c.category}</span>
                         </div>
                     </td>
                     <td class="py-px px-1">
-                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold text-slate-200 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-normal text-slate-200 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                             ${currSym}${catBudget.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </td>
                     <td class="py-px px-1">
-                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold text-amber-400 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-normal text-amber-400 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                             ${currSym}${catSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </td>
                     <td class="py-px px-1">
-                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold ${varColor} text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-normal ${varColor} text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                             ${varSign}${currSym}${Math.abs(catVar).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </td>

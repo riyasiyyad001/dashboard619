@@ -331,25 +331,33 @@ function sanitizeDatabase(data) {
 
     if (!data.profile || typeof data.profile !== 'object') {
         data.profile = {
-            name: 'RIYAS MADATHIL',
+            name: 'Executive Leader',
+            subtitle: 'Financial Operating System',
+            headquartersBadge: 'Executive Headquarters',
+            protocolPillText: 'High-Net-Worth Wealth & Operations Protocol',
+            principlesTitle: 'Determine to Overcome',
             contact1: '',
             contact2: '',
             whatsapp: '',
             gmail: '',
             facebook: '',
             instagram: '',
-            photo: 'https://placehold.co/150x150/0284c7/ffffff?text=RM',
-            address: 'Madathil House, Calicut, Kerala, India - 673001 | Villa 42, Al Rayyan, Doha, Qatar'
+            photo: '',
+            address: ''
         };
     }
     if (data.profile) {
+        if (data.profile.name === undefined) data.profile.name = 'Executive Leader';
+        if (data.profile.subtitle === undefined) data.profile.subtitle = 'Financial Operating System';
+        if (data.profile.headquartersBadge === undefined) data.profile.headquartersBadge = 'Executive Headquarters';
+        if (data.profile.protocolPillText === undefined) data.profile.protocolPillText = 'High-Net-Worth Wealth & Operations Protocol';
+        if (data.profile.principlesTitle === undefined) data.profile.principlesTitle = 'Determine to Overcome';
         if (data.profile.contact1 === undefined) data.profile.contact1 = '';
         if (data.profile.contact2 === undefined) data.profile.contact2 = '';
         if (data.profile.whatsapp === undefined) data.profile.whatsapp = '';
         if (data.profile.gmail === undefined) data.profile.gmail = '';
         if (data.profile.facebook === undefined) data.profile.facebook = '';
         if (data.profile.instagram === undefined) data.profile.instagram = '';
-        if (!data.profile.principlesTitle) data.profile.principlesTitle = 'Determine to Overcome';
         if (!Array.isArray(data.profile.principles)) {
             data.profile.principles = [
                 'Set a highest goal',
@@ -359,6 +367,10 @@ function sanitizeDatabase(data) {
                 'Gradually will get the result'
             ];
         }
+    }
+    if (!data.uiState || typeof data.uiState !== 'object') data.uiState = {};
+    if (!data.uiState.notes || typeof data.uiState.notes !== 'object') {
+        data.uiState.notes = { viewMode: 'grid', category: 'all', color: 'all', sortBy: 'pinned' };
     }
     if (!data.preferences || typeof data.preferences !== 'object') data.preferences = {};
     if (!data.vault || typeof data.vault !== 'object') data.vault = { documents: [], captures: [] };
@@ -431,7 +443,8 @@ async function loadDatabase() {
                 indiaOps: { ...(db.indiaOps || {}), ...(parsed.indiaOps || {}) },
                 budget: { ...(db.budget || {}), ...(parsed.budget || {}) },
                 profile: { ...(db.profile || {}), ...(parsed.profile || {}) },
-                preferences: { ...(db.preferences || {}), ...(parsed.preferences || {}) }
+                preferences: { ...(db.preferences || {}), ...(parsed.preferences || {}) },
+                uiState: { ...(db.uiState || {}), ...(parsed.uiState || {}) }
             });
             if (localTs) db.lastUpdatedAt = localTs;
         } catch (e) {
@@ -452,7 +465,8 @@ async function loadDatabase() {
                         indiaOps: { ...(db.indiaOps || {}), ...(idbState.indiaOps || {}) },
                         budget: { ...(db.budget || {}), ...(idbState.budget || {}) },
                         profile: { ...(db.profile || {}), ...(idbState.profile || {}) },
-                        preferences: { ...(db.preferences || {}), ...(idbState.preferences || {}) }
+                        preferences: { ...(db.preferences || {}), ...(idbState.preferences || {}) },
+                        uiState: { ...(db.uiState || {}), ...(idbState.uiState || {}) }
                     });
                     if (idbTs) {
                         db.lastUpdatedAt = idbTs;
@@ -660,9 +674,9 @@ window.onload = async function() {
     // Restore Theme Settings
     if (db.theme) {
         const htmlEl = document.documentElement;
-        htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light');
-        if (db.theme === 'theme-green' || db.theme === 'theme-black') htmlEl.classList.add('dark');
-        htmlEl.classList.add(db.theme);
+        htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light', 'theme-military', 'theme-gradient');
+        if (db.theme === 'theme-green' || db.theme === 'theme-black' || db.theme === 'theme-military') htmlEl.classList.add('dark');
+        htmlEl.classList.add(db.theme === 'theme-gradient' ? 'theme-military' : db.theme);
         currentThemeIndex = themes.indexOf(db.theme);
         if(currentThemeIndex === -1) currentThemeIndex = 0;
         
@@ -671,6 +685,7 @@ window.onload = async function() {
             if(icon) {
                 if (db.theme === 'theme-green') icon.className = 'fa-solid fa-leaf fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
                 else if (db.theme === 'theme-black') icon.className = 'fa-solid fa-moon fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
+                else if (db.theme === 'theme-military' || db.theme === 'theme-gradient') icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
                 else icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
             }
         }, 100);
@@ -787,17 +802,17 @@ function removePasscode() {
     });
 }
 
-const themes = ['theme-green', 'theme-black', 'theme-light'];
+const themes = ['theme-green', 'theme-black', 'theme-light', 'theme-military'];
 let currentThemeIndex = 0;
 
 function toggleTheme() {
     const htmlEl = document.documentElement;
-    htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light');
+    htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light', 'theme-military', 'theme-gradient');
     
     currentThemeIndex = (currentThemeIndex + 1) % themes.length;
     const newTheme = themes[currentThemeIndex];
     
-    if (newTheme === 'theme-green' || newTheme === 'theme-black') {
+    if (newTheme === 'theme-green' || newTheme === 'theme-black' || newTheme === 'theme-military') {
         htmlEl.classList.add('dark');
     }
     htmlEl.classList.add(newTheme);
@@ -809,9 +824,12 @@ function toggleTheme() {
     } else if (newTheme === 'theme-black') {
         icon.className = 'fa-solid fa-moon fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
         showToast('OLED Black Theme Applied');
-    } else {
+    } else if (newTheme === 'theme-light') {
         icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
         showToast('Light Theme Applied');
+    } else if (newTheme === 'theme-military') {
+        icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
+        showToast('Tactical Military Theme Applied');
     }
     
     db.theme = newTheme;
@@ -1042,11 +1060,13 @@ function saveHomeProfile() {
     const subtitleEl = document.getElementById('homeProfileSubtitle');
     const hqBadgeEl = document.getElementById('homeHeadquartersBadge');
     const protocolPillEl = document.getElementById('homeProtocolPillText');
+    const titleEl = document.getElementById('homePrinciplesTitle');
 
     if (nameEl) db.profile.name = nameEl.innerText.trim();
     if (subtitleEl) db.profile.subtitle = subtitleEl.innerText.trim();
     if (hqBadgeEl) db.profile.headquartersBadge = hqBadgeEl.innerText.trim();
     if (protocolPillEl) db.profile.protocolPillText = protocolPillEl.innerText.trim();
+    if (titleEl) db.profile.principlesTitle = titleEl.innerText.trim();
 
     saveDatabase();
 }
@@ -1271,23 +1291,23 @@ function renderHomeProfile() {
     const fbEl = document.getElementById('homeProfileFacebook');
     const igEl = document.getElementById('homeProfileInstagram');
 
-    if (nameEl && db.profile.name && document.activeElement !== nameEl) {
-        nameEl.innerText = db.profile.name;
+    if (nameEl && document.activeElement !== nameEl) {
+        nameEl.innerText = db.profile.name !== undefined ? db.profile.name : 'Executive Leader';
     }
-    if (subtitleEl && db.profile.subtitle && document.activeElement !== subtitleEl) {
-        subtitleEl.innerText = db.profile.subtitle;
+    if (subtitleEl && document.activeElement !== subtitleEl) {
+        subtitleEl.innerText = db.profile.subtitle !== undefined ? db.profile.subtitle : 'Financial Operating System';
     }
-    if (hqBadgeEl && db.profile.headquartersBadge && document.activeElement !== hqBadgeEl) {
-        hqBadgeEl.innerText = db.profile.headquartersBadge;
+    if (hqBadgeEl && document.activeElement !== hqBadgeEl) {
+        hqBadgeEl.innerText = db.profile.headquartersBadge !== undefined ? db.profile.headquartersBadge : 'Executive Headquarters';
     }
-    if (protocolPillEl && db.profile.protocolPillText && document.activeElement !== protocolPillEl) {
-        protocolPillEl.innerText = db.profile.protocolPillText;
+    if (protocolPillEl && document.activeElement !== protocolPillEl) {
+        protocolPillEl.innerText = db.profile.protocolPillText !== undefined ? db.profile.protocolPillText : 'High-Net-Worth Wealth & Operations Protocol';
     }
     if (photoEl && db.profile.photo) {
         photoEl.src = db.profile.photo;
     }
-    if (titleEl && db.profile.principlesTitle && document.activeElement !== titleEl) {
-        titleEl.innerText = db.profile.principlesTitle;
+    if (titleEl && document.activeElement !== titleEl) {
+        titleEl.innerText = db.profile.principlesTitle !== undefined ? db.profile.principlesTitle : 'Determine to Overcome';
     }
 
     if (c1El && document.activeElement !== c1El) {
@@ -2171,10 +2191,10 @@ function renderAssetLogsTable() {
         tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(log.date)}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors"><i class="fa-solid ${iconClass} w-5"></i> ${log.assetName}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors"><i class="fa-solid ${iconClass} w-5"></i> <span class="font-display font-medium text-slate-100 tracking-normal">${log.assetName}</span></div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${log.category}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-slate-400">${log.activity}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${val >= 0 ? 'text-emerald-400' : 'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${val >= 0 ? 'text-emerald-400' : 'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
                     <button onclick="openAssetLogModal('${log.id}')" class="text-slate-500 hover:text-brand-500"><i class="fa-solid fa-pen"></i></button>
@@ -2223,13 +2243,13 @@ function renderAssetLogsTable() {
     const trQatar = document.createElement('tr');
     trQatar.className = 'group transition-colors';
     trQatar.innerHTML = `
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-amber-400"></i> Live</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl font-semibold text-amber-400 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors"><i class="fa-solid fa-earth-asia w-5 mr-1"></i> Qatar Assets Valuation</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-slate-300 flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">Qatar Offshore Holdings</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 font-bold ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-amber-400/80'} transition-colors">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl text-right font-bold font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-amber-400'} flex items-center justify-end h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-amber-500/25 rounded-xl flex items-center justify-center h-full bg-amber-500/5 group-hover:bg-amber-500/10 transition-colors">
-            <button onclick="switchAssetSubTab('qatarvaluation')" class="text-amber-400 hover:text-amber-300 font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-amber-500/40 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-slate-300"></i> Live</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-slate-100 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors"><i class="fa-solid fa-earth-asia w-5 mr-1 text-slate-300"></i> <span class="font-display font-medium tracking-normal text-slate-100">Qatar Assets Valuation</span></div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-slate-300 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">Qatar Offshore Holdings</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-slate-200'} transition-colors font-mono">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-right font-medium font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-slate-100'} flex items-center justify-end h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl flex items-center justify-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">
+            <button onclick="switchAssetSubTab('qatarvaluation')" class="text-slate-300 hover:text-white font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-slate-400/50 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
     `;
     body.appendChild(trQatar);
@@ -2239,10 +2259,10 @@ function renderAssetLogsTable() {
     trMf.className = 'group transition-colors';
     trMf.innerHTML = `
         <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-emerald-400"></i> Live</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl font-semibold text-emerald-400 flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors"><i class="fa-solid fa-seedling w-5 mr-1"></i> Mutual Funds Portfolio</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl text-emerald-400 flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors"><i class="fa-solid fa-seedling w-5 mr-1"></i> <span class="font-display font-medium tracking-normal text-emerald-400">Mutual Funds Portfolio</span></div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl text-slate-300 flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors">Equities / Funds</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 font-bold text-emerald-400/70 transition-colors">Auto-Synced</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl text-right font-bold font-mono text-emerald-400 flex items-center justify-end h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors">₹${mfAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl flex items-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 text-emerald-400/70 transition-colors">Auto-Synced</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl text-right font-normal font-mono text-emerald-400 flex items-center justify-end h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors">₹${mfAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-emerald-500/25 rounded-xl flex items-center justify-center h-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors">
             <button onclick="switchAssetSubTab('mutualfunds')" class="text-emerald-400 hover:text-emerald-300 font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-emerald-500/40 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
@@ -2254,10 +2274,10 @@ function renderAssetLogsTable() {
     trBank.className = 'group transition-colors';
     trBank.innerHTML = `
         <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-accent-blue"></i> Live</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl font-semibold text-accent-blue flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors"><i class="fa-solid fa-building-columns w-5 mr-1"></i> Consolidated Bank Balances</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl text-accent-blue flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors"><i class="fa-solid fa-building-columns w-5 mr-1"></i> <span class="font-display font-medium tracking-normal text-accent-blue">Consolidated Bank Balances</span></div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl text-slate-300 flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors">Liquid Assets</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 font-bold text-accent-blue/70 transition-colors">Auto-Synced</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl text-right font-bold font-mono text-accent-blue flex items-center justify-end h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors">₹${bankAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl flex items-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 text-accent-blue/70 transition-colors">Auto-Synced</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl text-right font-normal font-mono text-accent-blue flex items-center justify-end h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors">₹${bankAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
         <td class="py-px px-1"><div class="px-3 py-2 border border-accent-blue/25 rounded-xl flex items-center justify-center h-full bg-accent-blue/5 group-hover:bg-accent-blue/10 transition-colors">
             <button onclick="switchAssetSubTab('banking')" class="text-accent-blue hover:text-accent-cyan font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-accent-blue/40 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
@@ -2394,7 +2414,7 @@ function renderQatarAssetsTable() {
             <tr>
                 <td colspan="8" class="py-12 text-center text-slate-500 font-mono text-xs">
                     <div class="flex flex-col items-center justify-center gap-2">
-                        <i class="fa-solid fa-earth-asia text-2xl text-amber-500/40"></i>
+                        <i class="fa-solid fa-earth-asia text-2xl text-[#8A1538]/60"></i>
                         <span>No Qatar asset records found. Click "Add Qatar Asset" to track offshore holdings.</span>
                     </div>
                 </td>
@@ -2415,7 +2435,7 @@ function renderQatarAssetsTable() {
             const isNegInr = inrVal < 0;
             const formattedQr = (isNegQr ? '-' : '') + 'QR ' + Math.abs(qrVal).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             const formattedInr = (isNegInr ? '-' : '') + '₹' + Math.abs(inrVal).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            const qrColorClass = isNegQr ? 'text-rose-400' : 'text-amber-400';
+            const qrColorClass = isNegQr ? 'text-rose-400' : 'text-[#C2385C]';
             const inrColorClass = isNegInr ? 'text-rose-400' : 'text-emerald-400';
 
             const tr = document.createElement('tr');
@@ -2423,17 +2443,17 @@ function renderQatarAssetsTable() {
             tr.innerHTML = `
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${index + 1}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(item.date)}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl font-semibold flex flex-col justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
-                    <span class="flex items-center gap-2 text-white"><i class="fa-solid ${iconClass} w-4 text-xs"></i> ${item.assetIdentity || 'Qatar Asset'}</span>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex flex-col justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                    <span class="flex items-center gap-2 text-white font-display font-medium tracking-normal"><i class="fa-solid ${iconClass} w-4 text-xs"></i> ${item.assetIdentity || 'Qatar Asset'}</span>
                     ${item.remarks ? `<span class="text-[10px] font-mono text-slate-400 font-normal mt-0.5 truncate max-w-xs">${item.remarks}</span>` : ''}
                 </div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs text-slate-300">${item.category || 'Asset'}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${qrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedQr}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${qrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedQr}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-mono text-slate-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors text-xs">₹${perQr.toFixed(2)}</div></td>
-                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${inrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedInr}</div></td>
+                <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${inrColorClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formattedInr}</div></td>
                 <td class="py-px px-1"><div class="px-3 py-2.5 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                     <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
-                        <button onclick="openQatarAssetModal('${item.id}')" title="Edit" class="text-slate-400 hover:text-amber-400 transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="openQatarAssetModal('${item.id}')" title="Edit" class="text-slate-400 hover:text-[#C2385C] transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
                         <button onclick="deleteQatarAsset('${item.id}')" title="Delete" class="text-slate-400 hover:text-rose-500 transition-colors"><i class="fa-solid fa-trash text-xs"></i></button>
                     </div>
                 </div></td>
@@ -2454,7 +2474,7 @@ function renderQatarAssetsTable() {
 
     if (totalQrEl) {
         totalQrEl.innerText = totQrText;
-        totalQrEl.className = totQrIsNeg ? 'text-xl font-bold font-mono text-rose-400' : 'text-xl font-bold font-mono text-amber-400';
+        totalQrEl.className = totQrIsNeg ? 'text-xl font-bold font-mono text-rose-400' : 'text-xl font-bold font-mono text-[#C2385C]';
     }
     if (totalInrEl) {
         totalInrEl.innerText = totInrText;
@@ -2469,7 +2489,7 @@ function renderQatarAssetsTable() {
         foot.innerHTML = `
             <tr class="border-t border-surface-800 bg-surface-900/90 font-bold">
                 <td colspan="4" class="py-3.5 px-4 text-right uppercase tracking-widest text-slate-400 text-[10px]">Total Qatar Portfolio Valuation:</td>
-                <td class="py-3.5 px-4 text-right font-mono ${totQrIsNeg ? 'text-rose-400' : 'text-amber-400'} text-sm">${totQrText}</td>
+                <td class="py-3.5 px-4 text-right font-mono ${totQrIsNeg ? 'text-rose-400' : 'text-[#C2385C]'} text-sm">${totQrText}</td>
                 <td class="py-3.5 px-4 text-right font-mono text-slate-400 text-xs">Avg: ₹${avgRate}</td>
                 <td class="py-3.5 px-4 text-right font-mono ${totInrIsNeg ? 'text-rose-400' : 'text-emerald-400'} text-sm">${totInrText}</td>
                 <td></td>
@@ -2657,13 +2677,13 @@ function renderBankAccountsTable() {
         tr.className = 'group hover:bg-surface-800/20 transition-colors last:border-0';
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[220px] w-full">${b.bankName}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[220px] w-full font-display font-medium text-slate-100 tracking-normal">${b.bankName}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[150px]">${accNo}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.accountName}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.branch}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${typeBadge}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl uppercase font-mono tracking-wider text-slate-400 text-xs flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.ifsc}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-brand-500 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.currency || 'INR'} ${bal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal text-brand-500 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.currency || 'INR'} ${bal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
                     <button onclick="openBankModal('${b.id}')" class="text-slate-500 hover:text-brand-500"><i class="fa-solid fa-pen"></i></button>
@@ -2861,11 +2881,11 @@ function renderLoansTable() {
             <td class="py-px px-1"><div class="px-2 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-16" onclick="cycleLoanPriority('${l.id}', event)">${getLoanPriorityBadge(l.priority || 'Medium')}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-mono text-xs bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(l.startDate)}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-mono text-xs bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(l.endDate)}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-medium bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[250px] w-full">${l.source}${l.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${l.notes}">(${l.notes})</span>` : ''}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full font-normal bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[250px] w-full"><span class="font-display font-medium text-slate-100 tracking-normal">${l.source}</span>${l.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${l.notes}">(${l.notes})</span>` : ''}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${l.type}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${rep.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-rose-400 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${outstanding.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal text-rose-400 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${outstanding.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
                     <button onclick="openLoanModal('${l.id}')" class="text-slate-500 hover:text-brand-500 cursor-pointer"><i class="fa-solid fa-pen"></i></button>
@@ -3025,15 +3045,15 @@ function renderAssetMutualFundsTable() {
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${formatToDDMMYYYY(mf.purchaseDate)}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl uppercase font-bold text-accent-cyan flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]">${mf.symbol}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl uppercase font-display font-medium text-accent-cyan tracking-normal flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]">${mf.symbol}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${mf.type}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${qty.toLocaleString('en-IN')}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${avgBuy.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono text-slate-300 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${invested.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${ltp.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-brand-500 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${presentVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct.toFixed(2)}%</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal text-brand-500 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${presentVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct.toFixed(2)}%</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
                     <button onclick="openAssetMutualFundModal('${mf.id}')" class="text-slate-500 hover:text-brand-500"><i class="fa-solid fa-pen"></i></button>
@@ -3371,7 +3391,7 @@ function renderOthersTable() {
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-[10px] text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-16">${(idx + 1).toString().padStart(2, '0')}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-24">${entry.year || '2026'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-32">${entry.month || 'February'}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[380px]"><div class="flex flex-col"><span class="font-medium text-slate-200">${entry.desc || '-'}</span>${entry.notes ? `<span class="text-[10px] text-slate-500 font-light mt-0.5 truncate max-w-md" title="${entry.notes}">${entry.notes}</span>` : ''}</div></div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[380px]"><div class="flex flex-col"><span class="font-display font-medium text-slate-200 tracking-normal">${entry.desc || '-'}</span>${entry.notes ? `<span class="text-[10px] text-slate-500 font-light mt-0.5 truncate max-w-md" title="${entry.notes}">${entry.notes}</span>` : ''}</div></div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-36">${inc > 0 ? `₹${inc.toLocaleString('en-IN', {minimumFractionDigits: 2})}` : '-'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono text-slate-400 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-36">${exp > 0 ? `₹${exp.toLocaleString('en-IN', {minimumFractionDigits: 2})}` : '-'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-36 ${netColor}">₹${Math.abs(net).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
@@ -3384,7 +3404,7 @@ function renderOthersTable() {
         card.innerHTML = `
             <div class="flex justify-between items-start">
                 <div>
-                    <h5 class="font-medium text-slate-200 text-sm mb-1">${entry.desc || '-'}</h5>
+                    <h5 class="font-display font-medium text-slate-200 text-sm mb-1 tracking-normal">${entry.desc || '-'}</h5>
                     <span class="font-mono text-[10px] uppercase tracking-widest text-slate-500 px-2 py-0.5 rounded border border-surface-700 bg-surface-800">${entry.month || 'February'} ${entry.year || '2026'}</span>
                 </div>
                 <div class="flex gap-2">
@@ -3619,10 +3639,10 @@ function renderShareMarketTable() {
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${sm.year || '2026'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-mono text-xs">${sm.month || 'February'}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]"><span class="font-bold text-accent-cyan tracking-wide">${formatTradeParticular(sm.script)}</span>${sm.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${sm.notes}">(${sm.notes})</span>` : ''}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-medium text-slate-300">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-full min-w-[250px]"><span class="font-display font-medium text-accent-cyan tracking-normal">${formatTradeParticular(sm.script)}</span>${sm.notes ? `<span class="text-[10px] text-slate-500 font-light ml-2 truncate max-w-xs" title="${sm.notes}">(${sm.notes})</span>` : ''}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors font-normal text-slate-300">₹${inv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${pnl>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${pnlPct>=0?'text-emerald-400':'text-rose-400'} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-16">
                 <button onclick="openTradeNotesModal('${sm.id}')" class="w-8 h-8 rounded-xl bg-surface-900/90 hover:bg-brand-500/20 border border-surface-700 hover:border-brand-500 text-slate-400 hover:text-brand-400 transition-all inline-flex items-center justify-center cursor-pointer shadow-sm group/note" title="Open Trade Notes & Documentation">
                     <i class="fa-regular fa-note-sticky text-xs group-hover/note:scale-110 transition-transform ${hasNotes ? 'text-brand-400 font-bold' : ''}"></i>
@@ -3662,7 +3682,7 @@ function renderShareMarketTable() {
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <h5 class="font-bold text-white text-sm tracking-wide">${formatTradeParticular(sm.script)}</h5>
+                            <h5 class="font-display font-medium text-white text-sm tracking-normal">${formatTradeParticular(sm.script)}</h5>
                             <span class="font-mono text-[10px] uppercase tracking-widest text-slate-500 px-2 py-0.5 rounded border border-surface-700 bg-surface-800">${sm.month || 'February'} ${sm.year || '2026'}</span>
                         </div>
                         <div class="flex items-center gap-2">
@@ -4274,14 +4294,14 @@ function renderSegmentPerformanceMatrix(tradesList) {
                 <div class="w-6 h-6 rounded-lg ${seg.badgeClass} flex items-center justify-center text-xs">
                     <i class="fa-solid ${seg.icon}"></i>
                 </div>
-                <span class="font-bold text-white tracking-wide">${seg.name}</span>
+                <span class="font-normal text-white tracking-wide">${seg.name}</span>
             </td>
             <td class="py-3 px-4 text-center font-mono text-xs text-slate-300">${count}</td>
             <td class="py-3 px-4 text-center font-mono text-xs text-slate-400">${segWins}W / ${segLosses}L</td>
-            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-slate-300'} font-bold">${count > 0 ? winRate.toFixed(1) + '%' : '-'}</td>
+            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-slate-300'} font-normal">${count > 0 ? winRate.toFixed(1) + '%' : '-'}</td>
             <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">₹${avgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${segPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${segPnl >= 0 ? '+' : ''}₹${segPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${pnlPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${count > 0 ? (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%' : '-'}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-normal ${segPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${segPnl >= 0 ? '+' : ''}₹${segPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-normal ${pnlPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${count > 0 ? (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%' : '-'}</td>
             <td class="py-3 px-4 text-center">${statusBadge}</td>
         `;
         body.appendChild(tr);
@@ -4349,12 +4369,12 @@ function renderChronologicalMonthlyMatrix(tradesList) {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-surface-800/30 transition-colors';
         tr.innerHTML = `
-            <td class="py-3 px-4 font-bold text-white font-mono text-xs">${item.month} ${item.year}</td>
+            <td class="py-3 px-4 font-normal text-white font-mono text-xs">${item.month} ${item.year}</td>
             <td class="py-3 px-4 text-center font-mono text-xs text-slate-300">${item.trades}</td>
-            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-amber-400'} font-bold">${winRate.toFixed(1)}%</td>
+            <td class="py-3 px-4 text-center font-mono text-xs ${winRate >= 50 ? 'text-emerald-400' : 'text-amber-400'} font-normal">${winRate.toFixed(1)}%</td>
             <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">₹${avgCap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl >= 0 ? '+' : ''}₹${item.pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            <td class="py-3 px-4 text-right font-mono text-xs font-bold ${yieldPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${yieldPct >= 0 ? '+' : ''}${yieldPct.toFixed(2)}%</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-normal ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${item.pnl >= 0 ? '+' : ''}₹${item.pnl.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-normal ${yieldPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${yieldPct >= 0 ? '+' : ''}${yieldPct.toFixed(2)}%</td>
         `;
         body.appendChild(tr);
     });
@@ -5061,16 +5081,34 @@ function deleteFavorite(id) {
     const index = db.favorites.findIndex(x => x.id === id);
     if (index === -1) return;
 
-    const deletedItem = db.favorites[index];
+    const item = db.favorites[index];
+    const typeLabel = item.type === 'photo' ? 'photo memory' : (item.type === 'quote' ? 'quote' : 'favorite item');
+    const confirmMsg = `Are you sure you want to delete this ${typeLabel}?`;
 
-    if (typeof pushUndoDelete === 'function') {
-        pushUndoDelete('favorite', deletedItem, index);
+    const doDelete = () => {
+        const curIdx = db.favorites.findIndex(x => x.id === id);
+        if (curIdx === -1) return;
+        const deletedItem = db.favorites[curIdx];
+
+        if (typeof pushUndoDelete === 'function') {
+            pushUndoDelete('favorite', deletedItem, curIdx);
+        }
+
+        db.favorites.splice(curIdx, 1);
+        saveDatabase();
+        renderFavoritesPage();
+        if (typeof closeModal === 'function') {
+            closeModal('favoritePhotoLightboxModal');
+            closeModal('favoriteQuoteViewModal');
+        }
+        showToast('Item deleted from favorites', true);
+    };
+
+    if (typeof requireConfirmation === 'function') {
+        requireConfirmation(confirmMsg, doDelete);
+    } else {
+        doDelete();
     }
-
-    db.favorites.splice(index, 1);
-    saveDatabase();
-    renderFavoritesPage();
-    showToast('Item deleted from favorites', true);
 }
 window.deleteFavorite = deleteFavorite;
 
@@ -5350,13 +5388,13 @@ function renderBudgetBlock(curr, tableBodyId, tableFootId) {
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors w-12">${idx + 1}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-300 font-medium flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${b.month || 'All'} ${b.year || '2026'}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-semibold text-slate-100 flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[180px]">
-                <span>${b.category}</span>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-normal text-slate-100 flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[180px]">
+                <span class="font-display font-medium text-slate-100 tracking-normal">${b.category}</span>
                 ${b.notes ? `<span class="text-[10px] text-slate-500 font-normal italic">(${b.notes})</span>` : ''}
             </div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-slate-200 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${budgetAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold text-rose-400 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${spendAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-bold font-mono ${varClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${varDisplay}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal text-slate-200 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${budgetAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal text-rose-400 font-mono flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currSymbol}${spendAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-normal font-mono ${varClass} flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${varDisplay}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${statusBadge}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
@@ -5863,9 +5901,9 @@ function renderDailyExpensesLogTable() {
         tr.innerHTML = `
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl font-mono text-xs text-slate-400 flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${exp.date || '-'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${currBadge}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-slate-300 font-medium flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${exp.category || 'General'}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-slate-200 font-display font-medium tracking-normal flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${exp.category || 'General'}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-white font-medium flex items-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors min-w-[200px]">${particularText}</div></td>
-            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold text-slate-200 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${curr === 'QAR' ? 'QR ' : '₹'}${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
+            <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-normal text-slate-200 flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">${curr === 'QAR' ? 'QR ' : '₹'}${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></td>
             <td class="py-px px-1"><div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center justify-center h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                 <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity w-full">
                     <button onclick="openDailyExpenseModal('${curr}', '${exp.id}')" class="text-slate-500 hover:text-brand-500 transition-colors" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
@@ -6172,21 +6210,21 @@ function renderBudgetAnalysis() {
                     <td class="py-px px-1">
                         <div class="px-3 py-2 border border-slate-500/25 rounded-xl flex items-center gap-2 h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                             <span class="w-2 h-2 rounded-full ${catUtil > 100 ? 'bg-rose-400' : (catUtil > 85 ? 'bg-amber-400' : 'bg-brand-400')}"></span>
-                            <span class="font-semibold text-slate-100 text-xs">${c.category}</span>
+                            <span class="font-display font-medium text-slate-100 text-xs tracking-normal">${c.category}</span>
                         </div>
                     </td>
                     <td class="py-px px-1">
-                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold text-slate-200 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-normal text-slate-200 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                             ${currSym}${catBudget.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </td>
                     <td class="py-px px-1">
-                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold text-amber-400 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-normal text-amber-400 text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                             ${currSym}${catSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </td>
                     <td class="py-px px-1">
-                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-bold ${varColor} text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
+                        <div class="px-3 py-2 border border-slate-500/25 rounded-xl text-right font-mono font-normal ${varColor} text-xs flex items-center justify-end h-full bg-surface-900/20 group-hover:bg-surface-800/50 transition-colors">
                             ${varSign}${currSym}${Math.abs(catVar).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </td>
@@ -6663,12 +6701,12 @@ function renderGoalsTable() {
                         </button>
                     </td>
                     <td class="py-3 px-3">
-                        <div class="font-semibold text-slate-100 ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
+                        <div class="font-display font-medium text-slate-100 tracking-normal ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-400">${g.startDate || '-'}</td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300 font-medium">${g.targetDate || '-'}</td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300 text-right">₹${est.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                    <td class="py-3 px-3 font-mono text-xs font-bold text-emerald-400 text-right">₹${paid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-3 font-mono text-xs font-normal text-emerald-400 text-right">₹${paid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                     <td class="py-3 px-3 text-center">${progressBarHtml}</td>
                     <td class="py-3 px-3">${statusBadge}</td>
                     <td class="py-3 px-3 text-center">${dataNotesHtml}</td>
@@ -6684,7 +6722,7 @@ function renderGoalsTable() {
                         </button>
                     </td>
                     <td class="py-3 px-3">
-                        <div class="font-semibold text-slate-100 ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
+                        <div class="font-display font-medium text-slate-100 tracking-normal ${isComp ? 'line-through text-slate-500' : ''}">${g.title}</div>
                     </td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${secondaryVal}</td>
                     <td class="py-3 px-3 font-mono text-xs text-slate-300">${g.targetDate || '-'}</td>
@@ -6981,7 +7019,7 @@ function renderGoalAnalytics() {
                         </button>
                     </td>
                     <td class="py-3 px-3">
-                        <div class="font-semibold text-slate-100">${g.title}</div>
+                        <div class="font-display font-medium text-slate-100 tracking-normal">${g.title}</div>
                     </td>
                     <td class="py-3 px-3">
                         <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-surface-800 text-brand-400 border border-surface-700">${catName}</span>
@@ -6994,7 +7032,7 @@ function renderGoalAnalytics() {
                                     ${progressPct >= 15 ? '<span class="w-1.5 h-1.5 rounded-full bg-white/90 mr-1 shadow-sm"></span>' : ''}
                                 </div>
                             </div>
-                            <span class="text-xs font-mono font-bold text-slate-200 shrink-0 w-10 text-right">${progressPct}%</span>
+                            <span class="text-xs font-mono font-normal text-slate-200 shrink-0 w-10 text-right">${progressPct}%</span>
                         </div>
                     </td>
                     <td class="py-3 px-3 text-center">
@@ -7665,6 +7703,11 @@ const noteFontMap = {
 
 function setNotesViewMode(mode) {
     notesViewMode = mode;
+    if (!db.uiState) db.uiState = {};
+    if (!db.uiState.notes) db.uiState.notes = {};
+    db.uiState.notes.viewMode = mode;
+    saveDatabase();
+
     const btnGrid = document.getElementById('btnNoteViewGrid');
     const btnList = document.getElementById('btnNoteViewList');
     const gridContainer = document.getElementById('notesGridContainer');
@@ -7710,6 +7753,15 @@ function clearNotesSearch() {
 window.clearNotesSearch = clearNotesSearch;
 
 function filterNotes() {
+    if (!db.uiState) db.uiState = {};
+    if (!db.uiState.notes) db.uiState.notes = {};
+    const catEl = document.getElementById('notesCategoryFilter');
+    const colorEl = document.getElementById('notesColorFilter');
+    const sortEl = document.getElementById('notesSortSelect');
+    if (catEl) db.uiState.notes.category = catEl.value;
+    if (colorEl) db.uiState.notes.color = colorEl.value;
+    if (sortEl) db.uiState.notes.sortBy = sortEl.value;
+    saveDatabase();
     renderNotesList();
 }
 window.filterNotes = filterNotes;
@@ -7722,10 +7774,46 @@ function renderNotesList() {
     if (!db.notes) db.notes = [];
     if (countBadge) countBadge.innerText = db.notes.length.toString();
 
+    // Restore persisted UI state
+    const catEl = document.getElementById('notesCategoryFilter');
+    const colorEl = document.getElementById('notesColorFilter');
+    const sortEl = document.getElementById('notesSortSelect');
+
+    if (db.uiState && db.uiState.notes) {
+        if (catEl && db.uiState.notes.category && catEl.value !== db.uiState.notes.category) {
+            catEl.value = db.uiState.notes.category;
+        }
+        if (colorEl && db.uiState.notes.color && colorEl.value !== db.uiState.notes.color) {
+            colorEl.value = db.uiState.notes.color;
+        }
+        if (sortEl && db.uiState.notes.sortBy && sortEl.value !== db.uiState.notes.sortBy) {
+            sortEl.value = db.uiState.notes.sortBy;
+        }
+        if (db.uiState.notes.viewMode && db.uiState.notes.viewMode !== notesViewMode) {
+            notesViewMode = db.uiState.notes.viewMode;
+            const btnGrid = document.getElementById('btnNoteViewGrid');
+            const btnList = document.getElementById('btnNoteViewList');
+            const listContainer = document.getElementById('notesListContainer');
+            if (btnGrid && btnList) {
+                if (notesViewMode === 'grid') {
+                    btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+                    btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+                    if (gridContainer) gridContainer.classList.remove('hidden');
+                    if (listContainer) listContainer.classList.add('hidden');
+                } else {
+                    btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+                    btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+                    if (gridContainer) gridContainer.classList.add('hidden');
+                    if (listContainer) listContainer.classList.remove('hidden');
+                }
+            }
+        }
+    }
+
     // Read filters
-    const catFilter = (document.getElementById('notesCategoryFilter') ? document.getElementById('notesCategoryFilter').value : 'all') || 'all';
-    const colorFilter = (document.getElementById('notesColorFilter') ? document.getElementById('notesColorFilter').value : 'all') || 'all';
-    const sortBy = (document.getElementById('notesSortSelect') ? document.getElementById('notesSortSelect').value : 'pinned') || 'pinned';
+    const catFilter = (catEl ? catEl.value : 'all') || 'all';
+    const colorFilter = (colorEl ? colorEl.value : 'all') || 'all';
+    const sortBy = (sortEl ? sortEl.value : 'pinned') || 'pinned';
 
     let filtered = [...db.notes];
 
