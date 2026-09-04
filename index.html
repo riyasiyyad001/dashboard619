@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark theme-green">
+<html lang="en" class="dark theme-military">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,7 +26,8 @@
             };
         })();
     </script>
-    <title>Financial & Personal Assistant Dashboard</title>
+    <title>Financial Executive OS</title>
+    <meta name="description" content="Executive financial dashboard and personal management OS with asset valuation, portfolio tracking, budgets, milestones, smart intelligence, document storage, and encrypted credentials vault.">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -270,52 +271,76 @@
 
         /* MILITARY TACTICAL THEME OVERRIDES */
         html.dark.theme-military body { 
-            background: radial-gradient(ellipse at 50% -10%, #162519 0%, #0d1710 50%, #080d09 100%) fixed; 
-            color: #d1dcd0;
+            background: radial-gradient(ellipse at 50% -10%, #172719 0%, #0e1910 50%, #08100a 100%) fixed !important; 
+            color: #d1ded0 !important;
         }
 
         /* Tactical Left Sidebar Navigation */
         html.dark.theme-military #mainSidebar,
         html.dark.theme-military .glass {
-            background: rgba(14, 23, 16, 0.94) !important;
+            background: rgba(13, 22, 15, 0.96) !important;
             backdrop-filter: blur(20px) saturate(140%) !important;
-            border-right: 1px solid rgba(138, 172, 130, 0.22) !important;
-            box-shadow: 6px 0 35px rgba(0, 0, 0, 0.7) !important;
+            border-right: 1px solid rgba(110, 150, 102, 0.3) !important;
+            box-shadow: 6px 0 35px rgba(0, 0, 0, 0.8) !important;
         }
         html.dark.theme-military #mainSidebar > div > div.rounded-3xl,
         html.dark.theme-military #mainSidebar .bg-surface-900\/40 {
-            background: rgba(18, 30, 20, 0.7) !important;
-            border: 1px solid rgba(138, 172, 130, 0.28) !important;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.65), 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+            background: rgba(17, 28, 19, 0.85) !important;
+            border: 1px solid rgba(110, 150, 102, 0.35) !important;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.7), 0 4px 20px rgba(0, 0, 0, 0.45) !important;
         }
-        html.dark.theme-military .nav-tab-active {
-            background: linear-gradient(135deg, rgba(46, 75, 50, 0.95) 0%, rgba(20, 36, 23, 0.98) 100%) !important;
-            border: 1px solid rgba(163, 201, 153, 0.5) !important;
-            box-shadow: inset 0 1px 2px 0 rgba(220, 252, 231, 0.35), inset 0 0 18px 0 rgba(110, 168, 98, 0.22), 0 8px 20px -4px rgba(0, 0, 0, 0.75) !important;
-            color: #f7fee7 !important;
+        html.dark.theme-military #mainSidebar .bg-gradient-to-br {
+            background: linear-gradient(135deg, #223725 0%, #121e14 100%) !important;
         }
-        html.dark.theme-military .nav-tab-inactive {
-            background: rgba(16, 27, 18, 0.45) !important;
-            border: 1px solid rgba(138, 172, 130, 0.12) !important;
-            color: #9cb396 !important;
-        }
-        html.dark.theme-military .nav-tab-inactive:hover {
-            background: rgba(32, 52, 36, 0.65) !important;
-            border-color: rgba(154, 196, 143, 0.38) !important;
-            color: #f0fdf4 !important;
-            box-shadow: inset 0 1px 1px 0 rgba(163, 201, 153, 0.18), 0 4px 14px rgba(0, 0, 0, 0.55) !important;
-        }
-        html.dark.theme-military #mainSidebar .text-brand-500 {
-            color: #a3c99a !important;
-        }
-        html.dark.theme-military #mainSidebar .bg-brand-500 {
-            background-color: #6b9360 !important;
+        html.dark.theme-military #mainSidebar .fa-gem {
+            color: #a8cf9d !important;
         }
         html.dark.theme-military #mainSidebar .border-brand-500\/60 {
-            border-color: rgba(163, 201, 153, 0.6) !important;
+            border-color: rgba(146, 186, 137, 0.65) !important;
+        }
+        html.dark.theme-military #mainSidebar .text-brand-500 {
+            color: #9cc494 !important;
+        }
+        html.dark.theme-military #mainSidebar .bg-brand-500 {
+            background-color: #5c8353 !important;
+            color: #0b120c !important;
         }
         html.dark.theme-military #mainSidebar .bg-surface-800\/60 {
             background-color: rgba(30, 48, 34, 0.6) !important;
+        }
+        html.dark.theme-military #mainSidebar button {
+            color: #8da487 !important;
+        }
+        html.dark.theme-military #mainSidebar button:hover {
+            color: #e2f4df !important;
+            background-color: rgba(45, 72, 48, 0.65) !important;
+        }
+        html.dark.theme-military #cloudSyncStatusBadge {
+            background: rgba(14, 24, 16, 0.95) !important;
+            border-color: rgba(110, 150, 102, 0.4) !important;
+            color: #c9dec5 !important;
+        }
+        html.dark.theme-military .nav-tab-active {
+            background: linear-gradient(135deg, rgba(46, 75, 50, 0.98) 0%, rgba(20, 36, 23, 0.98) 100%) !important;
+            border: 1px solid rgba(163, 201, 153, 0.6) !important;
+            border-left: 4px solid #8ebd85 !important;
+            box-shadow: inset 0 1px 2px 0 rgba(220, 252, 231, 0.35), inset 0 0 18px 0 rgba(110, 168, 98, 0.25), 0 8px 20px -4px rgba(0, 0, 0, 0.8) !important;
+            color: #f7fee7 !important;
+        }
+        html.dark.theme-military .nav-tab-active span,
+        html.dark.theme-military .nav-tab-active i {
+            color: #d1fae5 !important;
+        }
+        html.dark.theme-military .nav-tab-inactive {
+            background: rgba(16, 27, 18, 0.5) !important;
+            border: 1px solid rgba(110, 150, 102, 0.15) !important;
+            color: #92ab8f !important;
+        }
+        html.dark.theme-military .nav-tab-inactive:hover {
+            background: rgba(32, 52, 36, 0.75) !important;
+            border-color: rgba(154, 196, 143, 0.45) !important;
+            color: #f0fdf4 !important;
+            box-shadow: inset 0 1px 1px 0 rgba(163, 201, 153, 0.2), 0 4px 14px rgba(0, 0, 0, 0.55) !important;
         }
 
         /* Surfaces & Layout Components */
@@ -323,45 +348,65 @@
             background-color: #0b120c !important; 
         }
         html.dark.theme-military .bg-surface-900 { 
-            background-color: #121d14 !important; 
+            background-color: #121e14 !important; 
         }
         html.dark.theme-military .bg-surface-900\/50,
         html.dark.theme-military .bg-surface-900\/40,
         html.dark.theme-military .bg-surface-900\/80,
         html.dark.theme-military .bg-surface-900\/90 { 
-            background-color: rgba(18, 29, 20, 0.8) !important; 
+            background-color: rgba(18, 30, 20, 0.85) !important; 
         }
         html.dark.theme-military .bg-surface-800 { 
-            background-color: #1a2a1d !important; 
+            background-color: #192a1c !important; 
         }
         html.dark.theme-military .bg-surface-800\/50,
         html.dark.theme-military .bg-surface-800\/40 { 
-            background-color: rgba(26, 42, 29, 0.6) !important; 
+            background-color: rgba(25, 42, 28, 0.65) !important; 
         }
         html.dark.theme-military .border-surface-800, 
         html.dark.theme-military .border-surface-700 { 
-            border-color: rgba(120, 158, 114, 0.25) !important; 
+            border-color: rgba(110, 150, 102, 0.25) !important; 
         }
         html.dark.theme-military .border-slate-500\/25 { 
-            border-color: rgba(120, 158, 114, 0.22) !important; 
+            border-color: rgba(110, 150, 102, 0.22) !important; 
         }
         html.dark.theme-military .premium-card {
-            background: linear-gradient(145deg, #152217 0%, #0d160f 100%) !important;
-            border: 1px solid rgba(138, 176, 130, 0.26);
-            box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.7), 0 0 20px -4px rgba(95, 138, 90, 0.12);
+            background: linear-gradient(145deg, #152417 0%, #0d170f 100%) !important;
+            border: 1px solid rgba(125, 165, 117, 0.28);
+            box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.75), 0 0 20px -4px rgba(85, 130, 80, 0.12);
         }
         html.dark.theme-military .premium-card::before { 
-            background: linear-gradient(90deg, transparent, rgba(163, 201, 153, 0.45), transparent); 
+            background: linear-gradient(90deg, transparent, rgba(163, 201, 153, 0.4), transparent); 
         }
         html.dark.theme-military .main-canvas-oval {
-            border-color: rgba(138, 176, 130, 0.32);
-            background: radial-gradient(circle at 50% 0%, rgba(32, 54, 36, 0.5) 0%, rgba(10, 17, 11, 0.95) 100%);
-            box-shadow: 0 12px 45px -10px rgba(0, 0, 0, 0.8), inset 0 1px 2px 0 rgba(200, 230, 192, 0.25), 0 0 30px -5px rgba(110, 150, 100, 0.15);
+            border-color: rgba(110, 150, 102, 0.32);
+            background: radial-gradient(circle at 50% 0%, rgba(28, 48, 32, 0.45) 0%, rgba(10, 17, 11, 0.96) 100%);
+            box-shadow: 0 12px 45px -10px rgba(0, 0, 0, 0.85), inset 0 1px 2px 0 rgba(200, 230, 192, 0.22), 0 0 30px -5px rgba(95, 140, 88, 0.15);
         }
         html.dark.theme-military .bg-pattern {
-            background-image: linear-gradient(to right, rgba(138, 176, 130, 0.06) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(138, 176, 130, 0.06) 1px, transparent 1px);
-            background-size: 36px 36px;
+            background-image: linear-gradient(to right, rgba(110, 150, 102, 0.07) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(110, 150, 102, 0.07) 1px, transparent 1px);
+            background-size: 34px 34px;
+        }
+        html.dark.theme-military .text-brand-500 {
+            color: #9cc494 !important;
+        }
+        html.dark.theme-military .text-brand-400 {
+            color: #b5d8ad !important;
+        }
+        html.dark.theme-military .bg-brand-500 {
+            background-color: #5c8353 !important;
+            color: #0b120c !important;
+        }
+        html.dark.theme-military .bg-brand-600 {
+            background-color: #4b6e43 !important;
+            color: #f2f7f0 !important;
+        }
+        html.dark.theme-military .hover\:bg-brand-500:hover {
+            background-color: #6c9962 !important;
+        }
+        html.dark.theme-military .border-brand-500 {
+            border-color: rgba(146, 186, 137, 0.6) !important;
         }
 
         @media print {
@@ -1020,7 +1065,7 @@
                     <div class="pt-2.5 border-t border-surface-800/80 group/sidebar-bottom">
                         <div class="flex items-center justify-between px-0.5">
                             <!-- Undo Button with Live Badge -->
-                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn relative w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 opacity-0 group-hover/sidebar-bottom:opacity-100 hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-not-allowed">
+                            <button onclick="undoLastDelete()" title="Undo last delete (Ctrl+Z)" class="global-undo-btn relative w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group cursor-pointer">
                                 <i class="fa-solid fa-rotate-left fa-fw text-xs group-hover:-rotate-45 transition-transform duration-300"></i>
                                 <span class="global-undo-badge hidden absolute -top-1 -right-1 w-4 h-4 bg-brand-500 text-surface-950 text-[9px] font-bold rounded-full flex items-center justify-center shadow-md">0</span>
                             </button>
@@ -1030,7 +1075,7 @@
                             </button>
                             <!-- Theme Toggle -->
                             <button onclick="toggleTheme()" title="Toggle Theme" class="w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
-                                <i class="fa-solid fa-leaf fa-fw text-xs group-hover:-rotate-12 transition-transform duration-300" id="themeToggleIcon"></i>
+                                <i class="fa-solid fa-shield-halved fa-fw text-xs text-[#a3c99a] group-hover:scale-110 transition-transform duration-300" id="themeToggleIcon"></i>
                             </button>
                             <!-- Search -->
                             <button onclick="openUniversalSearch()" title="Search" class="w-8 h-8 rounded-xl bg-transparent hover:bg-surface-800/60 text-slate-500/70 hover:text-brand-500 transition-all flex items-center justify-center group">
@@ -1579,9 +1624,9 @@
                                         <td class="py-3 px-3 text-slate-300 font-light"><i class="fa-solid fa-building-columns text-accent-blue mr-2 w-4"></i> Liquid & Bank Balances</td>
                                         <td id="repBankAssets" class="py-3 px-3 text-right font-mono font-medium text-white">₹0.00</td>
                                     </tr>
-                                    <tr class="hover:bg-surface-800/30">
-                                        <td class="py-3 px-3 text-slate-300 font-light"><i class="fa-solid fa-earth-asia text-slate-300 mr-2 w-4"></i> Qatar Assets Valuation</td>
-                                        <td id="repQatarAssets" class="py-3 px-3 text-right font-mono font-medium text-slate-200">₹0.00</td>
+                                    <tr class="hover:bg-slate-300/10 bg-slate-300/5 transition-colors">
+                                        <td class="py-3 px-3 text-[#f1f5f9] font-medium"><i class="fa-solid fa-earth-asia text-[#cbd5e1] mr-2 w-4"></i> Qatar Assets Valuation</td>
+                                        <td id="repQatarAssets" class="py-3 px-3 text-right font-mono font-medium text-[#f8fafc]">₹0.00</td>
                                     </tr>
                                     <tr class="hover:bg-surface-800/30">
                                         <td class="py-3 px-3 text-slate-300 font-light"><i class="fa-solid fa-seedling text-emerald-400 mr-2 w-4"></i> Mutual Funds (Current Value)</td>
@@ -3330,84 +3375,247 @@
 
         <!-- PAGE 8.5: DOCUMENTS & MEDIA VAULT -->
         <section id="page-documents" class="page-view space-y-6 hidden">
-            <!-- Header & Action Buttons -->
-            <div class="flex items-center justify-between gap-4 pb-4 border-b border-surface-800/80 group/docheader">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                        <i class="fa-solid fa-folder-open text-sm"></i>
+            <!-- Header & Action Buttons with Sub-Tab Switcher -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-surface-800/80">
+                <div class="flex items-center gap-3">
+                    <div id="docHeaderIconContainer" class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-inner transition-colors">
+                        <i id="docHeaderMainIcon" class="fa-solid fa-folder-open text-base"></i>
                     </div>
                     <div>
-                        <h3 class="font-display text-2xl text-white font-bold tracking-tight">Documents</h3>
+                        <div class="flex items-center gap-2.5">
+                            <h3 id="docHeaderMainTitle" class="font-display text-2xl text-white font-bold tracking-tight">Documents</h3>
+                            <span id="credVaultLockStatusBadge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1.5">
+                                <i class="fa-solid fa-lock text-[9px]"></i> <span id="credVaultLockBadgeText">Locked</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
-                
-                <!-- Action Buttons at Top Right (Hidden by default, reveals on hover) -->
-                <div class="flex items-center gap-2 opacity-0 group-hover/docheader:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-                    <button onclick="openDocumentUploadModal()" class="px-4 py-2 rounded-xl text-xs font-mono bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95">
-                        <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
-                        <span class="font-medium font-sans">Upload Document / Photo</span>
-                    </button>
-                </div>
-            </div>
 
-            <!-- SEARCH, CATEGORIES & VIEW SWITCHER TOOLBAR -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80 group/docbar">
-                <!-- Category Select Pills -->
-                <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
-                    <button id="btnDocCat-all" onclick="setDocumentSubCategory('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer whitespace-nowrap">All Categories</button>
-                    <button id="btnDocCat-identity" onclick="setDocumentSubCategory('identity')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Identity &amp; Passports</button>
-                    <button id="btnDocCat-legal" onclick="setDocumentSubCategory('legal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Legal &amp; Deeds</button>
-                    <button id="btnDocCat-financial" onclick="setDocumentSubCategory('financial')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Financial &amp; Tax</button>
-                    <button id="btnDocCat-business" onclick="setDocumentSubCategory('business')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Business &amp; Ventures</button>
-                    <button id="btnDocCat-receipts" onclick="setDocumentSubCategory('receipts')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Receipts &amp; Invoices</button>
-                    <button id="btnDocCat-personal" onclick="setDocumentSubCategory('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Photos &amp; Personal</button>
-                </div>
-
-                <!-- Search & View Controls (Revealed on hover / focus) -->
-                <div class="flex items-center gap-2.5 justify-between md:justify-end opacity-0 group-hover/docbar:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-                    <!-- Search Input -->
-                    <div class="relative w-40 sm:w-56">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                        <input type="text" id="docSearchInput" oninput="renderDocumentsPage()" placeholder="Search documents..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-surface-700/60 bg-surface-950/60 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none font-mono">
-                    </div>
-
-                    <!-- View Mode Switcher -->
-                    <div class="flex items-center bg-surface-950/80 p-1 rounded-xl border border-surface-800 shrink-0">
-                        <button id="btnDocViewGrid" onclick="setDocumentViewMode('grid')" title="Grid Card View" class="px-2.5 py-1 rounded-lg text-xs font-mono transition-all bg-surface-800 text-emerald-300 shadow-sm cursor-pointer flex items-center gap-1">
-                            <i class="fa-solid fa-grip text-xs"></i>
-                            <span class="hidden sm:inline text-[11px]">Grid</span>
+                <!-- Sub-tab Navigation (Documents & Files vs Credentials Vault) -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex items-center bg-surface-950/80 p-1 rounded-2xl border border-surface-800/80 shadow-sm">
+                        <button id="btnDocSubTab-files" onclick="setDocumentSubTab('files')" title="Documents &amp; Files" class="group px-3 py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer flex items-center bg-surface-800 text-emerald-300 shadow-sm border border-emerald-500/30">
+                            <i class="fa-solid fa-folder-open text-xs"></i>
+                            <span class="max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-1.5 transition-all duration-300 ease-in-out whitespace-nowrap inline-block align-middle">Documents &amp; Files</span>
                         </button>
-                        <button id="btnDocViewList" onclick="setDocumentViewMode('list')" title="List Table View" class="px-2.5 py-1 rounded-lg text-xs font-mono transition-all text-slate-400 hover:text-white cursor-pointer flex items-center gap-1">
-                            <i class="fa-solid fa-list text-xs"></i>
-                            <span class="hidden sm:inline text-[11px]">List</span>
+                        <button id="btnDocSubTab-credentials" onclick="setDocumentSubTab('credentials')" title="Credentials" class="group px-3 py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer flex items-center text-slate-400 hover:text-white">
+                            <i class="fa-solid fa-key text-xs text-amber-400"></i>
+                            <span class="max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-1.5 transition-all duration-300 ease-in-out whitespace-nowrap inline-block align-middle">Credentials</span>
+                            <span id="credPillStatusDot" class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)] ml-1.5 shrink-0"></span>
                         </button>
                     </div>
+
+                    <!-- Top Action for Files -->
+                    <div id="docFilesTopActions">
+                        <button onclick="openDocumentUploadModal()" class="px-3.5 py-2 rounded-xl text-xs font-mono bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95 whitespace-nowrap">
+                            <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                            <span class="font-medium font-sans hidden sm:inline">Upload Document / Photo</span>
+                            <span class="font-medium font-sans sm:hidden">Upload</span>
+                        </button>
+                    </div>
+
+                    <!-- Top Actions for Credentials -->
+                    <div id="docCredentialsTopActions" class="hidden flex items-center gap-2">
+                        <button onclick="openChangeCredentialPasscodeModal()" title="Change Password" class="group px-3 py-1.5 rounded-xl text-xs font-mono bg-surface-900 border border-surface-700 text-slate-300 hover:text-amber-300 hover:border-amber-500/40 transition-all flex items-center cursor-pointer active:scale-95 whitespace-nowrap">
+                            <i class="fa-solid fa-key text-xs text-amber-400"></i>
+                            <span class="max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-1.5 transition-all duration-300 ease-in-out whitespace-nowrap inline-block align-middle">Change Password</span>
+                        </button>
+                        <button onclick="lockCredentialVault()" title="Lock Vault" class="group px-3 py-1.5 rounded-xl text-xs font-mono bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 hover:border-rose-400 transition-all flex items-center cursor-pointer active:scale-95 whitespace-nowrap">
+                            <i class="fa-solid fa-lock text-xs"></i>
+                            <span class="max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-1.5 transition-all duration-300 ease-in-out whitespace-nowrap inline-block align-middle">Lock</span>
+                        </button>
+                        <button onclick="openAddCredentialModal()" title="Add Credentials" class="group px-3.5 py-1.5 rounded-xl text-xs font-mono bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all flex items-center shadow-sm cursor-pointer active:scale-95 whitespace-nowrap">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                            <span class="max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-1.5 font-medium font-sans transition-all duration-300 ease-in-out whitespace-nowrap inline-block align-middle">Add Credentials</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- DOCUMENTS GRID CONTAINER -->
-            <div id="documentsGridContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                <!-- Dynamic cards injected via JS -->
+            <!-- SUB-SECTION 1: DOCUMENTS & FILES VIEW -->
+            <div id="docFilesSection" class="space-y-6">
+                <!-- SEARCH, CATEGORIES & VIEW SWITCHER TOOLBAR -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80 group/docbar">
+                    <!-- Category Select Pills -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
+                        <button id="btnDocCat-all" onclick="setDocumentSubCategory('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer whitespace-nowrap">All Categories</button>
+                        <button id="btnDocCat-identity" onclick="setDocumentSubCategory('identity')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Identity &amp; Passports</button>
+                        <button id="btnDocCat-legal" onclick="setDocumentSubCategory('legal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Legal &amp; Deeds</button>
+                        <button id="btnDocCat-financial" onclick="setDocumentSubCategory('financial')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Financial &amp; Tax</button>
+                        <button id="btnDocCat-business" onclick="setDocumentSubCategory('business')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Business &amp; Ventures</button>
+                        <button id="btnDocCat-receipts" onclick="setDocumentSubCategory('receipts')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Receipts &amp; Invoices</button>
+                        <button id="btnDocCat-personal" onclick="setDocumentSubCategory('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Photos &amp; Personal</button>
+                    </div>
+
+                    <!-- Search & View Controls (Revealed on hover / focus) -->
+                    <div class="flex items-center gap-2.5 justify-between md:justify-end opacity-0 group-hover/docbar:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                        <!-- Search Input -->
+                        <div class="relative w-40 sm:w-56">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                            <input type="text" id="docSearchInput" oninput="renderDocumentsPage()" placeholder="Search documents..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-surface-700/60 bg-surface-950/60 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none font-mono">
+                        </div>
+
+                        <!-- View Mode Switcher -->
+                        <div class="flex items-center bg-surface-950/80 p-1 rounded-xl border border-surface-800 shrink-0">
+                            <button id="btnDocViewGrid" onclick="setDocumentViewMode('grid')" title="Grid Card View" class="px-2.5 py-1 rounded-lg text-xs font-mono transition-all bg-surface-800 text-emerald-300 shadow-sm cursor-pointer flex items-center gap-1">
+                                <i class="fa-solid fa-grip text-xs"></i>
+                                <span class="hidden sm:inline text-[11px]">Grid</span>
+                            </button>
+                            <button id="btnDocViewList" onclick="setDocumentViewMode('list')" title="List Table View" class="px-2.5 py-1 rounded-lg text-xs font-mono transition-all text-slate-400 hover:text-white cursor-pointer flex items-center gap-1">
+                                <i class="fa-solid fa-list text-xs"></i>
+                                <span class="hidden sm:inline text-[11px]">List</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DOCUMENTS GRID CONTAINER -->
+                <div id="documentsGridContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <!-- Dynamic cards injected via JS -->
+                </div>
+
+                <!-- DOCUMENTS LIST CONTAINER (Alternative View) -->
+                <div id="documentsListContainer" class="hidden premium-card p-0 overflow-hidden">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-surface-900/80 text-[10px] font-mono uppercase tracking-wider text-slate-400 border-b border-surface-800">
+                                <tr>
+                                    <th class="p-3.5">Document / Asset</th>
+                                    <th class="p-3.5">Category</th>
+                                    <th class="p-3.5">Type &amp; Format</th>
+                                    <th class="p-3.5">Size</th>
+                                    <th class="p-3.5">Date</th>
+                                    <th class="p-3.5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="documentsTableBody" class="divide-y divide-surface-800/40 font-light">
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
-            <!-- DOCUMENTS LIST CONTAINER (Alternative View) -->
-            <div id="documentsListContainer" class="hidden premium-card p-0 overflow-hidden">
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left text-xs text-slate-300">
-                        <thead class="bg-surface-900/80 text-[10px] font-mono uppercase tracking-wider text-slate-400 border-b border-surface-800">
-                            <tr>
-                                <th class="p-3.5">Document / Asset</th>
-                                <th class="p-3.5">Category</th>
-                                <th class="p-3.5">Type &amp; Format</th>
-                                <th class="p-3.5">Size</th>
-                                <th class="p-3.5">Date</th>
-                                <th class="p-3.5 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="documentsTableBody" class="divide-y divide-surface-800/40 font-light">
-                            <!-- Injected via JS -->
-                        </tbody>
-                    </table>
+            <!-- SUB-SECTION 2: CREDENTIALS VAULT VIEW -->
+            <div id="docCredentialsSection" class="hidden space-y-6">
+                <!-- LOCKED STATE: MASTER PASSCODE ACCESS GATE -->
+                <div id="credVaultLockedView" class="max-w-xl mx-auto py-12 px-6 sm:px-10 premium-card border border-surface-700/80 shadow-2xl relative overflow-hidden text-center space-y-6">
+                    <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-80 bg-gradient-to-b from-amber-500/15 via-rose-500/10 to-transparent rounded-full blur-[80px] pointer-events-none"></div>
+
+                    <!-- Shield Lock Emblem -->
+                    <div class="relative z-10">
+                        <div class="w-20 h-20 mx-auto rounded-3xl bg-surface-950/90 border-2 border-amber-500/30 text-amber-400 flex items-center justify-center text-3xl shadow-[0_0_35px_rgba(245,158,11,0.2)]">
+                            <i class="fa-solid fa-shield-halved animate-pulse"></i>
+                        </div>
+                    </div>
+
+                    <!-- Title & Security Notice -->
+                    <div class="space-y-2 relative z-10">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest bg-rose-500/15 border border-rose-500/30 text-rose-400 font-bold">
+                            <i class="fa-solid fa-lock text-[9px]"></i> Restricted Security Vault
+                        </div>
+                        <h4 class="font-display text-2xl text-white font-bold tracking-tight">Credentials Vault</h4>
+                        <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                            Confidential storage for your email accounts, passwords, PIN numbers, Apple ID credentials, and digital security keys. Enter your vault secondary passcode to decrypt this section.
+                        </p>
+                    </div>
+
+                    <!-- Passcode Input Box -->
+                    <div class="relative z-10 max-w-sm mx-auto space-y-3.5">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i class="fa-solid fa-key text-xs"></i>
+                            </div>
+                            <input type="password" id="credVaultPasscodeInput" onkeydown="if(event.key==='Enter') unlockCredentialVault()" placeholder="Enter Vault Passcode / PIN" class="w-full pl-10 pr-10 py-3 rounded-xl border border-surface-700 bg-surface-950/90 text-white font-mono text-sm placeholder-slate-500 focus:border-amber-500 focus:outline-none tracking-wider text-center">
+                            <button type="button" onclick="toggleCredPasscodeVisibility('credVaultPasscodeInput', 'credVaultEyeIcon')" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+                                <i id="credVaultEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+
+                        <button type="button" onclick="unlockCredentialVault()" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-surface-950 font-bold font-mono text-xs uppercase tracking-wider transition-all shadow-[0_4px_20px_rgba(245,158,11,0.25)] flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]">
+                            <i class="fa-solid fa-unlock-keyhole text-sm"></i>
+                            <span>Unlock Credentials Vault</span>
+                        </button>
+
+                        <!-- Hint Box -->
+                        <div class="pt-1 flex flex-col items-center gap-2">
+                            <button type="button" onclick="toggleCredVaultHint()" class="text-[11px] font-mono text-slate-400 hover:text-amber-400 transition-colors cursor-pointer flex items-center gap-1.5">
+                                <i class="fa-solid fa-circle-question text-[10px]"></i>
+                                <span>Forgot Passcode? Show Hint</span>
+                            </button>
+                            <div id="credVaultHintBox" class="hidden p-3 rounded-xl bg-surface-950/80 border border-amber-500/20 text-[11px] font-mono text-amber-300 text-center w-full">
+                                <span class="text-slate-400">Security Hint:</span> <span id="credVaultHintText">Default PIN is 1234</span>
+                            </div>
+                        </div>
+
+                        <div class="text-[11px] font-mono text-slate-500 pt-2 border-t border-surface-800">
+                            Initial default passcode is <span class="text-amber-400 font-bold">1234</span>. You can change this passcode at any time after unlocking.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UNLOCKED STATE: CREDENTIALS DASHBOARD -->
+                <div id="credVaultUnlockedView" class="space-y-5 hidden">
+                    <!-- Category Pills, Search & View Mode Toolbar -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80">
+                        <!-- Category Filter Pills -->
+                        <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
+                            <button id="btnCredCat-email" onclick="setCredCategoryFilter('email')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Emails</button>
+                            <button id="btnCredCat-apple" onclick="setCredCategoryFilter('apple')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Apple ID</button>
+                            <button id="btnCredCat-banking" onclick="setCredCategoryFilter('banking')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Banking &amp; Cards</button>
+                            <button id="btnCredCat-pin" onclick="setCredCategoryFilter('pin')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">PINs &amp; Codes</button>
+                            <button id="btnCredCat-social" onclick="setCredCategoryFilter('social')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Social &amp; Media</button>
+                            <button id="btnCredCat-server" onclick="setCredCategoryFilter('server')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Servers &amp; Cloud</button>
+                            <button id="btnCredCat-other" onclick="setCredCategoryFilter('other')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Other Secrets</button>
+                            <button id="btnCredCat-all" onclick="setCredCategoryFilter('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 transition-all cursor-pointer whitespace-nowrap shadow-sm">All</button>
+                        </div>
+
+                        <!-- Right Controls: Live Search & Grid/List View Mode Toggle -->
+                        <div class="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+                            <!-- Live Search Bar -->
+                            <div class="relative w-full sm:w-64 shrink-0">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                                <input type="text" id="credSearchInput" oninput="renderCredentialsVault()" placeholder="Search credentials, emails..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-surface-700/60 bg-surface-950/60 text-xs text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none font-mono">
+                            </div>
+
+                            <!-- View Mode Toggle (Grid / List) -->
+                            <div class="flex items-center bg-surface-950 p-1 rounded-xl border border-surface-800 shrink-0">
+                                <button id="btnCredViewGrid" onclick="setCredViewMode('grid')" class="p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm" title="Grid Cards View">
+                                    <i class="fa-solid fa-grip"></i>
+                                </button>
+                                <button id="btnCredViewList" onclick="setCredViewMode('list')" class="p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer" title="List View">
+                                    <i class="fa-solid fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Credentials Cards Grid -->
+                    <div id="credentialsCardsContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <!-- Dynamic credential cards injected via JS -->
+                    </div>
+
+                    <!-- Credentials List / Table View Container -->
+                    <div id="credentialsListContainer" class="hidden premium-card overflow-hidden border border-surface-800">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs whitespace-nowrap">
+                                <thead>
+                                    <tr class="border-b border-surface-800 bg-surface-900/80 font-mono text-[10px] text-slate-400 uppercase tracking-wider">
+                                        <th class="py-3.5 px-3 text-center w-14">Category</th>
+                                        <th class="py-3.5 px-4 min-w-[170px]">Description</th>
+                                        <th class="py-3.5 px-4 min-w-[190px]">User / Email / Identifier</th>
+                                        <th class="py-3.5 px-4 min-w-[210px]">Password / Secret</th>
+                                        <th class="py-3.5 px-4 min-w-[160px]">Secondary PIN / Code</th>
+                                        <th class="py-3.5 px-4 min-w-[180px]">Notes / Recovery</th>
+                                        <th class="py-3.5 px-4 text-center w-24">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="credentialsListTableBody" class="divide-y divide-surface-800/40 text-slate-300 font-mono">
+                                    <!-- Injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -5476,6 +5684,149 @@
             <div class="flex justify-end gap-2 pt-2 border-t border-surface-800">
                 <button onclick="closeModal('documentEditModal')" class="px-3.5 py-1.5 bg-surface-800 text-slate-300 text-xs font-mono rounded-xl">Cancel</button>
                 <button onclick="submitEditDocument()" class="px-5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-surface-950 font-bold text-xs font-mono rounded-xl">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREDENTIAL MODAL (ADD / EDIT) -->
+    <div id="credentialModal" class="fixed inset-0 z-50 bg-surface-950/95 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar border border-surface-700/80 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-key text-xs"></i>
+                    </div>
+                    <div>
+                        <h3 id="credentialModalTitle" class="font-display text-base text-white font-bold">Add Credential</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Store email, password, PIN, or Apple ID securely</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('credentialModal')" class="text-slate-500 hover:text-white p-1 text-base transition-colors cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <input type="hidden" id="credModalEditId">
+
+            <div class="space-y-3.5 text-xs">
+                <!-- Category Select -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Category <span class="text-rose-400">*</span></label>
+                    <select id="credModalCategorySelect" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none cursor-pointer">
+                        <option value="email">📧 Email &amp; Account (Gmail, Outlook, Yahoo)</option>
+                        <option value="apple">🍏 Apple ID &amp; iCloud Credentials</option>
+                        <option value="banking">🏦 Banking &amp; Financial (NetBanking, Cards, PINs)</option>
+                        <option value="pin">🔢 PINs &amp; Passcodes (Device, ATM, Locker, Door)</option>
+                        <option value="social">🌐 Social &amp; Media (Instagram, LinkedIn, Streaming)</option>
+                        <option value="server">☁️ Servers &amp; Cloud (AWS, GitHub, Domains, Hosting)</option>
+                        <option value="other">🔑 Other Digital Secrets &amp; Keys</option>
+                    </select>
+                </div>
+
+                <!-- Description Input (Immediately after Category) -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Description</label>
+                    <input type="text" id="credModalDescriptionInput" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+
+                <!-- Username / Email Input -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Username / Email / Apple ID</label>
+                    <input type="text" id="credModalUsernameInput" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+
+                <!-- Password / Primary Secret -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="font-mono text-[10px] uppercase tracking-wider text-slate-400">Password / Secret Key <span class="text-rose-400">*</span></label>
+                        <button type="button" onclick="generateStrongPasswordForInput('credModalSecretInput')" class="text-[10px] font-mono text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 cursor-pointer">
+                            <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> Auto-Generate Strong
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="credModalSecretInput" class="w-full pl-3 pr-10 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                        <button type="button" onclick="toggleCredPasscodeVisibility('credModalSecretInput', 'credModalEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+                            <i id="credModalEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Secondary PIN / Code (Optional) -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Secondary PIN / ATM Code / CVV <span class="text-slate-500 font-normal lowercase">(optional)</span></label>
+                    <div class="relative">
+                        <input type="password" id="credModalSecondaryCodeInput" class="w-full pl-3 pr-10 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                        <button type="button" onclick="toggleCredPasscodeVisibility('credModalSecondaryCodeInput', 'credModalSecondaryEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer" title="Show / Hide PIN">
+                            <i id="credModalSecondaryEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notes / Security Questions -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Notes / Security Answers / Recovery Details</label>
+                    <textarea id="credModalNotesInput" rows="3" class="w-full min-h-[70px] px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none resize-y custom-scrollbar"></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex items-center justify-between gap-2 pt-3 border-t border-surface-800">
+                <button type="button" id="credModalDeleteBtn" class="hidden px-3.5 py-2 bg-rose-500/15 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                    <span>Delete</span>
+                </button>
+                <div class="flex items-center gap-2 ml-auto">
+                    <button type="button" onclick="closeModal('credentialModal')" class="px-4 py-2 bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-mono rounded-xl transition-all cursor-pointer">Cancel</button>
+                    <button type="button" onclick="saveCredentialItem()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-surface-950 font-bold text-xs font-mono rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Save Credential</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHANGE CREDENTIAL VAULT MASTER PASSCODE MODAL -->
+    <div id="changeCredentialPasscodeModal" class="fixed inset-0 z-50 bg-surface-950/95 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-6 space-y-4 border border-surface-700/80 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-[40px] pointer-events-none"></div>
+
+            <div class="flex items-center justify-between border-b border-surface-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-shield-halved text-xs"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-base text-white font-bold">Change Vault Passcode</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Set dedicated protection for your Credentials</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('changeCredentialPasscodeModal')" class="text-slate-500 hover:text-white p-1 text-base transition-colors cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Current Passcode <span class="text-rose-400">*</span></label>
+                    <input type="password" id="credChangeCurrentPasscode" placeholder="Enter current passcode" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">New Passcode / PIN <span class="text-rose-400">*</span></label>
+                    <input type="password" id="credChangeNewPasscode" placeholder="Enter new passcode (min 3 chars)" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Confirm New Passcode <span class="text-rose-400">*</span></label>
+                    <input type="password" id="credChangeConfirmPasscode" placeholder="Re-enter new passcode" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Security Hint <span class="text-slate-500 font-normal lowercase">(optional)</span></label>
+                    <input type="text" id="credChangeHint" placeholder="e.g., Mom's birthday or car registration" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-surface-800">
+                <button type="button" onclick="closeModal('changeCredentialPasscodeModal')" class="px-4 py-2 bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-mono rounded-xl transition-all cursor-pointer">Cancel</button>
+                <button type="button" onclick="saveNewCredentialPasscode()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-surface-950 font-bold text-xs font-mono rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Update Passcode</span>
+                </button>
             </div>
         </div>
     </div>

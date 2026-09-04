@@ -67,6 +67,12 @@ let db = {
     notes: [],
     reminders: [],
     notifications: [],
+    credentials: [],
+    credentialVault: {
+        passcode: '1234',
+        hint: 'Default PIN is 1234',
+        lastChanged: Date.now()
+    },
     theme: 'theme-green',
     preferences: {
         budgetFilterMode: 'monthly',
@@ -378,6 +384,16 @@ function sanitizeDatabase(data) {
     if (!Array.isArray(data.vault.captures)) data.vault.captures = [];
     if (!data.bgConfig || typeof data.bgConfig !== 'object') data.bgConfig = { opacity: 0.2, solidColor: '#0f172a', imgUrl: '' };
     if (!data.navCustomTitles || typeof data.navCustomTitles !== 'object') data.navCustomTitles = {};
+    if (!Array.isArray(data.credentials)) data.credentials = [];
+    if (!data.credentialVault || typeof data.credentialVault !== 'object') {
+        data.credentialVault = {
+            passcode: '1234',
+            hint: 'Default PIN is 1234',
+            lastChanged: Date.now()
+        };
+    }
+    if (!data.credentialVault.passcode) data.credentialVault.passcode = '1234';
+    if (!data.credentialVault.hint) data.credentialVault.hint = 'Default PIN is 1234';
 
     return data;
 }
@@ -672,24 +688,25 @@ window.onload = async function() {
     if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 
     // Restore Theme Settings
-    if (db.theme) {
-        const htmlEl = document.documentElement;
-        htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light', 'theme-military', 'theme-gradient');
-        if (db.theme === 'theme-green' || db.theme === 'theme-black' || db.theme === 'theme-military') htmlEl.classList.add('dark');
-        htmlEl.classList.add(db.theme === 'theme-gradient' ? 'theme-military' : db.theme);
-        currentThemeIndex = themes.indexOf(db.theme);
-        if(currentThemeIndex === -1) currentThemeIndex = 0;
-        
-        setTimeout(() => {
-            const icon = document.getElementById('themeToggleIcon');
-            if(icon) {
-                if (db.theme === 'theme-green') icon.className = 'fa-solid fa-leaf fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
-                else if (db.theme === 'theme-black') icon.className = 'fa-solid fa-moon fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
-                else if (db.theme === 'theme-military' || db.theme === 'theme-gradient') icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
-                else icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
-            }
-        }, 100);
+    if (!db.theme || db.theme === 'theme-gradient') {
+        db.theme = 'theme-military';
     }
+    const htmlEl = document.documentElement;
+    htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light', 'theme-military', 'theme-gradient');
+    if (db.theme === 'theme-green' || db.theme === 'theme-black' || db.theme === 'theme-military') htmlEl.classList.add('dark');
+    htmlEl.classList.add(db.theme);
+    currentThemeIndex = themes.indexOf(db.theme);
+    if (currentThemeIndex === -1) currentThemeIndex = 0;
+    
+    setTimeout(() => {
+        const icon = document.getElementById('themeToggleIcon');
+        if (icon) {
+            if (db.theme === 'theme-military') icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
+            else if (db.theme === 'theme-green') icon.className = 'fa-solid fa-leaf fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
+            else if (db.theme === 'theme-black') icon.className = 'fa-solid fa-moon fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
+            else icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
+        }
+    }, 100);
 
     // Explicitly focus the passcode field on load
     setTimeout(() => {
@@ -711,6 +728,14 @@ window.onload = async function() {
     // Background Reminders Checker (Checks every 30 seconds)
     setInterval(checkReminders, 30000);
     setTimeout(checkReminders, 2000); // Initial check after loading
+
+    // Restore last active page if saved
+    try {
+        const savedActivePage = localStorage.getItem('executive_active_page');
+        if (savedActivePage && savedActivePage !== 'home' && document.getElementById(`page-${savedActivePage}`)) {
+            switchPage(savedActivePage);
+        }
+    } catch (e) {}
 };
 
 function refreshAllViews() {
@@ -731,6 +756,8 @@ function refreshAllViews() {
     if (typeof renderFavoritesPage === 'function') renderFavoritesPage();
     renderHomeProfile();
     applyBgCustomization();
+    if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+    if (typeof renderCredentialsVault === 'function') renderCredentialsVault();
     if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 }
 
@@ -802,7 +829,7 @@ function removePasscode() {
     });
 }
 
-const themes = ['theme-green', 'theme-black', 'theme-light', 'theme-military'];
+const themes = ['theme-military', 'theme-green', 'theme-black', 'theme-light'];
 let currentThemeIndex = 0;
 
 function toggleTheme() {
@@ -818,7 +845,10 @@ function toggleTheme() {
     htmlEl.classList.add(newTheme);
     
     const icon = document.getElementById('themeToggleIcon');
-    if (newTheme === 'theme-green') {
+    if (newTheme === 'theme-military') {
+        icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
+        showToast('Tactical Military Theme Applied');
+    } else if (newTheme === 'theme-green') {
         icon.className = 'fa-solid fa-leaf fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
         showToast('Cyber Nature Theme Applied');
     } else if (newTheme === 'theme-black') {
@@ -827,9 +857,6 @@ function toggleTheme() {
     } else if (newTheme === 'theme-light') {
         icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
         showToast('Light Theme Applied');
-    } else if (newTheme === 'theme-military') {
-        icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
-        showToast('Tactical Military Theme Applied');
     }
     
     db.theme = newTheme;
@@ -1018,6 +1045,9 @@ function renderNavTabs() {
 
 function switchPage(pageId) {
     activePageId = pageId;
+    try {
+        localStorage.setItem('executive_active_page', pageId);
+    } catch (e) {}
     document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
     
     const target = document.getElementById(`page-${pageId}`);
@@ -1029,7 +1059,13 @@ function switchPage(pageId) {
     if (pageId === 'graphs') {
         if (typeof renderFinancialIntelligencePage === 'function') renderFinancialIntelligencePage();
     } else if (pageId === 'documents') {
-        if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+        const savedSubTab = (typeof window !== 'undefined' && window.activeDocumentSubTab) ? window.activeDocumentSubTab : (localStorage.getItem('executive_doc_subtab') || 'files');
+        if (typeof setDocumentSubTab === 'function') {
+            setDocumentSubTab(savedSubTab);
+        } else {
+            if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+            if (typeof renderCredentialsVault === 'function') renderCredentialsVault();
+        }
     } else if (pageId === 'favorites') {
         if (typeof renderFavoritesPage === 'function') renderFavoritesPage();
     } else if (pageId === 'assets') {
@@ -1712,6 +1748,26 @@ function undoLastDelete() {
                 }
                 restored = true;
                 break;
+            case 'document':
+                if (!db.documents) db.documents = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.documents.length) {
+                    db.documents.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.documents.push(item.data);
+                }
+                if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+                restored = true;
+                break;
+            case 'credential':
+                if (!db.credentials) db.credentials = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.credentials.length) {
+                    db.credentials.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.credentials.push(item.data);
+                }
+                if (typeof renderCredentialsVault === 'function') renderCredentialsVault();
+                restored = true;
+                break;
             case 'bulk':
                 if (item.data && typeof item.data === 'object') {
                     Object.keys(item.data).forEach(k => {
@@ -1744,16 +1800,17 @@ function updateUndoUI() {
     const lastItem = count > 0 ? window.undoStack[window.undoStack.length - 1] : null;
     
     document.querySelectorAll('.global-undo-btn').forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('cursor-not-allowed', 'pointer-events-none');
+        btn.classList.add('cursor-pointer');
         if (count > 0) {
-            btn.disabled = false;
-            btn.classList.remove('cursor-not-allowed', 'pointer-events-none');
-            btn.classList.add('cursor-pointer');
             btn.setAttribute('title', `Undo last delete: ${lastItem ? (lastItem.label || 'Item') : ''} (Ctrl+Z)`);
+            btn.classList.add('text-brand-400');
+            btn.classList.remove('text-slate-500/70');
         } else {
-            btn.disabled = true;
-            btn.classList.add('cursor-not-allowed', 'pointer-events-none');
-            btn.classList.remove('cursor-pointer');
-            btn.setAttribute('title', 'Nothing to undo (Ctrl+Z)');
+            btn.setAttribute('title', 'Undo (Ctrl+Z)');
+            btn.classList.remove('text-brand-400');
+            btn.classList.add('text-slate-500/70');
         }
     });
 

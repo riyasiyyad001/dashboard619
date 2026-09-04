@@ -411,17 +411,17 @@ function renderAssetLogsTable() {
 
     totalValueImpact += qatarAssetsTotalRs + mfAssets + bankAssets;
 
-    // 1. Qatar Assets Valuation (Auto-Synced above Mutual Funds)
+    // 1. Qatar Assets Valuation (Auto-Synced above Mutual Funds) - Light Silver Theme
     const trQatar = document.createElement('tr');
     trQatar.className = 'group transition-colors';
     trQatar.innerHTML = `
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-slate-300"></i> Live</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-slate-100 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors"><i class="fa-solid fa-earth-asia w-5 mr-1 text-slate-300"></i> <span class="font-display font-medium tracking-normal text-slate-100">Qatar Assets Valuation</span></div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-slate-300 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">Qatar Offshore Holdings</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-slate-200'} transition-colors font-mono">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-right font-medium font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-slate-100'} flex items-center justify-end h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl flex items-center justify-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">
-            <button onclick="switchAssetSubTab('qatarvaluation')" class="text-slate-300 hover:text-white font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-slate-400/50 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl font-mono text-xs text-[#e2e8f0] flex items-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm"><i class="fa-solid fa-bolt text-[10px] mr-1 text-[#cbd5e1]"></i> Live</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl text-[#f1f5f9] flex items-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm"><i class="fa-solid fa-earth-asia w-5 mr-1 text-[#cbd5e1]"></i> <span class="font-display font-medium tracking-normal text-[#f8fafc]">Qatar Assets Valuation</span></div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl text-[#e2e8f0] flex items-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm">Qatar Offshore Holdings</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl flex items-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-[#f1f5f9]'} transition-colors font-mono shadow-sm">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl text-right font-medium font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-[#f8fafc]'} flex items-center justify-end h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl flex items-center justify-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm">
+            <button onclick="switchAssetSubTab('qatarvaluation')" class="text-[#e2e8f0] hover:text-white font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-[#cbd5e1]/60 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
     `;
     body.appendChild(trQatar);

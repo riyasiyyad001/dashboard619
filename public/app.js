@@ -67,6 +67,12 @@ let db = {
     notes: [],
     reminders: [],
     notifications: [],
+    credentials: [],
+    credentialVault: {
+        passcode: '1234',
+        hint: 'Default PIN is 1234',
+        lastChanged: Date.now()
+    },
     theme: 'theme-green',
     preferences: {
         budgetFilterMode: 'monthly',
@@ -378,6 +384,16 @@ function sanitizeDatabase(data) {
     if (!Array.isArray(data.vault.captures)) data.vault.captures = [];
     if (!data.bgConfig || typeof data.bgConfig !== 'object') data.bgConfig = { opacity: 0.2, solidColor: '#0f172a', imgUrl: '' };
     if (!data.navCustomTitles || typeof data.navCustomTitles !== 'object') data.navCustomTitles = {};
+    if (!Array.isArray(data.credentials)) data.credentials = [];
+    if (!data.credentialVault || typeof data.credentialVault !== 'object') {
+        data.credentialVault = {
+            passcode: '1234',
+            hint: 'Default PIN is 1234',
+            lastChanged: Date.now()
+        };
+    }
+    if (!data.credentialVault.passcode) data.credentialVault.passcode = '1234';
+    if (!data.credentialVault.hint) data.credentialVault.hint = 'Default PIN is 1234';
 
     return data;
 }
@@ -672,24 +688,25 @@ window.onload = async function() {
     if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 
     // Restore Theme Settings
-    if (db.theme) {
-        const htmlEl = document.documentElement;
-        htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light', 'theme-military', 'theme-gradient');
-        if (db.theme === 'theme-green' || db.theme === 'theme-black' || db.theme === 'theme-military') htmlEl.classList.add('dark');
-        htmlEl.classList.add(db.theme === 'theme-gradient' ? 'theme-military' : db.theme);
-        currentThemeIndex = themes.indexOf(db.theme);
-        if(currentThemeIndex === -1) currentThemeIndex = 0;
-        
-        setTimeout(() => {
-            const icon = document.getElementById('themeToggleIcon');
-            if(icon) {
-                if (db.theme === 'theme-green') icon.className = 'fa-solid fa-leaf fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
-                else if (db.theme === 'theme-black') icon.className = 'fa-solid fa-moon fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
-                else if (db.theme === 'theme-military' || db.theme === 'theme-gradient') icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
-                else icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
-            }
-        }, 100);
+    if (!db.theme || db.theme === 'theme-gradient') {
+        db.theme = 'theme-military';
     }
+    const htmlEl = document.documentElement;
+    htmlEl.classList.remove('dark', 'theme-green', 'theme-black', 'theme-light', 'theme-military', 'theme-gradient');
+    if (db.theme === 'theme-green' || db.theme === 'theme-black' || db.theme === 'theme-military') htmlEl.classList.add('dark');
+    htmlEl.classList.add(db.theme);
+    currentThemeIndex = themes.indexOf(db.theme);
+    if (currentThemeIndex === -1) currentThemeIndex = 0;
+    
+    setTimeout(() => {
+        const icon = document.getElementById('themeToggleIcon');
+        if (icon) {
+            if (db.theme === 'theme-military') icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
+            else if (db.theme === 'theme-green') icon.className = 'fa-solid fa-leaf fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
+            else if (db.theme === 'theme-black') icon.className = 'fa-solid fa-moon fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
+            else icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
+        }
+    }, 100);
 
     // Explicitly focus the passcode field on load
     setTimeout(() => {
@@ -711,6 +728,14 @@ window.onload = async function() {
     // Background Reminders Checker (Checks every 30 seconds)
     setInterval(checkReminders, 30000);
     setTimeout(checkReminders, 2000); // Initial check after loading
+
+    // Restore last active page if saved
+    try {
+        const savedActivePage = localStorage.getItem('executive_active_page');
+        if (savedActivePage && savedActivePage !== 'home' && document.getElementById(`page-${savedActivePage}`)) {
+            switchPage(savedActivePage);
+        }
+    } catch (e) {}
 };
 
 function refreshAllViews() {
@@ -731,6 +756,8 @@ function refreshAllViews() {
     if (typeof renderFavoritesPage === 'function') renderFavoritesPage();
     renderHomeProfile();
     applyBgCustomization();
+    if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+    if (typeof renderCredentialsVault === 'function') renderCredentialsVault();
     if (typeof updateNotificationSoundUI === 'function') updateNotificationSoundUI();
 }
 
@@ -802,7 +829,7 @@ function removePasscode() {
     });
 }
 
-const themes = ['theme-green', 'theme-black', 'theme-light', 'theme-military'];
+const themes = ['theme-military', 'theme-green', 'theme-black', 'theme-light'];
 let currentThemeIndex = 0;
 
 function toggleTheme() {
@@ -818,7 +845,10 @@ function toggleTheme() {
     htmlEl.classList.add(newTheme);
     
     const icon = document.getElementById('themeToggleIcon');
-    if (newTheme === 'theme-green') {
+    if (newTheme === 'theme-military') {
+        icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
+        showToast('Tactical Military Theme Applied');
+    } else if (newTheme === 'theme-green') {
         icon.className = 'fa-solid fa-leaf fa-fw text-sm group-hover:-rotate-12 transition-transform duration-300';
         showToast('Cyber Nature Theme Applied');
     } else if (newTheme === 'theme-black') {
@@ -827,9 +857,6 @@ function toggleTheme() {
     } else if (newTheme === 'theme-light') {
         icon.className = 'fa-solid fa-sun fa-fw text-sm group-hover:rotate-90 transition-transform duration-300';
         showToast('Light Theme Applied');
-    } else if (newTheme === 'theme-military') {
-        icon.className = 'fa-solid fa-shield-halved fa-fw text-sm text-[#a3c99a] group-hover:scale-110 transition-transform duration-300';
-        showToast('Tactical Military Theme Applied');
     }
     
     db.theme = newTheme;
@@ -1018,6 +1045,9 @@ function renderNavTabs() {
 
 function switchPage(pageId) {
     activePageId = pageId;
+    try {
+        localStorage.setItem('executive_active_page', pageId);
+    } catch (e) {}
     document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
     
     const target = document.getElementById(`page-${pageId}`);
@@ -1029,7 +1059,13 @@ function switchPage(pageId) {
     if (pageId === 'graphs') {
         if (typeof renderFinancialIntelligencePage === 'function') renderFinancialIntelligencePage();
     } else if (pageId === 'documents') {
-        if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+        const savedSubTab = (typeof window !== 'undefined' && window.activeDocumentSubTab) ? window.activeDocumentSubTab : (localStorage.getItem('executive_doc_subtab') || 'files');
+        if (typeof setDocumentSubTab === 'function') {
+            setDocumentSubTab(savedSubTab);
+        } else {
+            if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+            if (typeof renderCredentialsVault === 'function') renderCredentialsVault();
+        }
     } else if (pageId === 'favorites') {
         if (typeof renderFavoritesPage === 'function') renderFavoritesPage();
     } else if (pageId === 'assets') {
@@ -1712,6 +1748,26 @@ function undoLastDelete() {
                 }
                 restored = true;
                 break;
+            case 'document':
+                if (!db.documents) db.documents = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.documents.length) {
+                    db.documents.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.documents.push(item.data);
+                }
+                if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+                restored = true;
+                break;
+            case 'credential':
+                if (!db.credentials) db.credentials = [];
+                if (typeof item.originalIndex === 'number' && item.originalIndex >= 0 && item.originalIndex <= db.credentials.length) {
+                    db.credentials.splice(item.originalIndex, 0, item.data);
+                } else {
+                    db.credentials.push(item.data);
+                }
+                if (typeof renderCredentialsVault === 'function') renderCredentialsVault();
+                restored = true;
+                break;
             case 'bulk':
                 if (item.data && typeof item.data === 'object') {
                     Object.keys(item.data).forEach(k => {
@@ -1744,16 +1800,17 @@ function updateUndoUI() {
     const lastItem = count > 0 ? window.undoStack[window.undoStack.length - 1] : null;
     
     document.querySelectorAll('.global-undo-btn').forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('cursor-not-allowed', 'pointer-events-none');
+        btn.classList.add('cursor-pointer');
         if (count > 0) {
-            btn.disabled = false;
-            btn.classList.remove('cursor-not-allowed', 'pointer-events-none');
-            btn.classList.add('cursor-pointer');
             btn.setAttribute('title', `Undo last delete: ${lastItem ? (lastItem.label || 'Item') : ''} (Ctrl+Z)`);
+            btn.classList.add('text-brand-400');
+            btn.classList.remove('text-slate-500/70');
         } else {
-            btn.disabled = true;
-            btn.classList.add('cursor-not-allowed', 'pointer-events-none');
-            btn.classList.remove('cursor-pointer');
-            btn.setAttribute('title', 'Nothing to undo (Ctrl+Z)');
+            btn.setAttribute('title', 'Undo (Ctrl+Z)');
+            btn.classList.remove('text-brand-400');
+            btn.classList.add('text-slate-500/70');
         }
     });
 
@@ -2239,17 +2296,17 @@ function renderAssetLogsTable() {
 
     totalValueImpact += qatarAssetsTotalRs + mfAssets + bankAssets;
 
-    // 1. Qatar Assets Valuation (Auto-Synced above Mutual Funds)
+    // 1. Qatar Assets Valuation (Auto-Synced above Mutual Funds) - Light Silver Theme
     const trQatar = document.createElement('tr');
     trQatar.className = 'group transition-colors';
     trQatar.innerHTML = `
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl font-mono text-xs text-slate-300 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors"><i class="fa-solid fa-bolt text-[10px] mr-1 text-slate-300"></i> Live</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-slate-100 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors"><i class="fa-solid fa-earth-asia w-5 mr-1 text-slate-300"></i> <span class="font-display font-medium tracking-normal text-slate-100">Qatar Assets Valuation</span></div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-slate-300 flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">Qatar Offshore Holdings</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl flex items-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-slate-200'} transition-colors font-mono">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl text-right font-medium font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-slate-100'} flex items-center justify-end h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
-        <td class="py-px px-1"><div class="px-3 py-2 border border-slate-300/30 rounded-xl flex items-center justify-center h-full bg-slate-300/10 group-hover:bg-slate-300/20 transition-colors">
-            <button onclick="switchAssetSubTab('qatarvaluation')" class="text-slate-300 hover:text-white font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-slate-400/50 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl font-mono text-xs text-[#e2e8f0] flex items-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm"><i class="fa-solid fa-bolt text-[10px] mr-1 text-[#cbd5e1]"></i> Live</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl text-[#f1f5f9] flex items-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm"><i class="fa-solid fa-earth-asia w-5 mr-1 text-[#cbd5e1]"></i> <span class="font-display font-medium tracking-normal text-[#f8fafc]">Qatar Assets Valuation</span></div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl text-[#e2e8f0] flex items-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm">Qatar Offshore Holdings</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl flex items-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 ${qatarAssetsTotalQr < 0 ? 'text-rose-400' : 'text-[#f1f5f9]'} transition-colors font-mono shadow-sm">Auto-Synced (${qatarAssetsTotalQr < 0 ? '-' : ''}QR ${Math.abs(qatarAssetsTotalQr).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl text-right font-medium font-mono ${qatarAssetsTotalRs < 0 ? 'text-rose-400' : 'text-[#f8fafc]'} flex items-center justify-end h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm">${qatarAssetsTotalRs < 0 ? '-' : ''}₹${Math.abs(qatarAssetsTotalRs).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></td>
+        <td class="py-px px-1"><div class="px-3 py-2 border border-[#cbd5e1]/40 rounded-xl flex items-center justify-center h-full bg-[#e2e8f0]/15 group-hover:bg-[#e2e8f0]/25 transition-colors shadow-sm">
+            <button onclick="switchAssetSubTab('qatarvaluation')" class="text-[#e2e8f0] hover:text-white font-bold text-[10px] font-mono uppercase tracking-wider transition-colors underline decoration-[#cbd5e1]/60 underline-offset-4 opacity-0 group-hover:opacity-100">View Data</button>
         </div></td>
     `;
     body.appendChild(trQatar);
@@ -10462,8 +10519,20 @@ function closeModal(id) {
 let confirmCallback = null;
 
 function requireConfirmation(msg, cb) {
+    const headingEl = document.getElementById('confirmDeleteHeading');
     const msgEl = document.getElementById('confirmDeleteMessage') || document.getElementById('confirmationDialogMsg');
+    const badgeEl = document.getElementById('confirmStepBadge');
+    const stepTextEl = document.getElementById('confirmStepText');
+    const warnBox = document.getElementById('confirmStep2WarningBox');
+    const btnText = document.getElementById('confirmExecuteBtnText');
+
+    if (headingEl) headingEl.textContent = 'Confirm Deletion';
     if (msgEl) msgEl.innerText = msg;
+    if (badgeEl) badgeEl.classList.remove('hidden');
+    if (stepTextEl) stepTextEl.textContent = 'CONFIRMATION';
+    if (warnBox) warnBox.classList.add('hidden');
+    if (btnText) btnText.textContent = 'Delete';
+
     confirmCallback = cb;
     openModal('confirmDeleteModal');
 }
@@ -10788,7 +10857,13 @@ async function triggerManualPullFromCloud() {
 // =========================================================================
 let docActiveCategoryFilter = 'all';
 let docActiveSubCategory = 'all';
-let docViewMode = 'grid';
+let docViewMode = (function() {
+    try {
+        return localStorage.getItem('executive_doc_view_mode') || 'grid';
+    } catch (e) {
+        return 'grid';
+    }
+})();
 let modalDocStagedFile = null;
 
 function setDocumentCategoryFilter(cat) {
@@ -10818,6 +10893,16 @@ window.setDocumentSubCategory = setDocumentSubCategory;
 
 function setDocumentViewMode(mode) {
     docViewMode = mode;
+    try {
+        localStorage.setItem('executive_doc_view_mode', mode);
+        if (window.db) {
+            if (!window.db.uiState) window.db.uiState = {};
+            if (!window.db.uiState.documents) window.db.uiState.documents = {};
+            window.db.uiState.documents.viewMode = mode;
+            if (typeof saveDatabase === 'function') saveDatabase(false);
+        }
+    } catch (e) {}
+
     const gridBtn = document.getElementById('btnDocViewGrid');
     const listBtn = document.getElementById('btnDocViewList');
     const gridContainer = document.getElementById('documentsGridContainer');
@@ -11236,6 +11321,8 @@ function renderDocumentsPage() {
             });
         }
     }
+
+    setDocumentViewMode(docViewMode);
 }
 window.renderDocumentsPage = renderDocumentsPage;
 
@@ -11846,6 +11933,1000 @@ function openShareForCurrentPreviewDoc() {
     shareCurrentPreviewDoc('modal');
 }
 window.openShareForCurrentPreviewDoc = openShareForCurrentPreviewDoc;
+
+/* ==========================================================================
+   SECURE CREDENTIALS VAULT (DOCUMENTS PAGE SUB-SECTION)
+   Protected with secondary master passcode, change passcode, & CRUD
+   ========================================================================== */
+
+window.activeDocumentSubTab = (function() {
+    try {
+        return localStorage.getItem('executive_doc_subtab') || 'files';
+    } catch (e) {
+        return 'files';
+    }
+})();
+window.isCredentialVaultUnlocked = false;
+window.activeCredCategory = (function() {
+    try {
+        return localStorage.getItem('executive_cred_category') || 'all';
+    } catch (e) {
+        return 'all';
+    }
+})();
+window.revealedCredSecrets = new Set();
+window.revealedCredPins = new Set();
+
+function setDocumentSubTab(subTab) {
+    window.activeDocumentSubTab = subTab;
+    try {
+        localStorage.setItem('executive_doc_subtab', subTab);
+        if (window.db) {
+            if (!window.db.uiState) window.db.uiState = {};
+            window.db.uiState.docSubTab = subTab;
+            if (typeof saveDatabase === 'function') saveDatabase(false);
+        }
+    } catch (e) {}
+    const btnFiles = document.getElementById('btnDocSubTab-files');
+    const btnCreds = document.getElementById('btnDocSubTab-credentials');
+    const secFiles = document.getElementById('docFilesSection');
+    const secCreds = document.getElementById('docCredentialsSection');
+    const topFiles = document.getElementById('docFilesTopActions');
+    const topCreds = document.getElementById('docCredentialsTopActions');
+    const headerTitle = document.getElementById('docHeaderMainTitle');
+    const headerIcon = document.getElementById('docHeaderMainIcon');
+    const headerIconContainer = document.getElementById('docHeaderIconContainer');
+    const lockBadge = document.getElementById('credVaultLockStatusBadge');
+
+    if (subTab === 'credentials') {
+        if (btnFiles) {
+            btnFiles.className = 'group px-3 py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer flex items-center text-slate-400 hover:text-white';
+        }
+        if (btnCreds) {
+            btnCreds.className = 'group px-3 py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer flex items-center bg-surface-800 text-amber-300 shadow-sm border border-amber-500/30';
+        }
+        if (secFiles) secFiles.classList.add('hidden');
+        if (secCreds) secCreds.classList.remove('hidden');
+        if (topFiles) topFiles.classList.add('hidden');
+        if (headerTitle) headerTitle.textContent = 'Credentials Vault';
+        if (headerIcon) headerIcon.className = 'fa-solid fa-key text-base';
+        if (headerIconContainer) headerIconContainer.className = 'w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shadow-inner transition-colors';
+        if (lockBadge) lockBadge.classList.remove('hidden');
+
+        updateCredLockBadge();
+        renderCredentialsVault();
+    } else {
+        if (btnFiles) {
+            btnFiles.className = 'group px-3 py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer flex items-center bg-surface-800 text-emerald-300 shadow-sm border border-emerald-500/30';
+        }
+        if (btnCreds) {
+            btnCreds.className = 'group px-3 py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer flex items-center text-slate-400 hover:text-white';
+        }
+        if (secFiles) secFiles.classList.remove('hidden');
+        if (secCreds) secCreds.classList.add('hidden');
+        if (topFiles) topFiles.classList.remove('hidden');
+        if (topCreds) topCreds.classList.add('hidden');
+        if (headerTitle) headerTitle.textContent = 'Documents';
+        if (headerIcon) headerIcon.className = 'fa-solid fa-folder-open text-base';
+        if (headerIconContainer) headerIconContainer.className = 'w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-inner transition-colors';
+        if (lockBadge) lockBadge.classList.add('hidden');
+
+        renderDocumentsPage();
+    }
+}
+window.setDocumentSubTab = setDocumentSubTab;
+
+function updateCredLockBadge() {
+    const lockBadge = document.getElementById('credVaultLockStatusBadge');
+    const badgeText = document.getElementById('credVaultLockBadgeText');
+    const statusDot = document.getElementById('credPillStatusDot');
+    const topCreds = document.getElementById('docCredentialsTopActions');
+
+    if (window.isCredentialVaultUnlocked) {
+        if (lockBadge) {
+            lockBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5';
+            lockBadge.innerHTML = '<i class="fa-solid fa-unlock-keyhole text-[9px]"></i> <span>Unlocked</span>';
+        }
+        if (statusDot) {
+            statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]';
+        }
+        if (topCreds && window.activeDocumentSubTab === 'credentials') {
+            topCreds.classList.remove('hidden');
+        }
+    } else {
+        if (lockBadge) {
+            lockBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1.5';
+            lockBadge.innerHTML = '<i class="fa-solid fa-lock text-[9px]"></i> <span>Locked</span>';
+        }
+        if (statusDot) {
+            statusDot.className = 'w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.7)]';
+        }
+        if (topCreds) {
+            topCreds.classList.add('hidden');
+        }
+    }
+}
+window.updateCredLockBadge = updateCredLockBadge;
+
+function unlockCredentialVault() {
+    const input = document.getElementById('credVaultPasscodeInput');
+    const entered = input ? input.value : '';
+    const master = (db.credentialVault && db.credentialVault.passcode) ? String(db.credentialVault.passcode) : '1234';
+
+    if (!entered) {
+        showToast('Please enter your vault passcode');
+        if (input) input.focus();
+        return;
+    }
+
+    if (entered === master) {
+        window.isCredentialVaultUnlocked = true;
+        if (input) input.value = '';
+        const hintBox = document.getElementById('credVaultHintBox');
+        if (hintBox) hintBox.classList.add('hidden');
+
+        updateCredLockBadge();
+        renderCredentialsVault();
+        showToast('Credentials Vault unlocked successfully');
+    } else {
+        showToast('Incorrect passcode. Try again or check hint.');
+        if (input) {
+            input.classList.add('border-rose-500', 'animate-shake');
+            setTimeout(() => input.classList.remove('border-rose-500', 'animate-shake'), 1200);
+            input.focus();
+        }
+    }
+}
+window.unlockCredentialVault = unlockCredentialVault;
+
+function lockCredentialVault() {
+    window.isCredentialVaultUnlocked = false;
+    window.revealedCredSecrets.clear();
+    const input = document.getElementById('credVaultPasscodeInput');
+    if (input) input.value = '';
+    
+    updateCredLockBadge();
+    renderCredentialsVault();
+    showToast('Credentials Vault locked');
+}
+window.lockCredentialVault = lockCredentialVault;
+
+function toggleCredVaultHint() {
+    const hintBox = document.getElementById('credVaultHintBox');
+    const hintText = document.getElementById('credVaultHintText');
+    if (!hintBox) return;
+
+    if (hintBox.classList.contains('hidden')) {
+        const hint = (db.credentialVault && db.credentialVault.hint) ? db.credentialVault.hint : 'Default PIN is 1234';
+        if (hintText) hintText.textContent = hint;
+        hintBox.classList.remove('hidden');
+    } else {
+        hintBox.classList.add('hidden');
+    }
+}
+window.toggleCredVaultHint = toggleCredVaultHint;
+
+function toggleCredPasscodeVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (!input) return;
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) {
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    } else {
+        input.type = 'password';
+        if (icon) {
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+}
+window.toggleCredPasscodeVisibility = toggleCredPasscodeVisibility;
+
+function openChangeCredentialPasscodeModal() {
+    const curr = document.getElementById('credChangeCurrentPasscode');
+    const next = document.getElementById('credChangeNewPasscode');
+    const conf = document.getElementById('credChangeConfirmPasscode');
+    const hint = document.getElementById('credChangeHint');
+
+    if (curr) curr.value = '';
+    if (next) next.value = '';
+    if (conf) conf.value = '';
+    if (hint) hint.value = (db.credentialVault && db.credentialVault.hint) ? db.credentialVault.hint : '';
+
+    openModal('changeCredentialPasscodeModal');
+}
+window.openChangeCredentialPasscodeModal = openChangeCredentialPasscodeModal;
+
+function saveNewCredentialPasscode() {
+    const curr = document.getElementById('credChangeCurrentPasscode');
+    const next = document.getElementById('credChangeNewPasscode');
+    const conf = document.getElementById('credChangeConfirmPasscode');
+    const hint = document.getElementById('credChangeHint');
+
+    const currVal = curr ? curr.value : '';
+    const nextVal = next ? next.value : '';
+    const confVal = conf ? conf.value : '';
+    const hintVal = hint ? hint.value.trim() : '';
+
+    const master = (db.credentialVault && db.credentialVault.passcode) ? String(db.credentialVault.passcode) : '1234';
+
+    if (currVal !== master) {
+        showToast('Current passcode is incorrect');
+        if (curr) curr.focus();
+        return;
+    }
+
+    if (!nextVal || nextVal.length < 3) {
+        showToast('New passcode must be at least 3 characters');
+        if (next) next.focus();
+        return;
+    }
+
+    if (nextVal !== confVal) {
+        showToast('New passcode confirmation does not match');
+        if (conf) conf.focus();
+        return;
+    }
+
+    if (!db.credentialVault) db.credentialVault = {};
+    db.credentialVault.passcode = nextVal;
+    db.credentialVault.hint = hintVal || 'Custom secure passcode';
+    db.credentialVault.lastChanged = Date.now();
+
+    saveDatabase(true);
+    closeModal('changeCredentialPasscodeModal');
+    showToast('Vault passcode updated successfully');
+    renderCredentialsVault();
+}
+window.saveNewCredentialPasscode = saveNewCredentialPasscode;
+
+function generateStrongPasswordForInput(inputId) {
+    const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
+    let result = '';
+    const randomArray = new Uint32Array(16);
+    if (window.crypto && window.crypto.getRandomValues) {
+        window.crypto.getRandomValues(randomArray);
+        for (let i = 0; i < 16; i++) {
+            result += chars[randomArray[i] % chars.length];
+        }
+    } else {
+        for (let i = 0; i < 16; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+    }
+
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.value = result;
+        input.type = 'text';
+        const icon = document.getElementById('credModalEyeIcon');
+        if (icon) {
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    }
+    showToast('Strong 16-char password generated');
+}
+window.generateStrongPasswordForInput = generateStrongPasswordForInput;
+
+function openAddCredentialModal(preselectedCat) {
+    const idEl = document.getElementById('credModalEditId');
+    const catEl = document.getElementById('credModalCategorySelect');
+    const descEl = document.getElementById('credModalDescriptionInput');
+    const userEl = document.getElementById('credModalUsernameInput');
+    const secEl = document.getElementById('credModalSecretInput');
+    const pinEl = document.getElementById('credModalSecondaryCodeInput');
+    const notesEl = document.getElementById('credModalNotesInput');
+    const titleHeader = document.getElementById('credentialModalTitle');
+
+    if (idEl) idEl.value = '';
+    if (titleHeader) titleHeader.textContent = 'Add Credential';
+    if (catEl) catEl.value = (preselectedCat && preselectedCat !== 'all') ? preselectedCat : 'email';
+    if (descEl) descEl.value = '';
+    if (userEl) userEl.value = '';
+    if (secEl) {
+        secEl.value = '';
+        secEl.type = 'password';
+    }
+    const icon = document.getElementById('credModalEyeIcon');
+    if (icon) {
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+    if (pinEl) {
+        pinEl.value = '';
+        pinEl.type = 'password';
+    }
+    const pinIcon = document.getElementById('credModalSecondaryEyeIcon');
+    if (pinIcon) {
+        pinIcon.classList.remove('fa-eye-slash');
+        pinIcon.classList.add('fa-eye');
+    }
+    if (notesEl) notesEl.value = '';
+
+    const delBtn = document.getElementById('credModalDeleteBtn');
+    if (delBtn) delBtn.classList.add('hidden');
+
+    openModal('credentialModal');
+}
+window.openAddCredentialModal = openAddCredentialModal;
+
+function openEditCredentialModal(id) {
+    if (!Array.isArray(db.credentials)) db.credentials = [];
+    const item = db.credentials.find(c => c.id === id);
+    if (!item) {
+        showToast('Credential record not found');
+        return;
+    }
+
+    const idEl = document.getElementById('credModalEditId');
+    const catEl = document.getElementById('credModalCategorySelect');
+    const descEl = document.getElementById('credModalDescriptionInput');
+    const userEl = document.getElementById('credModalUsernameInput');
+    const secEl = document.getElementById('credModalSecretInput');
+    const pinEl = document.getElementById('credModalSecondaryCodeInput');
+    const notesEl = document.getElementById('credModalNotesInput');
+    const titleHeader = document.getElementById('credentialModalTitle');
+
+    if (idEl) idEl.value = item.id;
+    if (titleHeader) titleHeader.textContent = 'Edit Credential';
+    if (catEl) catEl.value = item.category || 'email';
+    if (descEl) descEl.value = item.description || '';
+    if (userEl) userEl.value = item.username || '';
+    if (secEl) {
+        secEl.value = item.secret || '';
+        secEl.type = 'password';
+    }
+    const icon = document.getElementById('credModalEyeIcon');
+    if (icon) {
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+    if (pinEl) {
+        pinEl.value = item.secondaryCode || '';
+        pinEl.type = 'password';
+    }
+    const pinIcon = document.getElementById('credModalSecondaryEyeIcon');
+    if (pinIcon) {
+        pinIcon.classList.remove('fa-eye-slash');
+        pinIcon.classList.add('fa-eye');
+    }
+    if (notesEl) notesEl.value = item.notes || '';
+
+    const delBtn = document.getElementById('credModalDeleteBtn');
+    if (delBtn) {
+        delBtn.classList.remove('hidden');
+        delBtn.onclick = () => {
+            closeModal('credentialModal');
+            deleteCredentialItem(id);
+        };
+    }
+
+    openModal('credentialModal');
+}
+window.openEditCredentialModal = openEditCredentialModal;
+
+function saveCredentialItem() {
+    const idEl = document.getElementById('credModalEditId');
+    const catEl = document.getElementById('credModalCategorySelect');
+    const descEl = document.getElementById('credModalDescriptionInput');
+    const userEl = document.getElementById('credModalUsernameInput');
+    const secEl = document.getElementById('credModalSecretInput');
+    const pinEl = document.getElementById('credModalSecondaryCodeInput');
+    const notesEl = document.getElementById('credModalNotesInput');
+
+    const id = idEl ? idEl.value : '';
+    const category = catEl ? catEl.value : 'email';
+    const description = descEl ? descEl.value.trim() : '';
+    const username = userEl ? userEl.value.trim() : '';
+    const secret = secEl ? secEl.value : '';
+    const secondaryCode = pinEl ? pinEl.value.trim() : '';
+    const notes = notesEl ? notesEl.value.trim() : '';
+
+    if (!secret && !secondaryCode) {
+        showToast('Please enter a password, PIN, or secret key');
+        if (secEl) secEl.focus();
+        return;
+    }
+
+    const meta = getCredentialCategoryMeta(category);
+    const title = description || username || meta.name;
+
+    if (!Array.isArray(db.credentials)) db.credentials = [];
+
+    if (id) {
+        const item = db.credentials.find(c => c.id === id);
+        if (item) {
+            item.category = category;
+            item.description = description;
+            item.title = title;
+            item.username = username;
+            item.secret = secret;
+            item.secondaryCode = secondaryCode;
+            item.notes = notes;
+            item.updatedAt = Date.now();
+        }
+    } else {
+        const newItem = {
+            id: 'cred_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+            category,
+            description,
+            title,
+            username,
+            secret,
+            secondaryCode,
+            notes,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+        db.credentials.unshift(newItem);
+    }
+
+    saveDatabase(true);
+    closeModal('credentialModal');
+    renderCredentialsVault();
+    showToast(id ? 'Credential updated successfully' : 'New credential stored securely');
+}
+window.saveCredentialItem = saveCredentialItem;
+
+function deleteCredentialItem(id) {
+    if (!Array.isArray(db.credentials)) db.credentials = [];
+    const index = db.credentials.findIndex(c => c.id === id);
+    if (index === -1) return;
+
+    const item = db.credentials[index];
+    const displayLabel = item.description || item.username || item.title || 'this credential';
+    const confirmMsg = `Are you sure you want to delete "${displayLabel}"? This credential will be permanently removed from your vault.`;
+
+    const doDelete = () => {
+        const curIdx = db.credentials.findIndex(c => c.id === id);
+        if (curIdx === -1) return;
+        const deletedItem = db.credentials[curIdx];
+
+        if (typeof recordDeletion === 'function') {
+            recordDeletion({
+                type: 'credential',
+                label: `Credential: ${displayLabel}`,
+                data: JSON.parse(JSON.stringify(deletedItem)),
+                originalIndex: curIdx
+            });
+        }
+
+        db.credentials.splice(curIdx, 1);
+        if (window.revealedCredSecrets) window.revealedCredSecrets.delete(id);
+        if (window.revealedCredPins) window.revealedCredPins.delete(id);
+        saveDatabase(true);
+        renderCredentialsVault();
+        if (typeof showToast === 'function') {
+            showToast(`Deleted: "${displayLabel}"`);
+        }
+    };
+
+    if (typeof requireConfirmation === 'function') {
+        requireConfirmation(confirmMsg, doDelete);
+    } else {
+        doDelete();
+    }
+}
+window.deleteCredentialItem = deleteCredentialItem;
+
+function toggleSecretCardVisibility(id) {
+    if (window.revealedCredSecrets.has(id)) {
+        window.revealedCredSecrets.delete(id);
+    } else {
+        window.revealedCredSecrets.add(id);
+    }
+    renderCredentialsVault();
+}
+window.toggleSecretCardVisibility = toggleSecretCardVisibility;
+
+function toggleSecretPinVisibility(id) {
+    if (window.revealedCredPins.has(id)) {
+        window.revealedCredPins.delete(id);
+    } else {
+        window.revealedCredPins.add(id);
+    }
+    renderCredentialsVault();
+}
+window.toggleSecretPinVisibility = toggleSecretPinVisibility;
+
+function copyCredentialField(text, label) {
+    if (!text) {
+        showToast(`No ${label} to copy`);
+        return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(`${label} copied to clipboard!`);
+        }).catch(() => {
+            fallbackCopyText(text, label);
+        });
+    } else {
+        fallbackCopyText(text, label);
+    }
+}
+window.copyCredentialField = copyCredentialField;
+
+function fallbackCopyText(text, label) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+        document.execCommand('copy');
+        showToast(`${label} copied to clipboard!`);
+    } catch (e) {
+        showToast(`Failed to copy ${label}`);
+    }
+    document.body.removeChild(ta);
+}
+
+function setCredCategoryFilter(cat) {
+    window.activeCredCategory = cat;
+    try {
+        localStorage.setItem('executive_cred_category', cat);
+    } catch (e) {}
+    renderCredentialsVault();
+}
+window.setCredCategoryFilter = setCredCategoryFilter;
+
+window.activeCredViewMode = (function() {
+    try {
+        return localStorage.getItem('executive_cred_view_mode') || 'grid';
+    } catch (e) {
+        return 'grid';
+    }
+})();
+
+function setCredViewMode(mode) {
+    window.activeCredViewMode = mode;
+    try {
+        localStorage.setItem('executive_cred_view_mode', mode);
+        if (window.db) {
+            if (!window.db.uiState) window.db.uiState = {};
+            if (!window.db.uiState.credentials) window.db.uiState.credentials = {};
+            window.db.uiState.credentials.viewMode = mode;
+            if (typeof saveDatabase === 'function') saveDatabase(false);
+        }
+    } catch (e) {}
+
+    const btnGrid = document.getElementById('btnCredViewGrid');
+    const btnList = document.getElementById('btnCredViewList');
+    const gridContainer = document.getElementById('credentialsCardsContainer');
+    const listContainer = document.getElementById('credentialsListContainer');
+
+    if (mode === 'list') {
+        if (btnGrid) {
+            btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+        }
+        if (btnList) {
+            btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+        }
+        if (gridContainer) gridContainer.classList.add('hidden');
+        if (listContainer) listContainer.classList.remove('hidden');
+    } else {
+        if (btnGrid) {
+            btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+        }
+        if (btnList) {
+            btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+        }
+        if (gridContainer) gridContainer.classList.remove('hidden');
+        if (listContainer) listContainer.classList.add('hidden');
+    }
+    renderCredentialsVault();
+}
+window.setCredViewMode = setCredViewMode;
+
+function escapeCredHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function getCredentialCategoryMeta(cat) {
+    switch ((cat || '').toLowerCase()) {
+        case 'apple':
+            return {
+                name: 'Apple ID',
+                icon: 'fa-apple',
+                brandIcon: true,
+                badgeClass: 'bg-slate-500/15 text-slate-200 border-slate-500/30',
+                accentColor: 'text-slate-200',
+                accentBg: 'bg-slate-500/10'
+            };
+        case 'banking':
+            return {
+                name: 'Banking & Cards',
+                icon: 'fa-building-columns',
+                badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+                accentColor: 'text-emerald-400',
+                accentBg: 'bg-emerald-500/10'
+            };
+        case 'pin':
+            return {
+                name: 'PINs & Passcodes',
+                icon: 'fa-hashtag',
+                badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+                accentColor: 'text-amber-400',
+                accentBg: 'bg-amber-500/10'
+            };
+        case 'social':
+            return {
+                name: 'Social & Media',
+                icon: 'fa-globe',
+                badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+                accentColor: 'text-blue-400',
+                accentBg: 'bg-blue-500/10'
+            };
+        case 'server':
+            return {
+                name: 'Servers & Cloud',
+                icon: 'fa-server',
+                badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+                accentColor: 'text-purple-400',
+                accentBg: 'bg-purple-500/10'
+            };
+        case 'email':
+            return {
+                name: 'Email & Account',
+                icon: 'fa-envelope',
+                badgeClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+                accentColor: 'text-cyan-400',
+                accentBg: 'bg-cyan-500/10'
+            };
+        default:
+            return {
+                name: 'Other Secret',
+                icon: 'fa-key',
+                badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+                accentColor: 'text-amber-400',
+                accentBg: 'bg-amber-500/10'
+            };
+    }
+}
+
+function renderCredentialsVault() {
+    const lockedView = document.getElementById('credVaultLockedView');
+    const unlockedView = document.getElementById('credVaultUnlockedView');
+    const topCreds = document.getElementById('docCredentialsTopActions');
+    updateCredLockBadge();
+
+    if (!window.isCredentialVaultUnlocked) {
+        if (lockedView) lockedView.classList.remove('hidden');
+        if (unlockedView) unlockedView.classList.add('hidden');
+        if (topCreds) topCreds.classList.add('hidden');
+        return;
+    }
+
+    if (lockedView) lockedView.classList.add('hidden');
+    if (unlockedView) unlockedView.classList.remove('hidden');
+    if (topCreds && window.activeDocumentSubTab === 'credentials') {
+        topCreds.classList.remove('hidden');
+    }
+
+    if (!Array.isArray(db.credentials)) db.credentials = [];
+
+    // Update category pills
+    const cats = ['email', 'apple', 'banking', 'pin', 'social', 'server', 'other', 'all'];
+    cats.forEach(c => {
+        const btn = document.getElementById(`btnCredCat-${c}`);
+        if (btn) {
+            if (c === window.activeCredCategory) {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 transition-all cursor-pointer whitespace-nowrap shadow-sm';
+            } else {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap';
+            }
+        }
+    });
+
+    // Filter by category & search
+    const searchInput = document.getElementById('credSearchInput');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    const filtered = db.credentials.filter(item => {
+        if (window.activeCredCategory !== 'all' && item.category !== window.activeCredCategory) {
+            return false;
+        }
+        if (!query) return true;
+        const inDesc = (item.description || '').toLowerCase().includes(query);
+        const inTitle = (item.title || '').toLowerCase().includes(query);
+        const inUser = (item.username || '').toLowerCase().includes(query);
+        const inNotes = (item.notes || '').toLowerCase().includes(query);
+        const inPin = (item.secondaryCode || '').toLowerCase().includes(query);
+        const inCat = (item.category || '').toLowerCase().includes(query);
+        return inDesc || inTitle || inUser || inNotes || inPin || inCat;
+    });
+
+    const isListView = window.activeCredViewMode === 'list';
+    const gridContainer = document.getElementById('credentialsCardsContainer');
+    const listContainer = document.getElementById('credentialsListContainer');
+    const listTbody = document.getElementById('credentialsListTableBody');
+
+    // Sync button styling and container visibility
+    const btnGrid = document.getElementById('btnCredViewGrid');
+    const btnList = document.getElementById('btnCredViewList');
+    if (isListView) {
+        if (btnGrid) btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+        if (btnList) btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+        if (gridContainer) gridContainer.classList.add('hidden');
+        if (listContainer) listContainer.classList.remove('hidden');
+    } else {
+        if (btnGrid) btnGrid.className = 'p-1.5 px-2.5 rounded-lg text-xs text-amber-400 bg-surface-800 transition-all cursor-pointer shadow-sm';
+        if (btnList) btnList.className = 'p-1.5 px-2.5 rounded-lg text-xs text-slate-400 hover:text-white transition-all cursor-pointer';
+        if (gridContainer) gridContainer.classList.remove('hidden');
+        if (listContainer) listContainer.classList.add('hidden');
+    }
+
+    // Render Empty State
+    if (filtered.length === 0) {
+        const emptyHtml = `
+            <div class="col-span-full py-12 px-4 text-center premium-card border border-surface-800 space-y-4">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <div class="space-y-1">
+                    <h5 class="text-sm font-display font-bold text-white">${query ? 'No matching credentials found' : 'No credentials saved yet'}</h5>
+                    <p class="text-xs text-slate-400 max-w-sm mx-auto">
+                        ${query ? 'Try a different search keyword or category filter.' : 'Securely save your email accounts, passwords, PIN numbers, or Apple ID credentials.'}
+                    </p>
+                </div>
+                <div>
+                    <button onclick="openAddCredentialModal('${window.activeCredCategory !== 'all' ? window.activeCredCategory : 'email'}')" class="px-4 py-2 rounded-xl text-xs font-mono bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition-all cursor-pointer font-bold inline-flex items-center gap-2">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>Add First Credential</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        if (gridContainer) gridContainer.innerHTML = emptyHtml;
+        if (listTbody) {
+            listTbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="py-12 text-center text-slate-400">
+                        <div class="space-y-3">
+                            <i class="fa-solid fa-key text-2xl text-amber-400/60"></i>
+                            <div class="text-xs text-slate-400">${query ? 'No matching credentials found' : 'No credentials saved yet'}</div>
+                            <button onclick="openAddCredentialModal('${window.activeCredCategory !== 'all' ? window.activeCredCategory : 'email'}')" class="px-3.5 py-1.5 rounded-xl text-xs font-mono bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition-all cursor-pointer font-semibold inline-flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                                <span>Add Credential</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        return;
+    }
+
+    // Render Grid View Cards
+    if (gridContainer) {
+        gridContainer.innerHTML = '';
+        filtered.forEach(item => {
+            const meta = getCredentialCategoryMeta(item.category);
+            const isRevealed = window.revealedCredSecrets.has(item.id);
+            const maskedSecret = '••••••••••••';
+            const displaySecret = isRevealed ? (item.secret || '') : maskedSecret;
+            const primaryTitle = item.description || item.username || item.title || meta.name;
+
+            const isRevealedPin = window.revealedCredPins.has(item.id);
+            const maskedPin = '••••••';
+            const displayPin = isRevealedPin ? item.secondaryCode : maskedPin;
+
+            const card = document.createElement('div');
+            card.className = 'premium-card p-4 space-y-3.5 border border-surface-800 hover:border-surface-700 transition-all duration-200 group relative flex flex-col justify-between';
+
+            // Secondary code rendering
+            let secCodeHtml = '';
+            if (item.secondaryCode) {
+                secCodeHtml = `
+                    <div class="p-2.5 rounded-xl bg-surface-950/70 border border-surface-800/80 flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0">PIN / Code:</span>
+                            <span class="font-mono ${isRevealedPin ? 'text-amber-300 font-semibold select-all' : 'text-slate-400 tracking-wider'} truncate">${escapeCredHtml(displayPin)}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button onclick="toggleSecretPinVisibility('${item.id}')" title="${isRevealedPin ? 'Hide PIN' : 'Show PIN'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
+                                <i class="fa-solid ${isRevealedPin ? 'fa-eye-slash' : 'fa-eye'} text-xs"></i>
+                            </button>
+                            <button onclick="copyCredentialField('${item.secondaryCode.replace(/'/g, "\\'")}', 'PIN / Code')" title="Copy PIN" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
+                                <i class="fa-regular fa-copy text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Notes rendering
+            let notesHtml = '';
+            if (item.notes) {
+                notesHtml = `
+                    <div class="p-2.5 rounded-xl bg-surface-950/40 border border-surface-800/50 text-[11px] font-mono text-slate-400 line-clamp-2 leading-relaxed">
+                        <span class="text-slate-500 font-semibold">Note:</span> ${escapeCredHtml(item.notes)}
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="space-y-3">
+                    <!-- Top Row: Icon, Title, Badge, Action Dropdown -->
+                    <div class="flex items-start justify-between gap-2.5">
+                        <div class="flex items-center gap-2.5 overflow-hidden">
+                            <div class="w-9 h-9 rounded-xl ${meta.accentBg} border border-surface-700/60 ${meta.accentColor} flex items-center justify-center shrink-0 shadow-sm">
+                                <i class="${meta.brandIcon ? 'fa-brands' : 'fa-solid'} ${meta.icon} text-sm"></i>
+                            </div>
+                            <div class="overflow-hidden">
+                                <h4 class="font-display font-bold text-white text-sm truncate leading-snug group-hover:text-amber-300 transition-colors" title="${escapeCredHtml(primaryTitle)}">${escapeCredHtml(primaryTitle)}</h4>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="px-2 py-0.5 rounded-md ${meta.badgeClass} font-mono text-[9px] uppercase tracking-wider font-semibold border">${meta.name}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Edit & Delete Actions -->
+                        <div class="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openEditCredentialModal('${item.id}')" title="Edit Credential" class="p-1.5 text-slate-400 hover:text-amber-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteCredentialItem('${item.id}')" title="Delete Credential" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Username / Email Field (if exists and differs from title) -->
+                    ${(item.username && item.username !== primaryTitle) ? `
+                    <div class="p-2.5 rounded-xl bg-surface-950/70 border border-surface-800/80 flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0">User / Email:</span>
+                            <span class="font-mono text-slate-200 truncate font-medium select-all">${escapeCredHtml(item.username)}</span>
+                        </div>
+                        <button onclick="copyCredentialField('${item.username.replace(/'/g, "\\'")}', 'Username')" title="Copy Username / Email" class="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0">
+                            <i class="fa-regular fa-copy text-xs"></i>
+                        </button>
+                    </div>
+                    ` : ''}
+
+                    <!-- Password / Secret Field with Reveal & Copy -->
+                    ${item.secret ? `
+                    <div class="p-2.5 rounded-xl bg-surface-950/90 border border-surface-800 flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0">Password:</span>
+                            <span class="font-mono ${isRevealed ? 'text-emerald-300 font-semibold select-all' : 'text-slate-400 tracking-wider'} truncate">${escapeCredHtml(displaySecret)}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button onclick="toggleSecretCardVisibility('${item.id}')" title="${isRevealed ? 'Hide Password' : 'Show Password'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
+                                <i class="fa-solid ${isRevealed ? 'fa-eye-slash' : 'fa-eye'} text-xs"></i>
+                            </button>
+                            <button onclick="copyCredentialField('${(item.secret || '').replace(/'/g, "\\'")}', 'Password')" title="Copy Password" class="p-1 text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer">
+                                <i class="fa-regular fa-copy text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    ${secCodeHtml}
+                    ${notesHtml}
+                </div>
+            `;
+            gridContainer.appendChild(card);
+        });
+    }
+
+    // Render List View Table
+    if (listTbody) {
+        listTbody.innerHTML = '';
+        filtered.forEach(item => {
+            const meta = getCredentialCategoryMeta(item.category);
+            const isRevealed = window.revealedCredSecrets.has(item.id);
+            const maskedSecret = '••••••••••••';
+            const displaySecret = isRevealed ? (item.secret || '') : maskedSecret;
+
+            const isRevealedPin = window.revealedCredPins.has(item.id);
+            const maskedPin = '••••••';
+            const displayPin = isRevealedPin ? item.secondaryCode : maskedPin;
+
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-surface-900/50 transition-colors border-b border-surface-800/40';
+
+            tr.innerHTML = `
+                <!-- Category: Icon only, no text label as requested -->
+                <td class="py-3 px-3 text-center">
+                    <div class="inline-flex items-center justify-center w-7 h-7 rounded-lg ${meta.accentBg} ${meta.accentColor} border border-surface-700/50 text-xs shadow-sm" title="${meta.name}">
+                        <i class="${meta.brandIcon ? 'fa-brands' : 'fa-solid'} ${meta.icon}"></i>
+                    </div>
+                </td>
+
+                <!-- Description -->
+                <td class="py-3 px-4 max-w-[200px]">
+                    ${item.description ? `
+                        <span class="font-mono text-white text-xs font-semibold truncate block" title="${escapeCredHtml(item.description)}">${escapeCredHtml(item.description)}</span>
+                    ` : '<span class="text-slate-600 font-mono text-xs italic">-</span>'}
+                </td>
+
+                <!-- User / Email / Identifier -->
+                <td class="py-3 px-4">
+                    ${item.username ? `
+                        <div class="flex items-center gap-2 max-w-[240px]">
+                            <span class="font-mono text-slate-200 text-xs font-medium truncate select-all">${escapeCredHtml(item.username)}</span>
+                            <button onclick="copyCredentialField('${item.username.replace(/'/g, "\\'")}', 'Username / Email')" title="Copy" class="p-1 text-slate-500 hover:text-white transition-colors cursor-pointer shrink-0">
+                                <i class="fa-regular fa-copy text-[11px]"></i>
+                            </button>
+                        </div>
+                    ` : '<span class="text-slate-600 font-mono text-xs italic">-</span>'}
+                </td>
+
+                <!-- Password / Secret -->
+                <td class="py-3 px-4">
+                    ${item.secret ? `
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono ${isRevealed ? 'text-emerald-300 font-semibold select-all' : 'text-slate-400 tracking-wider'} text-xs">${escapeCredHtml(displaySecret)}</span>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button onclick="toggleSecretCardVisibility('${item.id}')" title="${isRevealed ? 'Hide' : 'Show'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
+                                    <i class="fa-solid ${isRevealed ? 'fa-eye-slash' : 'fa-eye'} text-[11px]"></i>
+                                </button>
+                                <button onclick="copyCredentialField('${(item.secret || '').replace(/'/g, "\\'")}', 'Password')" title="Copy" class="p-1 text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer">
+                                    <i class="fa-regular fa-copy text-[11px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    ` : '<span class="text-slate-600 font-mono text-xs italic">-</span>'}
+                </td>
+
+                <!-- Secondary PIN / Code with Eye Icon Toggle and Copy -->
+                <td class="py-3 px-4">
+                    ${item.secondaryCode ? `
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono ${isRevealedPin ? 'text-amber-300 font-semibold select-all' : 'text-slate-400 tracking-wider'} text-xs">${escapeCredHtml(displayPin)}</span>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button onclick="toggleSecretPinVisibility('${item.id}')" title="${isRevealedPin ? 'Hide PIN' : 'Show PIN'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
+                                    <i class="fa-solid ${isRevealedPin ? 'fa-eye-slash' : 'fa-eye'} text-[11px]"></i>
+                                </button>
+                                <button onclick="copyCredentialField('${item.secondaryCode.replace(/'/g, "\\'")}', 'PIN / Code')" title="Copy PIN" class="p-1 text-slate-500 hover:text-amber-300 transition-colors cursor-pointer">
+                                    <i class="fa-regular fa-copy text-[11px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    ` : '<span class="text-slate-600 font-mono text-xs italic">-</span>'}
+                </td>
+
+                <!-- Notes / Recovery -->
+                <td class="py-3 px-4 max-w-[240px]">
+                    ${item.notes ? `
+                        <span class="text-slate-400 text-xs font-mono truncate block" title="${escapeCredHtml(item.notes)}">${escapeCredHtml(item.notes)}</span>
+                    ` : '<span class="text-slate-600 font-mono text-xs italic">-</span>'}
+                </td>
+
+                <!-- Actions -->
+                <td class="py-3 px-4 text-center">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <button onclick="openEditCredentialModal('${item.id}')" title="Edit Credential" class="p-1.5 text-slate-400 hover:text-amber-300 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteCredentialItem('${item.id}')" title="Delete Credential" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            listTbody.appendChild(tr);
+        });
+    }
+}
+window.renderCredentialsVault = renderCredentialsVault;
+
 
 
 

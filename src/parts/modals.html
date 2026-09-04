@@ -2002,6 +2002,149 @@
         </div>
     </div>
 
+    <!-- CREDENTIAL MODAL (ADD / EDIT) -->
+    <div id="credentialModal" class="fixed inset-0 z-50 bg-surface-950/95 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar border border-surface-700/80 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-surface-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-key text-xs"></i>
+                    </div>
+                    <div>
+                        <h3 id="credentialModalTitle" class="font-display text-base text-white font-bold">Add Credential</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Store email, password, PIN, or Apple ID securely</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('credentialModal')" class="text-slate-500 hover:text-white p-1 text-base transition-colors cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <input type="hidden" id="credModalEditId">
+
+            <div class="space-y-3.5 text-xs">
+                <!-- Category Select -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Category <span class="text-rose-400">*</span></label>
+                    <select id="credModalCategorySelect" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none cursor-pointer">
+                        <option value="email">📧 Email &amp; Account (Gmail, Outlook, Yahoo)</option>
+                        <option value="apple">🍏 Apple ID &amp; iCloud Credentials</option>
+                        <option value="banking">🏦 Banking &amp; Financial (NetBanking, Cards, PINs)</option>
+                        <option value="pin">🔢 PINs &amp; Passcodes (Device, ATM, Locker, Door)</option>
+                        <option value="social">🌐 Social &amp; Media (Instagram, LinkedIn, Streaming)</option>
+                        <option value="server">☁️ Servers &amp; Cloud (AWS, GitHub, Domains, Hosting)</option>
+                        <option value="other">🔑 Other Digital Secrets &amp; Keys</option>
+                    </select>
+                </div>
+
+                <!-- Description Input (Immediately after Category) -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Description</label>
+                    <input type="text" id="credModalDescriptionInput" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+
+                <!-- Username / Email Input -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Username / Email / Apple ID</label>
+                    <input type="text" id="credModalUsernameInput" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+
+                <!-- Password / Primary Secret -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="font-mono text-[10px] uppercase tracking-wider text-slate-400">Password / Secret Key <span class="text-rose-400">*</span></label>
+                        <button type="button" onclick="generateStrongPasswordForInput('credModalSecretInput')" class="text-[10px] font-mono text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 cursor-pointer">
+                            <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> Auto-Generate Strong
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="credModalSecretInput" class="w-full pl-3 pr-10 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                        <button type="button" onclick="toggleCredPasscodeVisibility('credModalSecretInput', 'credModalEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+                            <i id="credModalEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Secondary PIN / Code (Optional) -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Secondary PIN / ATM Code / CVV <span class="text-slate-500 font-normal lowercase">(optional)</span></label>
+                    <div class="relative">
+                        <input type="password" id="credModalSecondaryCodeInput" class="w-full pl-3 pr-10 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                        <button type="button" onclick="toggleCredPasscodeVisibility('credModalSecondaryCodeInput', 'credModalSecondaryEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer" title="Show / Hide PIN">
+                            <i id="credModalSecondaryEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notes / Security Questions -->
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Notes / Security Answers / Recovery Details</label>
+                    <textarea id="credModalNotesInput" rows="3" class="w-full min-h-[70px] px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none resize-y custom-scrollbar"></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex items-center justify-between gap-2 pt-3 border-t border-surface-800">
+                <button type="button" id="credModalDeleteBtn" class="hidden px-3.5 py-2 bg-rose-500/15 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                    <span>Delete</span>
+                </button>
+                <div class="flex items-center gap-2 ml-auto">
+                    <button type="button" onclick="closeModal('credentialModal')" class="px-4 py-2 bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-mono rounded-xl transition-all cursor-pointer">Cancel</button>
+                    <button type="button" onclick="saveCredentialItem()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-surface-950 font-bold text-xs font-mono rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Save Credential</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHANGE CREDENTIAL VAULT MASTER PASSCODE MODAL -->
+    <div id="changeCredentialPasscodeModal" class="fixed inset-0 z-50 bg-surface-950/95 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="premium-card max-w-md w-full p-6 space-y-4 border border-surface-700/80 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-[40px] pointer-events-none"></div>
+
+            <div class="flex items-center justify-between border-b border-surface-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-shield-halved text-xs"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-base text-white font-bold">Change Vault Passcode</h3>
+                        <p class="text-[10px] font-mono text-slate-400">Set dedicated protection for your Credentials</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('changeCredentialPasscodeModal')" class="text-slate-500 hover:text-white p-1 text-base transition-colors cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Current Passcode <span class="text-rose-400">*</span></label>
+                    <input type="password" id="credChangeCurrentPasscode" placeholder="Enter current passcode" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">New Passcode / PIN <span class="text-rose-400">*</span></label>
+                    <input type="password" id="credChangeNewPasscode" placeholder="Enter new passcode (min 3 chars)" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Confirm New Passcode <span class="text-rose-400">*</span></label>
+                    <input type="password" id="credChangeConfirmPasscode" placeholder="Re-enter new passcode" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Security Hint <span class="text-slate-500 font-normal lowercase">(optional)</span></label>
+                    <input type="text" id="credChangeHint" placeholder="e.g., Mom's birthday or car registration" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-surface-800">
+                <button type="button" onclick="closeModal('changeCredentialPasscodeModal')" class="px-4 py-2 bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-mono rounded-xl transition-all cursor-pointer">Cancel</button>
+                <button type="button" onclick="saveNewCredentialPasscode()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-surface-950 font-bold text-xs font-mono rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Update Passcode</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- GLOBAL TOAST NOTIFICATION WITH DYNAMIC UNDO ACTION -->
     <div id="appToast" class="fixed bottom-6 right-6 z-[200] transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-auto">
         <div class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface-900/95 border border-brand-500/40 text-slate-100 shadow-2xl backdrop-blur-xl max-w-md">
