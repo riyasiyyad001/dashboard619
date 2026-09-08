@@ -4311,6 +4311,245 @@ let docViewMode = (function() {
     }
 })();
 let modalDocStagedFile = null;
+let modalExcelStagedFile = null;
+
+function openExcelUploadModal() {
+    modalExcelStagedFile = null;
+    const titleInput = document.getElementById('modalExcelTitleInput');
+    const catSelect = document.getElementById('modalExcelCategorySelect');
+    const dateInput = document.getElementById('modalExcelDateInput');
+    const tagsInput = document.getElementById('modalExcelTagsInput');
+    const confCheck = document.getElementById('modalExcelConfidentialCheck');
+    const notesInput = document.getElementById('modalExcelNotesInput');
+    const fileInput = document.getElementById('modalExcelFileInput');
+    const fileChip = document.getElementById('modalExcelSelectedFileInfo');
+
+    if (titleInput) titleInput.value = '';
+    if (catSelect) catSelect.value = (typeof docActiveSubCategory !== 'undefined' && docActiveSubCategory !== 'all' && docActiveSubCategory !== 'identity') ? docActiveSubCategory : 'financial';
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    if (tagsInput) tagsInput.value = '#Excel, #Financial';
+    if (confCheck) confCheck.checked = false;
+    if (notesInput) notesInput.value = '';
+    if (fileInput) fileInput.value = '';
+    if (fileChip) fileChip.classList.add('hidden');
+
+    openModal('excelUploadModal');
+}
+window.openExcelUploadModal = openExcelUploadModal;
+
+function handleModalExcelFileSelect(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    stageExcelFile(file);
+}
+window.handleModalExcelFileSelect = handleModalExcelFileSelect;
+
+function handleModalExcelDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('modalExcelDropzone');
+    if (el) el.classList.add('border-emerald-400', 'bg-emerald-500/10');
+}
+window.handleModalExcelDragOver = handleModalExcelDragOver;
+
+function handleModalExcelDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('modalExcelDropzone');
+    if (el) el.classList.remove('border-emerald-400', 'bg-emerald-500/10');
+}
+window.handleModalExcelDragLeave = handleModalExcelDragLeave;
+
+function handleModalExcelDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('modalExcelDropzone');
+    if (el) el.classList.remove('border-emerald-400', 'bg-emerald-500/10');
+
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        stageExcelFile(e.dataTransfer.files[0]);
+    }
+}
+window.handleModalExcelDrop = handleModalExcelDrop;
+
+function stageExcelFile(file) {
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+        showToast('File too large! Maximum 15MB allowed per Excel workbook.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        modalExcelStagedFile = {
+            name: file.name,
+            size: file.size,
+            type: 'excel',
+            mimeType: file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            data: evt.target.result
+        };
+
+        const fileChip = document.getElementById('modalExcelSelectedFileInfo');
+        const fileNameEl = document.getElementById('modalExcelSelectedName');
+        const fileMetaEl = document.getElementById('modalExcelSelectedMeta');
+        const titleInput = document.getElementById('modalExcelTitleInput');
+
+        if (fileNameEl) fileNameEl.innerText = file.name;
+        if (fileMetaEl) fileMetaEl.innerText = `${(file.size / 1024).toFixed(1)} KB • Excel Spreadsheet`;
+        if (fileChip) fileChip.classList.remove('hidden');
+
+        // Auto populate title if blank
+        if (titleInput && !titleInput.value.trim()) {
+            const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+            titleInput.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+        }
+    };
+    reader.readAsDataURL(file);
+}
+window.stageExcelFile = stageExcelFile;
+
+function generateSampleExcelTemplate() {
+    try {
+        if (typeof XLSX === 'undefined') {
+            showToast('Excel engine loading, please try in a moment');
+            return;
+        }
+
+        // Build a multi-sheet financial workbook using SheetJS
+        const wb = XLSX.utils.book_new();
+
+        // 1. Executive Summary Sheet
+        const summaryData = [
+            ["EXECUTIVE FINANCIAL PORTFOLIO & AUDIT LEDGER 2026", "", "", ""],
+            ["Generated on", new Date().toLocaleDateString(), "Currency", "USD / INR"],
+            ["", "", "", ""],
+            ["Category", "Asset / Description", "Valuation (USD)", "Allocation %"],
+            ["Real Estate", "Prime Commercial Plot & Luxury Residence", 850000, "41.5%"],
+            ["Equity & Securities", "NSE / NASDAQ Growth Portfolio", 420000, "20.5%"],
+            ["Treasury & Cash", "Private Reserve & Term Deposits", 310000, "15.1%"],
+            ["Business Ventures", "Operating Entity Equity Stakes", 350000, "17.1%"],
+            ["Precious Metals", "Sovereign Gold & Safe Custody", 120000, "5.8%"],
+            ["TOTAL NET ASSETS", "", 2050000, "100.0%"]
+        ];
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, "Portfolio Summary");
+
+        // 2. Cash Flow Forecast Sheet
+        const cashFlowData = [
+            ["QUARTERLY CASH FLOW ANALYSIS 2026", "", "", ""],
+            ["Quarter", "Projected Inflow", "Operating Outflow", "Net Surplus"],
+            ["Q1 2026", 75000, 28000, 47000],
+            ["Q2 2026", 82000, 31000, 51000],
+            ["Q3 2026", 90000, 30000, 60000],
+            ["Q4 2026", 110000, 35000, 75000],
+            ["TOTALS", 357000, 124000, 233000]
+        ];
+        const wsCashFlow = XLSX.utils.aoa_to_sheet(cashFlowData);
+        XLSX.utils.book_append_sheet(wb, wsCashFlow, "Cash Flow Forecast");
+
+        // Write as Base64 data URL
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+        const dataUrl = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${wbout}`;
+
+        modalExcelStagedFile = {
+            name: 'Executive_Financial_Ledger_2026.xlsx',
+            size: Math.round(dataUrl.length * 0.75),
+            type: 'excel',
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            data: dataUrl
+        };
+
+        const fileChip = document.getElementById('modalExcelSelectedFileInfo');
+        const fileNameEl = document.getElementById('modalExcelSelectedName');
+        const fileMetaEl = document.getElementById('modalExcelSelectedMeta');
+        const titleInput = document.getElementById('modalExcelTitleInput');
+
+        if (fileNameEl) fileNameEl.innerText = 'Executive_Financial_Ledger_2026.xlsx';
+        if (fileMetaEl) fileMetaEl.innerText = `${(modalExcelStagedFile.size / 1024).toFixed(1)} KB • Multi-Sheet Excel Workbook`;
+        if (fileChip) fileChip.classList.remove('hidden');
+
+        if (titleInput && !titleInput.value.trim()) {
+            titleInput.value = 'Executive Financial Portfolio & Cash Flow Model 2026';
+        }
+
+        showToast('Created sample multi-sheet Excel model ready to save!');
+    } catch (err) {
+        console.error('Error generating template:', err);
+        showToast('Error generating template: ' + err.message);
+    }
+}
+window.generateSampleExcelTemplate = generateSampleExcelTemplate;
+
+async function saveExcelDocumentItem() {
+    const titleInput = document.getElementById('modalExcelTitleInput');
+    const catSelect = document.getElementById('modalExcelCategorySelect');
+    const dateInput = document.getElementById('modalExcelDateInput');
+    const tagsInput = document.getElementById('modalExcelTagsInput');
+    const confCheck = document.getElementById('modalExcelConfidentialCheck');
+    const notesInput = document.getElementById('modalExcelNotesInput');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    if (!title) {
+        showToast('Please enter a spreadsheet title or description');
+        return;
+    }
+
+    // If no file uploaded, automatically build sample template so user can save immediately
+    if (!modalExcelStagedFile) {
+        generateSampleExcelTemplate();
+    }
+
+    if (!Array.isArray(db.documents)) db.documents = [];
+
+    const tags = (tagsInput ? tagsInput.value : '')
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0)
+        .map(t => t.startsWith('#') ? t : `#${t}`);
+
+    const docId = `doc_xls_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    const fileData = modalExcelStagedFile ? modalExcelStagedFile.data : null;
+
+    const newDoc = {
+        id: docId,
+        title: title,
+        category: catSelect ? catSelect.value : 'financial',
+        fileType: 'excel',
+        mimeType: modalExcelStagedFile ? modalExcelStagedFile.mimeType : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        fileData: fileData,
+        fileSize: modalExcelStagedFile ? modalExcelStagedFile.size : 52000,
+        date: dateInput ? (dateInput.value || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
+        tags: tags.length > 0 ? tags : ['#Excel', '#Financial'],
+        notes: notesInput ? notesInput.value.trim() : '',
+        isConfidential: confCheck ? confCheck.checked : false,
+        createdAt: new Date().toISOString()
+    };
+
+    if (fileData && window.vaultStorage) {
+        try {
+            await window.vaultStorage.saveFile(docId, fileData);
+        } catch (e) {
+            console.warn("Vault direct save error:", e);
+        }
+    }
+
+    db.documents.unshift(newDoc);
+    await saveDatabase(true);
+
+    // Reset staged file & modal fields
+    modalExcelStagedFile = null;
+    if (titleInput) titleInput.value = '';
+    if (notesInput) notesInput.value = '';
+    const fileChip = document.getElementById('modalExcelSelectedFileInfo');
+    if (fileChip) fileChip.classList.add('hidden');
+    const fileInput = document.getElementById('modalExcelFileInput');
+    if (fileInput) fileInput.value = '';
+
+    closeModal('excelUploadModal');
+    renderDocumentsPage();
+    showToast(`Saved Excel spreadsheet "${title}" to Vault`);
+}
+window.saveExcelDocumentItem = saveExcelDocumentItem;
 
 function setDocumentCategoryFilter(cat) {
     docActiveCategoryFilter = cat;
@@ -4467,12 +4706,13 @@ function stageDocumentFile(file) {
     reader.onload = function(evt) {
         const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
         const isImg = file.type.startsWith('image/');
+        const isExcel = file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls') || file.name.toLowerCase().endsWith('.csv') || (file.type && (file.type.includes('spreadsheet') || file.type.includes('excel')));
 
         modalDocStagedFile = {
             name: file.name,
             size: file.size,
-            type: isPdf ? 'pdf' : (isImg ? 'photo' : 'other'),
-            mimeType: file.type || (isPdf ? 'application/pdf' : 'application/octet-stream'),
+            type: isExcel ? 'excel' : (isPdf ? 'pdf' : (isImg ? 'photo' : 'other')),
+            mimeType: file.type || (isExcel ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : (isPdf ? 'application/pdf' : 'application/octet-stream')),
             data: evt.target.result
         };
 
@@ -4483,9 +4723,9 @@ function stageDocumentFile(file) {
         const titleInput = document.getElementById('modalDocTitleInput');
 
         if (fileNameEl) fileNameEl.innerText = file.name;
-        if (fileMetaEl) fileMetaEl.innerText = `${(file.size / 1024).toFixed(1)} KB • ${file.type || 'Document'}`;
+        if (fileMetaEl) fileMetaEl.innerText = `${(file.size / 1024).toFixed(1)} KB • ${isExcel ? 'Excel Spreadsheet' : (file.type || 'Document')}`;
         if (fileIcon) {
-            fileIcon.className = isPdf ? 'fa-solid fa-file-pdf text-rose-400 text-sm shrink-0' : (isImg ? 'fa-solid fa-image text-cyan-400 text-sm shrink-0' : 'fa-solid fa-file-lines text-emerald-400 text-sm shrink-0');
+            fileIcon.className = isExcel ? 'fa-solid fa-file-excel text-emerald-400 text-sm shrink-0' : (isPdf ? 'fa-solid fa-file-pdf text-rose-400 text-sm shrink-0' : (isImg ? 'fa-solid fa-image text-cyan-400 text-sm shrink-0' : 'fa-solid fa-file-lines text-emerald-400 text-sm shrink-0'));
         }
         if (fileChip) fileChip.classList.remove('hidden');
 
@@ -4617,7 +4857,8 @@ function renderDocumentsPage() {
             filtered.forEach(d => {
                 const isPdf = d.fileType === 'pdf' || (d.mimeType && d.mimeType.includes('pdf'));
                 const isImg = d.fileType === 'photo' || (d.mimeType && d.mimeType.startsWith('image/'));
-                const sizeText = d.fileSize ? (d.fileSize > 1024 * 1024 ? `${(d.fileSize / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(d.fileSize / 1024)} KB`) : 'PDF Doc';
+                const isXls = d.fileType === 'excel' || (d.mimeType && (d.mimeType.includes('spreadsheet') || d.mimeType.includes('excel') || d.mimeType.includes('csv')));
+                const sizeText = d.fileSize ? (d.fileSize > 1024 * 1024 ? `${(d.fileSize / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(d.fileSize / 1024)} KB`) : (isXls ? 'Excel Sheet' : 'PDF Doc');
 
                 const catBadge = getDocCategoryBadge(d.category);
                 const tagPills = Array.isArray(d.tags) ? d.tags.slice(0, 3).map(t => `<span class="px-2 py-0.5 rounded-md bg-surface-900 border border-white/[0.04] text-[9px] font-mono text-slate-400">${t}</span>`).join('') : '';
@@ -4649,20 +4890,27 @@ function renderDocumentsPage() {
                                 <span class="text-[10px] font-mono text-slate-400 mt-2 flex items-center gap-1">
                                     <i class="fa-solid fa-expand text-[9px] text-cyan-400"></i> High-Res Photo
                                 </span>
-                            `) : `
+                            `) : (isXls ? `
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shadow-sm group-hover/dcard:scale-110 transition-transform">
+                                    <i class="fa-solid fa-file-excel text-2xl text-emerald-400"></i>
+                                </div>
+                                <span class="text-[10px] font-mono text-slate-400 mt-2 flex items-center gap-1">
+                                    <i class="fa-solid fa-table-cells text-[9px] text-emerald-400"></i> Interactive Sheet
+                                </span>
+                            ` : `
                                 <div class="w-12 h-12 rounded-2xl ${isPdf ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'} flex items-center justify-center shadow-sm group-hover/dcard:scale-110 transition-transform">
                                     <i class="fa-solid ${isPdf ? 'fa-file-pdf' : 'fa-file-shield'} text-2xl"></i>
                                 </div>
                                 <span class="text-[10px] font-mono text-slate-400 mt-2 flex items-center gap-1">
                                     <i class="fa-solid fa-expand text-[9px] text-emerald-400"></i> ${isPdf ? 'Open PDF Preview' : 'Preview Document'}
                                 </span>
-                            `}
+                            `)}
                         </div>
 
                         <!-- Title & Meta -->
                         <div>
                             <h4 onclick="previewDocumentItem('${d.id}')" class="font-display text-sm font-bold text-white group-hover/dcard:text-emerald-300 transition-colors line-clamp-1 cursor-pointer" title="${d.title}">${d.title}</h4>
-                            <p class="text-[10px] font-mono text-slate-400 mt-0.5">${sizeText} • ${isPdf ? 'PDF Document' : (isImg ? 'High-Res Photo' : 'Secure File')}</p>
+                            <p class="text-[10px] font-mono text-slate-400 mt-0.5">${sizeText} • ${isXls ? 'Excel Spreadsheet' : (isPdf ? 'PDF Document' : (isImg ? 'High-Res Photo' : 'Secure File'))}</p>
                             ${d.notes ? `<p class="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed font-light">${d.notes}</p>` : ''}
                         </div>
 
@@ -4676,6 +4924,9 @@ function renderDocumentsPage() {
                             <i class="fa-regular fa-eye text-xs"></i> Preview
                         </button>
                         <div class="flex items-center gap-1 opacity-0 group-hover/dcard:opacity-100 transition-opacity duration-200">
+                            <button onclick="toggleDocumentFavorite('${d.id}', event)" class="p-1.5 rounded-lg ${((db.favorites || []).some(x => x.linkedDocId === d.id || x.title === d.title)) ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-amber-300 hover:bg-surface-800'} transition-colors cursor-pointer" title="${((db.favorites || []).some(x => x.linkedDocId === d.id || x.title === d.title)) ? 'Favorited' : 'Add to Favorites'}">
+                                <i class="${((db.favorites || []).some(x => x.linkedDocId === d.id || x.title === d.title)) ? 'fa-solid' : 'fa-regular'} fa-star text-xs"></i>
+                            </button>
                             <button onclick="openUniversalShare('document', '${d.id}', event)" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Share Options">
                                 <i class="fa-solid fa-share-nodes text-xs"></i>
                             </button>
@@ -4723,15 +4974,16 @@ function renderDocumentsPage() {
             filtered.forEach(d => {
                 const isPdf = d.fileType === 'pdf' || (d.mimeType && d.mimeType.includes('pdf'));
                 const isImg = d.fileType === 'photo' || (d.mimeType && d.mimeType.startsWith('image/'));
-                const sizeText = d.fileSize ? (d.fileSize > 1024 * 1024 ? `${(d.fileSize / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(d.fileSize / 1024)} KB`) : 'PDF';
+                const isXls = d.fileType === 'excel' || (d.mimeType && (d.mimeType.includes('spreadsheet') || d.mimeType.includes('excel') || d.mimeType.includes('csv')));
+                const sizeText = d.fileSize ? (d.fileSize > 1024 * 1024 ? `${(d.fileSize / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(d.fileSize / 1024)} KB`) : (isXls ? 'Excel' : 'PDF');
 
                 const tr = document.createElement('tr');
                 tr.className = 'group hover:bg-surface-800/20 transition-colors border-b border-surface-800/40 last:border-0';
                 tr.innerHTML = `
                     <td class="p-3.5">
                         <div class="flex items-center gap-3 cursor-pointer" onclick="previewDocumentItem('${d.id}')">
-                            <div class="w-8 h-8 rounded-lg ${isPdf ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : (isImg ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20')} flex items-center justify-center shrink-0">
-                                <i class="fa-solid ${isPdf ? 'fa-file-pdf' : (isImg ? 'fa-image' : 'fa-file-lines')} text-xs"></i>
+                            <div class="w-8 h-8 rounded-lg ${isXls ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : (isPdf ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : (isImg ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'))} flex items-center justify-center shrink-0">
+                                <i class="fa-solid ${isXls ? 'fa-file-excel text-emerald-400' : (isPdf ? 'fa-file-pdf' : (isImg ? 'fa-image' : 'fa-file-lines'))} text-xs"></i>
                             </div>
                             <div class="truncate">
                                 <div class="font-medium text-white group-hover:text-emerald-300 transition-colors truncate">${d.title}</div>
@@ -4740,11 +4992,14 @@ function renderDocumentsPage() {
                         </div>
                     </td>
                     <td class="p-3.5">${getDocCategoryBadge(d.category)}</td>
-                    <td class="p-3.5 font-mono text-xs text-slate-400">${isPdf ? 'PDF Document' : (isImg ? 'Media Photo' : 'Record File')}</td>
+                    <td class="p-3.5 font-mono text-xs text-slate-400">${isXls ? 'Excel Spreadsheet' : (isPdf ? 'PDF Document' : (isImg ? 'Media Photo' : 'Record File'))}</td>
                     <td class="p-3.5 font-mono text-xs text-slate-400">${sizeText}</td>
                     <td class="p-3.5 font-mono text-xs text-slate-400">${d.date || '-'}</td>
                     <td class="p-3.5 text-right">
                         <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="toggleDocumentFavorite('${d.id}', event)" class="p-1.5 rounded-lg ${((db.favorites || []).some(x => x.linkedDocId === d.id || x.title === d.title)) ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-amber-300 hover:bg-surface-800'} transition-colors cursor-pointer" title="${((db.favorites || []).some(x => x.linkedDocId === d.id || x.title === d.title)) ? 'Favorited' : 'Add to Favorites'}">
+                                <i class="${((db.favorites || []).some(x => x.linkedDocId === d.id || x.title === d.title)) ? 'fa-solid' : 'fa-regular'} fa-star text-xs"></i>
+                            </button>
                             <button onclick="openUniversalShare('document', '${d.id}', event)" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-surface-800 rounded-lg transition-colors cursor-pointer" title="Share Options">
                                 <i class="fa-solid fa-share-nodes text-xs"></i>
                             </button>
@@ -4771,6 +5026,63 @@ function renderDocumentsPage() {
     setDocumentViewMode(docViewMode);
 }
 window.renderDocumentsPage = renderDocumentsPage;
+
+function toggleDocumentFavorite(docId, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    if (!db.documents) return;
+    const doc = db.documents.find(x => x.id === docId);
+    if (!doc) return;
+    if (!db.favorites) db.favorites = [];
+
+    const existingIndex = db.favorites.findIndex(x => x.linkedDocId === docId || (x.title === doc.title && (x.type === 'word' || x.type === 'excel' || x.type === 'pdf' || x.type === 'photo')));
+    if (existingIndex >= 0) {
+        db.favorites.splice(existingIndex, 1);
+        if (typeof saveDatabase === 'function') saveDatabase();
+        if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+        if (typeof renderFavoritesPage === 'function') renderFavoritesPage();
+        showToast(`Removed "${doc.title}" from Favorites`);
+        return;
+    }
+
+    const isXls = doc.fileType === 'excel' || (doc.mimeType && (doc.mimeType.includes('spreadsheet') || doc.mimeType.includes('excel') || doc.mimeType.includes('csv')));
+    const isImg = doc.fileType === 'photo' || (doc.mimeType && doc.mimeType.startsWith('image/'));
+    const isWord = doc.fileType === 'word' || (doc.mimeType && (doc.mimeType.includes('word') || doc.mimeType.includes('officedocument.wordprocessingml')));
+    const isPdf = doc.fileType === 'pdf' || (doc.mimeType && doc.mimeType.includes('pdf'));
+
+    let favType = 'pdf';
+    if (isXls) favType = 'excel';
+    else if (isImg) favType = 'photo';
+    else if (isWord) favType = 'word';
+    else if (isPdf) favType = 'pdf';
+
+    const newFav = {
+        id: 'fav_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        linkedDocId: doc.id,
+        type: favType,
+        title: doc.title || 'Favorite Document',
+        notes: doc.notes || '',
+        fileData: doc.fileData || '',
+        fileName: doc.fileName || `${doc.title}.${favType === 'word' ? 'docx' : favType === 'excel' ? 'xlsx' : favType === 'photo' ? 'jpg' : 'pdf'}`,
+        fileSize: doc.fileSize || '',
+        mimeType: doc.mimeType || (favType === 'word' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : favType === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf'),
+        createdAt: new Date().toISOString(),
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    };
+
+    if (favType === 'photo') {
+        newFav.photoUrl = doc.fileData || '';
+    }
+
+    db.favorites.unshift(newFav);
+    if (typeof saveDatabase === 'function') saveDatabase();
+    if (typeof renderDocumentsPage === 'function') renderDocumentsPage();
+    if (typeof renderFavoritesPage === 'function') renderFavoritesPage();
+    showToast(`Added "${doc.title}" to Favorites ⭐`);
+}
+window.toggleDocumentFavorite = toggleDocumentFavorite;
 
 function getDocCategoryBadge(cat) {
     switch ((cat || '').toLowerCase()) {
@@ -4818,6 +5130,7 @@ async function previewDocumentItem(id) {
 
     const isPdf = doc.fileType === 'pdf' || (doc.mimeType && doc.mimeType.includes('pdf'));
     const isImg = doc.fileType === 'photo' || (doc.mimeType && doc.mimeType.startsWith('image/'));
+    const isXls = doc.fileType === 'excel' || (doc.mimeType && (doc.mimeType.includes('spreadsheet') || doc.mimeType.includes('excel') || doc.mimeType.includes('csv')));
 
     if (titleEl) titleEl.innerText = doc.title;
     if (confBadge) {
@@ -4829,7 +5142,7 @@ async function previewDocumentItem(id) {
     if (sizeEl) sizeEl.innerText = doc.fileSize ? (doc.fileSize > 1024 * 1024 ? `${(doc.fileSize / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(doc.fileSize / 1024)} KB`) : 'Standard';
 
     if (iconEl) {
-        iconEl.innerHTML = `<i class="fa-solid ${isPdf ? 'fa-file-pdf text-rose-400' : (isImg ? 'fa-image text-cyan-400' : 'fa-file-shield text-emerald-400')} text-base"></i>`;
+        iconEl.innerHTML = `<i class="fa-solid ${isXls ? 'fa-file-excel text-emerald-400' : (isPdf ? 'fa-file-pdf text-rose-400' : (isImg ? 'fa-image text-cyan-400' : 'fa-file-shield text-emerald-400'))} text-base"></i>`;
     }
 
     if (notesEl) {
@@ -4862,7 +5175,7 @@ async function previewDocumentItem(id) {
     openModal('documentViewerModal');
 
     // Asynchronously resolve file binary if not cached in memory
-    if (!doc.fileData && (doc.hasBinary || isPdf || isImg)) {
+    if (!doc.fileData && (doc.hasBinary || isPdf || isImg || isXls)) {
         if (stageEl) {
             stageEl.innerHTML = `
                 <div class="text-center space-y-3 py-16">
@@ -4886,6 +5199,11 @@ async function previewDocumentItem(id) {
                     <img src="${doc.fileData}" alt="${doc.title}" class="max-h-[68vh] max-w-full rounded-xl shadow-2xl object-contain border border-surface-800">
                 </div>
             `;
+        } else if (isXls && doc.fileData) {
+            stageEl.innerHTML = renderExcelViewerHtml(doc);
+            setTimeout(() => {
+                initExcelViewer(doc);
+            }, 50);
         } else if (isPdf && doc.fileData) {
             // Render High Fidelity Interactive PDF via PDF.js Canvas + Direct Native Controls
             stageEl.innerHTML = `
@@ -4939,14 +5257,14 @@ async function previewDocumentItem(id) {
             stageEl.innerHTML = `
                 <div class="p-8 text-center space-y-4 max-w-md mx-auto">
                     <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
-                        <i class="fa-solid ${isPdf ? 'fa-file-pdf text-rose-400' : 'fa-file-shield'} text-3xl"></i>
+                        <i class="fa-solid ${isXls ? 'fa-file-excel text-emerald-400' : (isPdf ? 'fa-file-pdf text-rose-400' : 'fa-file-shield')} text-3xl"></i>
                     </div>
                     <div>
                         <h4 class="text-white font-semibold text-base">${doc.title}</h4>
-                        <p class="text-xs font-mono text-slate-400 mt-1">Encrypted ${isPdf ? 'PDF Document' : 'Media Asset'} secured in your Private Vault.</p>
+                        <p class="text-xs font-mono text-slate-400 mt-1">Encrypted ${isXls ? 'Excel Spreadsheet' : (isPdf ? 'PDF Document' : 'Media Asset')} secured in your Private Vault.</p>
                     </div>
                     <button onclick="downloadDocumentItem('${doc.id}')" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-surface-950 font-bold rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-md">
-                        <i class="fa-solid fa-download mr-1.5"></i> Download File
+                        <i class="fa-solid fa-download mr-1.5"></i> Download ${isXls ? 'Excel File' : 'File'}
                     </button>
                 </div>
             `;
@@ -4954,6 +5272,156 @@ async function previewDocumentItem(id) {
     }
 }
 window.previewDocumentItem = previewDocumentItem;
+
+function renderExcelViewerHtml(doc) {
+    return `
+        <div class="w-full h-full flex flex-col items-center justify-between relative">
+            <!-- Excel Controls Toolbar -->
+            <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between px-4 py-2 bg-surface-900/90 border-b border-surface-800/80 rounded-t-xl gap-2 shrink-0">
+                <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar" id="excelSheetTabsContainer">
+                    <span class="text-xs font-mono text-emerald-400 font-semibold flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-file-excel text-emerald-400"></i> Sheets:
+                    </span>
+                    <div id="excelSheetTabs" class="flex items-center gap-1"></div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 justify-end">
+                    <span id="excelSheetStats" class="text-[10px] font-mono text-slate-400">Loading...</span>
+                    <button onclick="downloadDocumentItem('${doc.id}')" class="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-mono rounded-lg transition-colors cursor-pointer flex items-center gap-1">
+                        <i class="fa-solid fa-download text-xs"></i> Download .xlsx
+                    </button>
+                </div>
+            </div>
+
+            <!-- Excel Table Sheet Container -->
+            <div id="excelSheetViewContainer" class="flex-1 w-full overflow-auto p-4 custom-scrollbar bg-surface-950/90 flex flex-col">
+                <div id="excelLoadingSpinner" class="text-center space-y-2 py-12 m-auto">
+                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-emerald-400"></i>
+                    <div class="text-xs font-mono text-slate-400">Reading Excel spreadsheet...</div>
+                </div>
+                <div id="excelTableWrapper" class="hidden overflow-x-auto w-full border border-surface-800 rounded-xl bg-surface-900/60 shadow-lg"></div>
+            </div>
+        </div>
+    `;
+}
+
+window.activeExcelWorkbook = null;
+window.activeExcelDocId = null;
+
+function initExcelViewer(doc) {
+    if (!doc || !doc.fileData) return;
+    window.activeExcelDocId = doc.id;
+
+    const spinner = document.getElementById('excelLoadingSpinner');
+    const tableWrapper = document.getElementById('excelTableWrapper');
+    const sheetTabs = document.getElementById('excelSheetTabs');
+    const sheetStats = document.getElementById('excelSheetStats');
+
+    try {
+        if (typeof XLSX === 'undefined') {
+            if (spinner) spinner.innerHTML = `<span class="text-rose-400 text-xs font-mono">Excel engine loading. Please retry in a moment.</span>`;
+            return;
+        }
+
+        let base64 = doc.fileData;
+        if (base64.includes(',')) {
+            base64 = base64.split(',')[1];
+        }
+
+        const wb = XLSX.read(base64, { type: 'base64' });
+        window.activeExcelWorkbook = wb;
+
+        if (!wb.SheetNames || wb.SheetNames.length === 0) {
+            if (spinner) spinner.innerHTML = `<span class="text-slate-400 text-xs font-mono">Workbook contains no sheets.</span>`;
+            return;
+        }
+
+        // Render sheet tabs
+        if (sheetTabs) {
+            sheetTabs.innerHTML = '';
+            wb.SheetNames.forEach((sheetName, index) => {
+                const tabBtn = document.createElement('button');
+                tabBtn.className = `px-2.5 py-1 text-xs font-mono rounded-lg transition-all cursor-pointer whitespace-nowrap ${index === 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold' : 'bg-surface-800 text-slate-400 hover:text-white border border-surface-700/50'}`;
+                tabBtn.innerText = sheetName;
+                tabBtn.onclick = () => switchExcelActiveSheet(sheetName);
+                sheetTabs.appendChild(tabBtn);
+            });
+        }
+
+        switchExcelActiveSheet(wb.SheetNames[0]);
+    } catch (err) {
+        console.error('Failed to parse Excel file:', err);
+        if (spinner) {
+            spinner.innerHTML = `
+                <div class="text-center space-y-3 py-8">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400 text-2xl"></i>
+                    <div class="text-xs font-mono text-slate-400">Spreadsheet loaded. Click download to open in Excel.</div>
+                    <button onclick="downloadDocumentItem('${doc.id}')" class="px-4 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-mono rounded-xl">
+                        <i class="fa-solid fa-download mr-1"></i> Download File
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+
+function switchExcelActiveSheet(sheetName) {
+    const wb = window.activeExcelWorkbook;
+    if (!wb || !wb.Sheets || !wb.Sheets[sheetName]) return;
+
+    const spinner = document.getElementById('excelLoadingSpinner');
+    const tableWrapper = document.getElementById('excelTableWrapper');
+    const sheetTabs = document.getElementById('excelSheetTabs');
+    const sheetStats = document.getElementById('excelSheetStats');
+
+    if (sheetTabs) {
+        Array.from(sheetTabs.children).forEach(btn => {
+            if (btn.innerText === sheetName) {
+                btn.className = 'px-2.5 py-1 text-xs font-mono rounded-lg transition-all cursor-pointer whitespace-nowrap bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold shadow-sm';
+            } else {
+                btn.className = 'px-2.5 py-1 text-xs font-mono rounded-lg transition-all cursor-pointer whitespace-nowrap bg-surface-800 text-slate-400 hover:text-white border border-surface-700/50';
+            }
+        });
+    }
+
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+    if (spinner) spinner.classList.add('hidden');
+    if (tableWrapper) {
+        tableWrapper.classList.remove('hidden');
+        if (!rows || rows.length === 0) {
+            tableWrapper.innerHTML = `<div class="p-8 text-center text-xs font-mono text-slate-500">Sheet "${sheetName}" is empty.</div>`;
+            return;
+        }
+
+        const rowCount = rows.length;
+        const colCount = Math.max(...rows.map(r => (Array.isArray(r) ? r.length : 0)));
+        if (sheetStats) sheetStats.innerText = `${rowCount} rows • ${colCount} cols`;
+
+        let tableHtml = `<table class="w-full text-left text-xs font-mono border-collapse select-text">`;
+        rows.forEach((row, rIdx) => {
+            const isHeader = rIdx === 0;
+            const bgClass = isHeader ? 'bg-surface-950/90 text-emerald-400 font-bold border-b border-surface-700/80 sticky top-0' : (rIdx % 2 === 0 ? 'bg-surface-900/40 hover:bg-surface-800/60' : 'bg-surface-950/40 hover:bg-surface-800/60');
+            tableHtml += `<tr class="${bgClass} transition-colors border-b border-surface-800/50">`;
+            
+            tableHtml += `<td class="py-2 px-3 text-slate-600 bg-surface-950/80 border-r border-surface-800/80 text-[10px] select-none text-center w-10">${rIdx + 1}</td>`;
+
+            for (let cIdx = 0; cIdx < colCount; cIdx++) {
+                const cellVal = (Array.isArray(row) && row[cIdx] !== undefined) ? String(row[cIdx]) : '';
+                if (isHeader) {
+                    tableHtml += `<th class="py-2.5 px-3.5 border-r border-surface-800/60 font-semibold tracking-wider whitespace-nowrap max-w-xs truncate" title="${cellVal}">${cellVal || `Col ${cIdx + 1}`}</th>`;
+                } else {
+                    const isNum = !isNaN(Number(cellVal)) && cellVal.trim() !== '';
+                    tableHtml += `<td class="py-2 px-3.5 border-r border-surface-800/40 text-slate-300 whitespace-nowrap max-w-xs truncate ${isNum ? 'text-right text-emerald-300' : ''}" title="${cellVal}">${cellVal}</td>`;
+                }
+            }
+            tableHtml += `</tr>`;
+        });
+        tableHtml += `</table>`;
+        tableWrapper.innerHTML = tableHtml;
+    }
+}
+window.switchExcelActiveSheet = switchExcelActiveSheet;
 
 // High-fidelity PDF rendering engine using PDF.js with canvas and interactive pagination
 let currentPdfDoc = null;
@@ -5127,9 +5595,11 @@ async function downloadDocumentItem(id) {
     }
 
     if (doc.fileData) {
+        const isXls = doc.fileType === 'excel' || (doc.mimeType && (doc.mimeType.includes('spreadsheet') || doc.mimeType.includes('excel') || doc.mimeType.includes('csv')));
+        const ext = isXls ? 'xlsx' : (doc.fileType === 'photo' ? 'jpg' : 'pdf');
         const a = document.createElement('a');
         a.href = doc.fileData;
-        a.download = doc.title ? `${doc.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${doc.fileType === 'photo' ? 'jpg' : 'pdf'}` : 'document';
+        a.download = doc.title ? `${doc.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}` : `document.${ext}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -6180,14 +6650,14 @@ function renderCredentialsVault() {
                 secCodeHtml = `
                     <div class="p-2.5 rounded-xl bg-surface-950/70 border border-surface-800/80 flex items-center justify-between text-xs">
                         <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0">PIN / Code:</span>
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0">Code:</span>
                             <span class="font-mono ${isRevealedPin ? 'text-amber-300 font-semibold select-all' : 'text-slate-400 tracking-wider'} truncate">${escapeCredHtml(displayPin)}</span>
                         </div>
                         <div class="flex items-center gap-1.5 shrink-0">
-                            <button onclick="toggleSecretPinVisibility('${item.id}')" title="${isRevealedPin ? 'Hide PIN' : 'Show PIN'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
+                            <button onclick="toggleSecretPinVisibility('${item.id}')" title="${isRevealedPin ? 'Hide Code' : 'Show Code'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
                                 <i class="fa-solid ${isRevealedPin ? 'fa-eye-slash' : 'fa-eye'} text-xs"></i>
                             </button>
-                            <button onclick="copyCredentialField('${item.secondaryCode.replace(/'/g, "\\'")}', 'PIN / Code')" title="Copy PIN" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
+                            <button onclick="copyCredentialField('${item.secondaryCode.replace(/'/g, "\\'")}', 'Code')" title="Copy Code" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
                                 <i class="fa-regular fa-copy text-xs"></i>
                             </button>
                         </div>
@@ -6232,31 +6702,31 @@ function renderCredentialsVault() {
                         </div>
                     </div>
 
-                    <!-- Username / Email Field (if exists and differs from title) -->
+                    <!-- Identifier Field (if exists and differs from title) -->
                     ${(item.username && item.username !== primaryTitle) ? `
                     <div class="p-2.5 rounded-xl bg-surface-950/70 border border-surface-800/80 flex items-center justify-between text-xs">
                         <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0">User / Email:</span>
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0">Identifier:</span>
                             <span class="font-mono text-slate-200 truncate font-medium select-all">${escapeCredHtml(item.username)}</span>
                         </div>
-                        <button onclick="copyCredentialField('${item.username.replace(/'/g, "\\'")}', 'Username')" title="Copy Username / Email" class="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0">
+                        <button onclick="copyCredentialField('${item.username.replace(/'/g, "\\'")}', 'Identifier')" title="Copy Identifier" class="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0">
                             <i class="fa-regular fa-copy text-xs"></i>
                         </button>
                     </div>
                     ` : ''}
 
-                    <!-- Password / Secret Field with Reveal & Copy -->
+                    <!-- Passcode Field with Reveal & Copy -->
                     ${item.secret ? `
                     <div class="p-2.5 rounded-xl bg-surface-950/90 border border-surface-800 flex items-center justify-between text-xs">
                         <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0">Password:</span>
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0">Passcode:</span>
                             <span class="font-mono ${isRevealed ? 'text-emerald-300 font-semibold select-all' : 'text-slate-400 tracking-wider'} truncate">${escapeCredHtml(displaySecret)}</span>
                         </div>
                         <div class="flex items-center gap-1.5 shrink-0">
-                            <button onclick="toggleSecretCardVisibility('${item.id}')" title="${isRevealed ? 'Hide Password' : 'Show Password'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
+                            <button onclick="toggleSecretCardVisibility('${item.id}')" title="${isRevealed ? 'Hide Passcode' : 'Show Passcode'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
                                 <i class="fa-solid ${isRevealed ? 'fa-eye-slash' : 'fa-eye'} text-xs"></i>
                             </button>
-                            <button onclick="copyCredentialField('${(item.secret || '').replace(/'/g, "\\'")}', 'Password')" title="Copy Password" class="p-1 text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer">
+                            <button onclick="copyCredentialField('${(item.secret || '').replace(/'/g, "\\'")}', 'Passcode')" title="Copy Passcode" class="p-1 text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer">
                                 <i class="fa-regular fa-copy text-xs"></i>
                             </button>
                         </div>
@@ -6295,26 +6765,26 @@ function renderCredentialsVault() {
                     </div>
                 </td>
 
-                <!-- Description -->
-                <td class="py-3 px-4 max-w-[200px]">
+                <!-- Description (Double Width) -->
+                <td class="py-3 px-4 min-w-[340px] max-w-[420px]">
                     ${item.description ? `
                         <span class="font-mono text-white text-xs font-semibold truncate block" title="${escapeCredHtml(item.description)}">${escapeCredHtml(item.description)}</span>
                     ` : '<span class="text-slate-600 font-mono text-xs italic">-</span>'}
                 </td>
 
-                <!-- User / Email / Identifier -->
+                <!-- Identifier -->
                 <td class="py-3 px-4">
                     ${item.username ? `
                         <div class="flex items-center gap-2 max-w-[240px]">
                             <span class="font-mono text-slate-200 text-xs font-medium truncate select-all">${escapeCredHtml(item.username)}</span>
-                            <button onclick="copyCredentialField('${item.username.replace(/'/g, "\\'")}', 'Username / Email')" title="Copy" class="p-1 text-slate-500 hover:text-white transition-colors cursor-pointer shrink-0">
+                            <button onclick="copyCredentialField('${item.username.replace(/'/g, "\\'")}', 'Identifier')" title="Copy Identifier" class="p-1 text-slate-500 hover:text-white transition-colors cursor-pointer shrink-0">
                                 <i class="fa-regular fa-copy text-[11px]"></i>
                             </button>
                         </div>
                     ` : '<span class="text-slate-600 font-mono text-xs italic">-</span>'}
                 </td>
 
-                <!-- Password / Secret -->
+                <!-- Passcode -->
                 <td class="py-3 px-4">
                     ${item.secret ? `
                         <div class="flex items-center gap-2">
@@ -6323,7 +6793,7 @@ function renderCredentialsVault() {
                                 <button onclick="toggleSecretCardVisibility('${item.id}')" title="${isRevealed ? 'Hide' : 'Show'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
                                     <i class="fa-solid ${isRevealed ? 'fa-eye-slash' : 'fa-eye'} text-[11px]"></i>
                                 </button>
-                                <button onclick="copyCredentialField('${(item.secret || '').replace(/'/g, "\\'")}', 'Password')" title="Copy" class="p-1 text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer">
+                                <button onclick="copyCredentialField('${(item.secret || '').replace(/'/g, "\\'")}', 'Passcode')" title="Copy Passcode" class="p-1 text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer">
                                     <i class="fa-regular fa-copy text-[11px]"></i>
                                 </button>
                             </div>
@@ -6331,16 +6801,16 @@ function renderCredentialsVault() {
                     ` : '<span class="text-slate-600 font-mono text-xs italic">-</span>'}
                 </td>
 
-                <!-- Secondary PIN / Code with Eye Icon Toggle and Copy -->
+                <!-- Code with Eye Icon Toggle and Copy -->
                 <td class="py-3 px-4">
                     ${item.secondaryCode ? `
                         <div class="flex items-center gap-2">
                             <span class="font-mono ${isRevealedPin ? 'text-amber-300 font-semibold select-all' : 'text-slate-400 tracking-wider'} text-xs">${escapeCredHtml(displayPin)}</span>
                             <div class="flex items-center gap-1 shrink-0">
-                                <button onclick="toggleSecretPinVisibility('${item.id}')" title="${isRevealedPin ? 'Hide PIN' : 'Show PIN'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
+                                <button onclick="toggleSecretPinVisibility('${item.id}')" title="${isRevealedPin ? 'Hide Code' : 'Show Code'}" class="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer">
                                     <i class="fa-solid ${isRevealedPin ? 'fa-eye-slash' : 'fa-eye'} text-[11px]"></i>
                                 </button>
-                                <button onclick="copyCredentialField('${item.secondaryCode.replace(/'/g, "\\'")}', 'PIN / Code')" title="Copy PIN" class="p-1 text-slate-500 hover:text-amber-300 transition-colors cursor-pointer">
+                                <button onclick="copyCredentialField('${item.secondaryCode.replace(/'/g, "\\'")}', 'Code')" title="Copy Code" class="p-1 text-slate-500 hover:text-amber-300 transition-colors cursor-pointer">
                                     <i class="fa-regular fa-copy text-[11px]"></i>
                                 </button>
                             </div>
@@ -6348,7 +6818,7 @@ function renderCredentialsVault() {
                     ` : '<span class="text-slate-600 font-mono text-xs italic">-</span>'}
                 </td>
 
-                <!-- Notes / Recovery -->
+                <!-- Note -->
                 <td class="py-3 px-4 max-w-[240px]">
                     ${item.notes ? `
                         <span class="text-slate-400 text-xs font-mono truncate block" title="${escapeCredHtml(item.notes)}">${escapeCredHtml(item.notes)}</span>

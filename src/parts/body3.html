@@ -1390,6 +1390,11 @@
                         <button id="btnDocCat-business" onclick="setDocumentSubCategory('business')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Business &amp; Ventures</button>
                         <button id="btnDocCat-receipts" onclick="setDocumentSubCategory('receipts')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Receipts &amp; Invoices</button>
                         <button id="btnDocCat-personal" onclick="setDocumentSubCategory('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Photos &amp; Personal</button>
+                        <!-- Add Excel Button -->
+                        <button id="btnDocAddExcel" onclick="openExcelUploadModal()" title="Add Excel Spreadsheet" class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 hover:text-emerald-100 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95">
+                            <i class="fa-solid fa-file-excel text-emerald-400 text-xs"></i>
+                            <span>Add Excel</span>
+                        </button>
                     </div>
 
                     <!-- Search & View Controls (Revealed on hover / focus) -->
@@ -1547,12 +1552,12 @@
                                 <thead>
                                     <tr class="border-b border-surface-800 bg-surface-900/80 font-mono text-[10px] text-slate-400 uppercase tracking-wider">
                                         <th class="py-3.5 px-3 text-center w-14">Category</th>
-                                        <th class="py-3.5 px-4 min-w-[170px]">Description</th>
-                                        <th class="py-3.5 px-4 min-w-[190px]">User / Email / Identifier</th>
-                                        <th class="py-3.5 px-4 min-w-[210px]">Password / Secret</th>
-                                        <th class="py-3.5 px-4 min-w-[160px]">Secondary PIN / Code</th>
-                                        <th class="py-3.5 px-4 min-w-[180px]">Notes / Recovery</th>
-                                        <th class="py-3.5 px-4 text-center w-24">Actions</th>
+                                        <th class="py-3.5 px-4 min-w-[340px] w-96">Description</th>
+                                        <th class="py-3.5 px-4 min-w-[160px]">Identifier</th>
+                                        <th class="py-3.5 px-4 min-w-[170px]">Passcode</th>
+                                        <th class="py-3.5 px-4 min-w-[130px]">Code</th>
+                                        <th class="py-3.5 px-4 min-w-[180px] max-w-[240px]">Note</th>
+                                        <th class="py-3.5 px-4 text-center w-20">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="credentialsListTableBody" class="divide-y divide-surface-800/40 text-slate-300 font-mono">
@@ -1565,46 +1570,99 @@
             </div>
         </section>
 
-        <!-- PAGE 9: FAVORITES (PHOTOS & QUOTES) -->
-        <section id="page-favorites" class="page-view space-y-5 hidden">
+        <!-- PAGE 9: FAVORITES (PHOTOS, QUOTES, WORD, EXCEL & PDF FILES) -->
+        <section id="page-favorites" class="page-view space-y-5 hidden relative" ondragover="handleFavoritesPageDragOver(event)" ondragleave="handleFavoritesPageDragLeave(event)" ondrop="handleFavoritesPageDrop(event)">
+            <!-- Drop Overlay for Fast Drag-and-Drop of Word, Excel, PDF, and Photos -->
+            <div id="favoritesDropOverlay" class="hidden absolute inset-0 z-40 bg-surface-950/90 backdrop-blur-sm border-2 border-dashed border-cyan-400 rounded-3xl flex flex-col items-center justify-center pointer-events-none p-6 text-center animate-in fade-in duration-150">
+                <div class="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 flex items-center justify-center mb-3 shadow-lg">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
+                </div>
+                <h4 class="text-white font-display text-lg font-bold">Drop File to Add to Favorites</h4>
+                <p class="text-xs font-mono text-cyan-200 mt-1 max-w-sm">Automatically detects Microsoft Word (.docx), Excel (.xlsx), PDF (.pdf), and Photo files</p>
+            </div>
+
+            <!-- Direct File Input for Word, Excel, PDF, and Photos -->
+            <input type="file" id="directFavFileInput" onchange="handleDirectFavoriteFileUpload(event)" accept=".docx,.doc,.xlsx,.xls,.csv,.pdf,image/*" class="hidden">
+
             <!-- Header & Action Buttons -->
-            <div class="flex items-center justify-between gap-4 pb-4 border-b border-surface-800/80 group/favheader">
+            <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-surface-800/80">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
                         <i class="fa-solid fa-star text-sm"></i>
                     </div>
-                    <h3 class="font-display text-2xl text-white font-bold tracking-tight">Favorites</h3>
+                    <div>
+                        <h3 class="font-display text-2xl text-white font-bold tracking-tight">Favorites</h3>
+                        <p class="text-[11px] font-mono text-slate-400">Word, Excel, PDF documents, photos, and quotes</p>
+                    </div>
                 </div>
                 
-                <!-- Single Add Button at Top Right (Hidden by default, reveals on hover) -->
-                <div id="favAddBtnContainer" class="opacity-0 group-hover/favheader:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-                    <button onclick="openFavoriteModal(null, favCurrentFilter)" class="px-4 py-2 rounded-xl text-xs font-mono bg-gradient-to-r from-cyan-500/20 to-amber-500/20 border border-brand-500/40 text-brand-300 hover:bg-brand-500/20 hover:border-brand-400 transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95">
+                <!-- Add & Upload Action Buttons -->
+                <div id="favAddBtnContainer" class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="openFavoriteModal(null, favCurrentFilter)" class="px-3.5 py-2 rounded-xl text-xs font-mono bg-gradient-to-r from-brand-500/20 via-cyan-500/20 to-amber-500/20 border border-brand-500/40 text-brand-300 hover:bg-brand-500/30 hover:border-brand-400 transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95">
                         <i class="fa-solid fa-plus text-xs"></i>
                         <span class="font-medium font-sans">Add Favorite</span>
                     </button>
+                    
+                    <!-- Direct Upload File Button (Accepts Word, Excel, PDF, Photos) -->
+                    <button type="button" onclick="document.getElementById('directFavFileInput').click()" title="Directly choose a Word, Excel, PDF or Photo file" class="px-3 py-2 rounded-xl text-xs font-mono bg-surface-900 hover:bg-surface-800 border border-surface-700/90 hover:border-cyan-400 text-cyan-300 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95">
+                        <i class="fa-solid fa-cloud-arrow-up text-cyan-400 text-xs"></i>
+                        <span class="font-medium font-sans">Upload File</span>
+                    </button>
+
+                    <!-- Quick Format Shortcuts -->
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="openFavoriteModal(null, 'word')" title="Add Word Document (.docx, .doc)" class="px-2.5 py-2 rounded-xl text-xs font-mono bg-surface-900 border border-surface-700/80 hover:border-blue-500/60 text-blue-400 hover:bg-blue-500/15 transition-all flex items-center gap-1 cursor-pointer active:scale-95">
+                            <i class="fa-solid fa-file-word text-xs"></i>
+                            <span class="text-[11px] font-sans font-medium">Word</span>
+                        </button>
+                        <button type="button" onclick="openFavoriteModal(null, 'excel')" title="Add Excel Spreadsheet (.xlsx, .xls, .csv)" class="px-2.5 py-2 rounded-xl text-xs font-mono bg-surface-900 border border-surface-700/80 hover:border-emerald-500/60 text-emerald-400 hover:bg-emerald-500/15 transition-all flex items-center gap-1 cursor-pointer active:scale-95">
+                            <i class="fa-solid fa-file-excel text-xs"></i>
+                            <span class="text-[11px] font-sans font-medium">Excel</span>
+                        </button>
+                        <button type="button" onclick="openFavoriteModal(null, 'pdf')" title="Add PDF Document (.pdf)" class="px-2.5 py-2 rounded-xl text-xs font-mono bg-surface-900 border border-surface-700/80 hover:border-rose-500/60 text-rose-400 hover:bg-rose-500/15 transition-all flex items-center gap-1 cursor-pointer active:scale-95">
+                            <i class="fa-solid fa-file-pdf text-xs"></i>
+                            <span class="text-[11px] font-sans font-medium">PDF</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Filter Tabs & View Toggle Bar (Photos & Quotes) -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80 group/favbar">
-                <!-- Filter Tabs: Photos & Quotes -->
-                <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
-                    <button id="btnFavFilter-photo" onclick="setFavoriteFilter('photo')" class="px-3.5 py-1.5 rounded-xl text-xs font-mono font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition-all cursor-pointer flex items-center gap-1.5 shrink-0">
+            <!-- Filter Tabs & View Toggle Bar (All, Photos, Quotes, Word, Excel, PDF) -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80 group/favbar">
+                <!-- Filter Tabs: All, Photos, Quotes, Word, Excel, PDF -->
+                <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
+                    <button id="btnFavFilter-all" onclick="setFavoriteFilter('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer border border-transparent flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-layer-group text-[11px]"></i>
+                        <span>All (<span id="cntFavFilterAll">0</span>)</span>
+                    </button>
+                    <button id="btnFavFilter-photo" onclick="setFavoriteFilter('photo')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition-all cursor-pointer flex items-center gap-1.5 shrink-0">
                         <i class="fa-solid fa-camera text-[11px]"></i>
                         <span>Photos (<span id="cntFavFilterPhoto">0</span>)</span>
                     </button>
-                    <button id="btnFavFilter-quote" onclick="setFavoriteFilter('quote')" class="px-3.5 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer border border-transparent flex items-center gap-1.5 shrink-0">
+                    <button id="btnFavFilter-quote" onclick="setFavoriteFilter('quote')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer border border-transparent flex items-center gap-1.5 shrink-0">
                         <i class="fa-solid fa-quote-left text-[11px]"></i>
                         <span>Quotes (<span id="cntFavFilterQuote">0</span>)</span>
                     </button>
+                    <button id="btnFavFilter-word" onclick="setFavoriteFilter('word')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer border border-transparent flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-file-word text-[11px] text-blue-400"></i>
+                        <span>Word (<span id="cntFavFilterWord">0</span>)</span>
+                    </button>
+                    <button id="btnFavFilter-excel" onclick="setFavoriteFilter('excel')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer border border-transparent flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-file-excel text-[11px] text-emerald-400"></i>
+                        <span>Excel (<span id="cntFavFilterExcel">0</span>)</span>
+                    </button>
+                    <button id="btnFavFilter-pdf" onclick="setFavoriteFilter('pdf')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer border border-transparent flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-file-pdf text-[11px] text-rose-400"></i>
+                        <span>PDF (<span id="cntFavFilterPdf">0</span>)</span>
+                    </button>
                 </div>
 
-                <!-- Search & View Mode Switcher (Hidden by default, reveals on hover / focus) -->
-                <div id="favToolsGroup" class="flex items-center gap-2.5 justify-between sm:justify-end opacity-0 group-hover/favbar:opacity-100 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                <!-- Search & View Mode Switcher -->
+                <div id="favToolsGroup" class="flex items-center gap-2.5 justify-between md:justify-end">
                     <!-- Search Input -->
-                    <div id="favSearchContainer" class="relative w-40 sm:w-52">
+                    <div id="favSearchContainer" class="relative w-full sm:w-48 md:w-56">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                        <input type="text" id="favSearchInput" oninput="renderFavoritesPage()" placeholder="Search..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-surface-700/60 bg-surface-950/60 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none font-mono">
+                        <input type="text" id="favSearchInput" oninput="renderFavoritesPage()" placeholder="Search favorites..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-surface-700/60 bg-surface-950/60 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none font-mono">
                     </div>
 
                     <!-- View Mode Switcher: Grid (Compact Icons) vs List -->
