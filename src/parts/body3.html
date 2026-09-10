@@ -1383,13 +1383,14 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80 group/docbar">
                     <!-- Category Select Pills -->
                     <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
-                        <button id="btnDocCat-all" onclick="setDocumentSubCategory('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer whitespace-nowrap">All Categories</button>
-                        <button id="btnDocCat-identity" onclick="setDocumentSubCategory('identity')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Identity &amp; Passports</button>
-                        <button id="btnDocCat-legal" onclick="setDocumentSubCategory('legal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Legal &amp; Deeds</button>
-                        <button id="btnDocCat-financial" onclick="setDocumentSubCategory('financial')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Financial &amp; Tax</button>
-                        <button id="btnDocCat-business" onclick="setDocumentSubCategory('business')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Business &amp; Ventures</button>
-                        <button id="btnDocCat-receipts" onclick="setDocumentSubCategory('receipts')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Receipts &amp; Invoices</button>
-                        <button id="btnDocCat-personal" onclick="setDocumentSubCategory('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Photos &amp; Personal</button>
+                        <button id="btnDocCat-home" onclick="setDocumentSubCategory('home')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">My Home</button>
+                        <button id="btnDocCat-properties" onclick="setDocumentSubCategory('properties')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Properties</button>
+                        <button id="btnDocCat-identity" onclick="setDocumentSubCategory('identity')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Identity</button>
+                        <button id="btnDocCat-financial" onclick="setDocumentSubCategory('financial')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Fin &amp; Tax</button>
+                        <button id="btnDocCat-business" onclick="setDocumentSubCategory('business')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Business</button>
+                        <button id="btnDocCat-bills" onclick="setDocumentSubCategory('bills')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Bills &amp; Warranty</button>
+                        <button id="btnDocCat-personal" onclick="setDocumentSubCategory('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Personal</button>
+                        <button id="btnDocCat-all" onclick="setDocumentSubCategory('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer whitespace-nowrap">All</button>
                         <!-- Add Excel Button -->
                         <button id="btnDocAddExcel" onclick="openExcelUploadModal()" title="Add Excel Spreadsheet" class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 hover:text-emerald-100 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95">
                             <i class="fa-solid fa-file-excel text-emerald-400 text-xs"></i>
@@ -1476,7 +1477,7 @@
                             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                                 <i class="fa-solid fa-key text-xs"></i>
                             </div>
-                            <input type="password" id="credVaultPasscodeInput" onkeydown="if(event.key==='Enter') unlockCredentialVault()" placeholder="Enter Vault Passcode / PIN" class="w-full pl-10 pr-10 py-3 rounded-xl border border-surface-700 bg-surface-950/90 text-white font-mono text-sm placeholder-slate-500 focus:border-amber-500 focus:outline-none tracking-wider text-center">
+                            <input type="password" id="credVaultPasscodeInput" onkeydown="if(event.key==='Enter') unlockCredentialVault()" class="w-full pl-10 pr-10 py-3 rounded-xl border border-surface-700 bg-surface-950/90 text-white font-mono text-sm focus:border-amber-500 focus:outline-none tracking-wider text-center">
                             <button type="button" onclick="toggleCredPasscodeVisibility('credVaultPasscodeInput', 'credVaultEyeIcon')" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
                                 <i id="credVaultEyeIcon" class="fa-solid fa-eye text-xs"></i>
                             </button>
@@ -1510,14 +1511,19 @@
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80">
                         <!-- Category Filter Pills -->
                         <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
-                            <button id="btnCredCat-email" onclick="setCredCategoryFilter('email')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Emails</button>
-                            <button id="btnCredCat-apple" onclick="setCredCategoryFilter('apple')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Apple ID</button>
-                            <button id="btnCredCat-banking" onclick="setCredCategoryFilter('banking')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Banking &amp; Cards</button>
-                            <button id="btnCredCat-pin" onclick="setCredCategoryFilter('pin')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">PINs &amp; Codes</button>
-                            <button id="btnCredCat-social" onclick="setCredCategoryFilter('social')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Social &amp; Media</button>
-                            <button id="btnCredCat-server" onclick="setCredCategoryFilter('server')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Servers &amp; Cloud</button>
-                            <button id="btnCredCat-other" onclick="setCredCategoryFilter('other')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Other Secrets</button>
+                            <button id="btnCredCat-email" onclick="setCredCategoryFilter('email')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">E-Mail</button>
+                            <button id="btnCredCat-banking" onclick="setCredCategoryFilter('banking')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Banking</button>
+                            <button id="btnCredCat-demats" onclick="setCredCategoryFilter('demats')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Demats</button>
+                            <button id="btnCredCat-social" onclick="setCredCategoryFilter('social')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Social Media</button>
+                            <button id="btnCredCat-clouds" onclick="setCredCategoryFilter('clouds')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Clouds</button>
+                            <button id="btnCredCat-personal" onclick="setCredCategoryFilter('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Personal</button>
+                            <button id="btnCredCat-others" onclick="setCredCategoryFilter('others')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Others</button>
                             <button id="btnCredCat-all" onclick="setCredCategoryFilter('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 transition-all cursor-pointer whitespace-nowrap shadow-sm">All</button>
+                            <!-- Add Excel Button -->
+                            <button id="btnCredAddExcel" onclick="openExcelUploadModal('credentials')" title="Add Excel Spreadsheet" class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-100 border border-amber-500/40 hover:border-amber-400 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95">
+                                <i class="fa-solid fa-file-excel text-amber-400 text-xs"></i>
+                                <span>Add Excel</span>
+                            </button>
                         </div>
 
                         <!-- Right Controls: Live Search & Grid/List View Mode Toggle -->

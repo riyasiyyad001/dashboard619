@@ -3442,13 +3442,14 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80 group/docbar">
                     <!-- Category Select Pills -->
                     <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
-                        <button id="btnDocCat-all" onclick="setDocumentSubCategory('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer whitespace-nowrap">All Categories</button>
-                        <button id="btnDocCat-identity" onclick="setDocumentSubCategory('identity')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Identity &amp; Passports</button>
-                        <button id="btnDocCat-legal" onclick="setDocumentSubCategory('legal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Legal &amp; Deeds</button>
-                        <button id="btnDocCat-financial" onclick="setDocumentSubCategory('financial')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Financial &amp; Tax</button>
-                        <button id="btnDocCat-business" onclick="setDocumentSubCategory('business')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Business &amp; Ventures</button>
-                        <button id="btnDocCat-receipts" onclick="setDocumentSubCategory('receipts')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Receipts &amp; Invoices</button>
-                        <button id="btnDocCat-personal" onclick="setDocumentSubCategory('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Photos &amp; Personal</button>
+                        <button id="btnDocCat-home" onclick="setDocumentSubCategory('home')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">My Home</button>
+                        <button id="btnDocCat-properties" onclick="setDocumentSubCategory('properties')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Properties</button>
+                        <button id="btnDocCat-identity" onclick="setDocumentSubCategory('identity')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Identity</button>
+                        <button id="btnDocCat-financial" onclick="setDocumentSubCategory('financial')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Fin &amp; Tax</button>
+                        <button id="btnDocCat-business" onclick="setDocumentSubCategory('business')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Business</button>
+                        <button id="btnDocCat-bills" onclick="setDocumentSubCategory('bills')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Bills &amp; Warranty</button>
+                        <button id="btnDocCat-personal" onclick="setDocumentSubCategory('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Personal</button>
+                        <button id="btnDocCat-all" onclick="setDocumentSubCategory('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer whitespace-nowrap">All</button>
                         <!-- Add Excel Button -->
                         <button id="btnDocAddExcel" onclick="openExcelUploadModal()" title="Add Excel Spreadsheet" class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 hover:text-emerald-100 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95">
                             <i class="fa-solid fa-file-excel text-emerald-400 text-xs"></i>
@@ -3535,7 +3536,7 @@
                             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                                 <i class="fa-solid fa-key text-xs"></i>
                             </div>
-                            <input type="password" id="credVaultPasscodeInput" onkeydown="if(event.key==='Enter') unlockCredentialVault()" placeholder="Enter Vault Passcode / PIN" class="w-full pl-10 pr-10 py-3 rounded-xl border border-surface-700 bg-surface-950/90 text-white font-mono text-sm placeholder-slate-500 focus:border-amber-500 focus:outline-none tracking-wider text-center">
+                            <input type="password" id="credVaultPasscodeInput" onkeydown="if(event.key==='Enter') unlockCredentialVault()" class="w-full pl-10 pr-10 py-3 rounded-xl border border-surface-700 bg-surface-950/90 text-white font-mono text-sm focus:border-amber-500 focus:outline-none tracking-wider text-center">
                             <button type="button" onclick="toggleCredPasscodeVisibility('credVaultPasscodeInput', 'credVaultEyeIcon')" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
                                 <i id="credVaultEyeIcon" class="fa-solid fa-eye text-xs"></i>
                             </button>
@@ -3569,14 +3570,19 @@
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-900/40 p-2.5 rounded-2xl border border-surface-800/80">
                         <!-- Category Filter Pills -->
                         <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
-                            <button id="btnCredCat-email" onclick="setCredCategoryFilter('email')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Emails</button>
-                            <button id="btnCredCat-apple" onclick="setCredCategoryFilter('apple')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Apple ID</button>
-                            <button id="btnCredCat-banking" onclick="setCredCategoryFilter('banking')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Banking &amp; Cards</button>
-                            <button id="btnCredCat-pin" onclick="setCredCategoryFilter('pin')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">PINs &amp; Codes</button>
-                            <button id="btnCredCat-social" onclick="setCredCategoryFilter('social')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Social &amp; Media</button>
-                            <button id="btnCredCat-server" onclick="setCredCategoryFilter('server')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Servers &amp; Cloud</button>
-                            <button id="btnCredCat-other" onclick="setCredCategoryFilter('other')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Other Secrets</button>
+                            <button id="btnCredCat-email" onclick="setCredCategoryFilter('email')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">E-Mail</button>
+                            <button id="btnCredCat-banking" onclick="setCredCategoryFilter('banking')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Banking</button>
+                            <button id="btnCredCat-demats" onclick="setCredCategoryFilter('demats')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Demats</button>
+                            <button id="btnCredCat-social" onclick="setCredCategoryFilter('social')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Social Media</button>
+                            <button id="btnCredCat-clouds" onclick="setCredCategoryFilter('clouds')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Clouds</button>
+                            <button id="btnCredCat-personal" onclick="setCredCategoryFilter('personal')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Personal</button>
+                            <button id="btnCredCat-others" onclick="setCredCategoryFilter('others')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer whitespace-nowrap">Others</button>
                             <button id="btnCredCat-all" onclick="setCredCategoryFilter('all')" class="px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 transition-all cursor-pointer whitespace-nowrap shadow-sm">All</button>
+                            <!-- Add Excel Button -->
+                            <button id="btnCredAddExcel" onclick="openExcelUploadModal('credentials')" title="Add Excel Spreadsheet" class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-100 border border-amber-500/40 hover:border-amber-400 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95">
+                                <i class="fa-solid fa-file-excel text-amber-400 text-xs"></i>
+                                <span>Add Excel</span>
+                            </button>
                         </div>
 
                         <!-- Right Controls: Live Search & Grid/List View Mode Toggle -->
@@ -3797,15 +3803,15 @@
                         <option value="Investment">Investment</option>
                         <option value="Others">Others</option>
                     </select>
-                    <input type="text" id="budgetCustomCategoryInput" placeholder="Enter custom category..." class="hidden w-full p-3 mt-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
+                    <input type="text" id="budgetCustomCategoryInput" class="hidden w-full p-3 mt-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Monthly Budget Amount</label>
-                    <input type="number" step="0.01" id="budgetAmountInput" placeholder="Allocated" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="number" step="0.01" id="budgetAmountInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Remarks</label>
-                    <textarea id="budgetNotesInput" rows="6" placeholder="Additional remarks, allocation details, or financial notes..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="budgetNotesInput" rows="6" class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveBudgetEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Budget Entry</button>
@@ -3846,7 +3852,7 @@
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Amount</label>
-                        <input type="number" step="0.01" id="dailyExpAmountInput" placeholder="0.00" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-mono text-sm">
+                        <input type="number" step="0.01" id="dailyExpAmountInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-mono text-sm">
                     </div>
                 </div>
                 <div>
@@ -3858,11 +3864,11 @@
                         <option value="Investment">Investment</option>
                         <option value="Others">Others</option>
                     </select>
-                    <input type="text" id="dailyExpCustomCategoryInput" placeholder="Enter custom category..." class="hidden w-full p-3 mt-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
+                    <input type="text" id="dailyExpCustomCategoryInput" class="hidden w-full p-3 mt-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Particulars / Description</label>
-                    <textarea id="dailyExpDescInput" rows="5" placeholder="e.g. Supermarket shopping, utility bills, maintenance notes..." class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="dailyExpDescInput" rows="5" class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveDailyExpense()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Daily Expense</button>
@@ -3895,7 +3901,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Asset Name</label>
-                        <input type="text" id="assetLogName" placeholder="e.g. Gold, Real Estate" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="text" id="assetLogName" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category</label>
@@ -3923,12 +3929,12 @@
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Value Impact (₹)</label>
-                        <input type="number" step="0.01" id="assetLogValue" placeholder="Amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="assetLogValue" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Description</label>
-                    <textarea id="assetLogNotes" rows="6" placeholder="Additional asset details, physical location, valuation notes, or transaction particulars..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="assetLogNotes" rows="6" class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveAssetLog()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save & Sync</button>
@@ -3957,21 +3963,21 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Institution</label>
-                        <input type="text" id="bankNameInput" placeholder="e.g. Commercial Bank" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="text" id="bankNameInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">A/c Number</label>
-                        <input type="text" id="bankAccountNumberInput" placeholder="e.g. 123456789012" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-mono">
+                        <input type="text" id="bankAccountNumberInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-mono">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Beneficiary</label>
-                        <input type="text" id="bankAccountNameInput" placeholder="Holder Name" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="text" id="bankAccountNameInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Branch</label>
-                        <input type="text" id="bankBranchInput" placeholder="Branch location" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="text" id="bankBranchInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -3988,7 +3994,7 @@
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Routing / IFSC / SWIFT</label>
-                        <input type="text" id="bankIfscInput" placeholder="Routing code" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase font-mono">
+                        <input type="text" id="bankIfscInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase font-mono">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -4002,12 +4008,12 @@
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Balance</label>
-                        <input type="number" step="0.01" id="bankBalanceInput" placeholder="Amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="bankBalanceInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Remarks (Internal)</label>
-                    <textarea id="bankNotesInput" rows="5" placeholder="Account remarks, customer ID, locker info, or notes..." class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="bankNotesInput" rows="5" class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveBankDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Account</button>
@@ -4054,25 +4060,25 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Asset Identity <span class="text-rose-400">*</span></label>
-                    <input type="text" id="qatarAssetNameInput" placeholder="e.g. Lusail Marina Apartment / Pearl Commercial Store" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none text-xs">
+                    <input type="text" id="qatarAssetNameInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none text-xs">
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-amber-400">Value in QR <span class="text-rose-400">*</span></label>
-                        <input type="number" step="0.01" id="qatarAssetValueQrInput" oninput="computeQatarModalInrValue()" placeholder="e.g. 250000 or -50000" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-amber-400 focus:border-amber-500 focus:outline-none font-mono text-xs font-semibold">
+                        <input type="number" step="0.01" id="qatarAssetValueQrInput" oninput="computeQatarModalInrValue()" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-amber-400 focus:border-amber-500 focus:outline-none font-mono text-xs font-semibold">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Per QR (₹) <span class="text-rose-400">*</span></label>
-                        <input type="number" step="0.0001" id="qatarAssetPerQrInput" oninput="computeQatarModalInrValue()" placeholder="e.g. 23.50" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none font-mono text-xs">
+                        <input type="number" step="0.0001" id="qatarAssetPerQrInput" oninput="computeQatarModalInrValue()" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none font-mono text-xs">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-emerald-400">Value in Rs (Auto)</label>
-                        <input type="text" id="qatarAssetValueRsInput" readonly placeholder="₹0.00" class="w-full p-3 rounded-xl border border-surface-700/80 bg-surface-950 text-emerald-400 font-mono text-xs font-bold cursor-not-allowed">
+                        <input type="text" id="qatarAssetValueRsInput" readonly class="w-full p-3 rounded-xl border border-surface-700/80 bg-surface-950 text-emerald-400 font-mono text-xs font-bold cursor-not-allowed">
                     </div>
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Remarks / Description</label>
-                    <textarea id="qatarAssetRemarksInput" rows="5" placeholder="Deed numbers, location, ownership split, or additional notes..." class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="qatarAssetRemarksInput" rows="5" class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-amber-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveQatarAssetDetails()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(245,158,11,0.25)]">Save Qatar Asset</button>
@@ -4110,7 +4116,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Creditor / Source</label>
-                    <input type="text" id="loanSourceInput" placeholder="e.g. QIB Business Loan, HDFC Mortgage" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="text" id="loanSourceInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -4136,16 +4142,16 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Principal (₹)</label>
-                        <input type="number" step="0.01" id="loanAmountInput" placeholder="Total" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="loanAmountInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Amortized (₹)</label>
-                        <input type="number" step="0.01" id="loanRepaidInput" placeholder="Repaid" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="loanRepaidInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Terms</label>
-                    <textarea id="loanNotesInput" rows="5" placeholder="Interest rate, EMI due dates, collateral details, or repayment schedule..." class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="loanNotesInput" rows="5" class="w-full min-h-[120px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveLoanDetails()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Facility</button>
@@ -4178,7 +4184,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Symbol / Scheme Name</label>
-                        <input type="text" id="assetMfSymbolInput" placeholder="e.g. NIPPON_SMALL" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase font-mono">
+                        <input type="text" id="assetMfSymbolInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none uppercase font-mono">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Fund Type</label>
@@ -4194,16 +4200,16 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Units</label>
-                        <input type="number" step="any" id="assetMfQtyInput" placeholder="Quantity" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="any" id="assetMfQtyInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Avg Buy (₹)</label>
-                        <input type="number" step="0.01" id="assetMfAvgBuyInput" placeholder="Avg Buy" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="assetMfAvgBuyInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">LTP / Current NAV (₹)</label>
-                    <input type="number" step="0.01" id="assetMfLtpInput" placeholder="Current LTP" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="number" step="0.01" id="assetMfLtpInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div class="pt-4">
                     <button onclick="saveAssetMutualFund()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Fund</button>
@@ -4264,20 +4270,20 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Deployed Capital (₹)</label>
-                        <input type="number" step="0.01" id="shareCapitalInput" placeholder="Amount" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="shareCapitalInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Realized P&L (₹)</label>
-                        <input type="number" step="0.01" id="sharePnlInput" placeholder="Profit / Loss" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="sharePnlInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Particulars</label>
-                    <input type="text" id="shareParticularsInput" placeholder="e.g. Reliance Ind, BankNifty" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="text" id="shareParticularsInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Strategy</label>
-                    <textarea id="shareDescInput" rows="6" placeholder="e.g. Swing Trading setup, risk-reward ratio, entry/exit reasons, or options hedging details..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="shareDescInput" rows="6" class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveShareTrade()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Commit Trade Record</button>
@@ -4328,7 +4334,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Description</label>
-                    <input type="text" id="othersDescInput" placeholder="e.g. Consulting Project, Freelance Revenue" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="text" id="othersDescInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -4342,7 +4348,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes & Breakdown</label>
-                    <textarea id="othersNotesInput" rows="6" placeholder="Additional remarks, invoice links, or calculation details..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="othersNotesInput" rows="6" class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveOthersEntry()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Entry</button>
@@ -4370,7 +4376,7 @@
                 <input type="hidden" id="goalId">
                 <div>
                     <label id="goalTitleLabel" class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Goal Objective</label>
-                    <input type="text" id="goalTitleInput" placeholder="e.g. Run a half marathon, Complete Quran study, Buy Land" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="text" id="goalTitleInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div>
                     <label id="goalCategoryLabel" class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Category</label>
@@ -4385,7 +4391,7 @@
                         <option value="Other">Other</option>
                     </select>
                     <!-- Input for specific genres when Reading or Travel is selected -->
-                    <input type="text" id="goalGenreInput" placeholder="e.g. Non-Fiction, Biography or Itinerary Focus" class="hidden w-full p-3 mt-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
+                    <input type="text" id="goalGenreInput" class="hidden w-full p-3 mt-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-sm">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -4402,11 +4408,11 @@
                 <div id="goalFinancialFields" class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Estimate (₹)</label>
-                        <input type="number" step="0.01" id="goalEstimateInput" placeholder="Total required" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="goalEstimateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Paid / Saved (₹)</label>
-                        <input type="number" step="0.01" id="goalPaidInput" placeholder="Amount paid" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                        <input type="number" step="0.01" id="goalPaidInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                     </div>
                 </div>
 
@@ -4439,7 +4445,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Notes / Action Milestones</label>
-                    <textarea id="goalNotesInput" rows="6" placeholder="Key milestones, detailed action items, motivation notes, or references..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="goalNotesInput" rows="6" class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4">
                     <button onclick="saveGoal()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl transition-all shadow-[0_4px_20px_rgba(201,164,107,0.25)]">Save Goal</button>
@@ -4486,7 +4492,7 @@
 
                 <!-- Title Input -->
                 <div>
-                    <input type="text" id="noteTitleInput" placeholder="Note Title / Subject Header..." autocapitalize="sentences" autocorrect="on" spellcheck="true" autocomplete="off" oninput="handleNoteTitleInput(this)" class="w-full px-4 py-3 rounded-xl border border-surface-700/80 bg-surface-900/90 text-white font-display text-lg md:text-xl font-bold focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none placeholder-slate-500 transition-all">
+                    <input type="text" id="noteTitleInput" autocapitalize="sentences" autocorrect="on" spellcheck="true" autocomplete="off" oninput="handleNoteTitleInput(this)" class="w-full px-4 py-3 rounded-xl border border-surface-700/80 bg-surface-900/90 text-white font-display text-lg md:text-xl font-bold focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none transition-all">
                 </div>
 
                 <!-- Metadata Row: Category, Accent Color Theme, Font Family, Font Size -->
@@ -4604,7 +4610,7 @@
 
                 <!-- The Rich Content Editable Area -->
                 <div class="flex-1 min-h-[260px] relative rounded-xl border border-surface-700/80 bg-surface-950/70 p-4 md:p-6 overflow-y-auto custom-scrollbar focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400 transition-all">
-                    <div id="noteEditor" contenteditable="true" autocapitalize="sentences" autocorrect="on" spellcheck="true" data-placeholder="Capture your thoughts, plans, meeting takeaways, or reflections here..." class="w-full h-full min-h-[220px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter" oninput="handleNoteEditorInput(event)"></div>
+                    <div id="noteEditor" contenteditable="true" autocapitalize="sentences" autocorrect="on" spellcheck="true" class="w-full h-full min-h-[220px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter" oninput="handleNoteEditorInput(event)"></div>
                     <textarea id="noteContentInput" class="hidden"></textarea>
                 </div>
             </div>
@@ -4686,21 +4692,21 @@
                 <input type="hidden" id="reminderDateInput">
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Title / Subject</label>
-                    <input type="text" id="reminderTitleInput" placeholder="e.g. Executive Board Meeting, Tax Filing, Visa Renewal" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none transition-all">
+                    <input type="text" id="reminderTitleInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none transition-all">
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
                             Entry Date <span class="text-slate-500 font-normal lowercase">(Logged Date)</span>
                         </label>
-                        <input type="text" id="reminderEntryDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none custom-datepicker" placeholder="DD/MM/YYYY">
+                        <input type="text" id="reminderEntryDateInput" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
                     </div>
                     <div>
                         <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-brand-400 flex items-center justify-between">
                             <span>Remind Date <span class="text-slate-400 font-normal lowercase">(Alert Date)</span></span>
                             <span class="text-[9px] text-amber-400 font-mono"><i class="fa-solid fa-bell text-[8px] mr-1"></i>24h alert</span>
                         </label>
-                        <input type="text" id="reminderDueDateInput" class="w-full p-3 rounded-xl border border-brand-500/50 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none custom-datepicker" placeholder="DD/MM/YYYY">
+                        <input type="text" id="reminderDueDateInput" class="w-full p-3 rounded-xl border border-brand-500/50 bg-surface-900/90 text-white focus:border-brand-500 focus:outline-none custom-datepicker">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -4728,7 +4734,7 @@
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Additional Notes & Context</label>
-                    <textarea id="reminderNotesInput" rows="6" placeholder="Add detailed notes, meeting agenda links, location details, or follow-up instructions..." class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm placeholder-slate-500 leading-relaxed custom-scrollbar"></textarea>
+                    <textarea id="reminderNotesInput" rows="6" class="w-full min-h-[140px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-y text-sm leading-relaxed custom-scrollbar"></textarea>
                 </div>
                 <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center gap-2">
                     <i class="fa-solid fa-clock-rotate-left text-amber-400 shrink-0"></i>
@@ -4808,7 +4814,7 @@
                 <!-- Custom Note / Message (Optional) -->
                 <div>
                     <label class="block mb-1.5 font-mono text-[10px] uppercase tracking-wider text-slate-400">Add an optional message or recipient notes:</label>
-                    <textarea id="shareCustomMessageInput" rows="3" placeholder="Optional notes to accompany the shared record..." class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-none text-xs custom-scrollbar"></textarea>
+                    <textarea id="shareCustomMessageInput" rows="3" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none resize-none text-xs custom-scrollbar"></textarea>
                 </div>
 
                 <!-- Action Buttons: WhatsApp & Email ONLY -->
@@ -4834,7 +4840,7 @@
                 <button onclick="closeModal('universalSearchModal')" class="text-slate-500 hover:text-brand-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="mb-4 shrink-0">
-                <input type="text" id="universalSearchInput" oninput="executeUniversalSearch()" placeholder="Search assets, banks, notes, reminders..." class="w-full p-4 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-mono text-sm shadow-inner transition-all">
+                <input type="text" id="universalSearchInput" oninput="executeUniversalSearch()" class="w-full p-4 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none font-mono text-sm shadow-inner transition-all">
             </div>
             <div id="searchResultsContainer" class="flex-1 overflow-y-auto custom-scrollbar space-y-2">
                 <!-- Results injected here -->
@@ -4856,11 +4862,11 @@
             <div class="space-y-4 text-sm font-light">
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">New 4-Digit PIN</label>
-                    <input type="password" maxlength="4" id="newPasscodePin" placeholder="••••" class="w-full p-3 text-center tracking-[0.5em] text-2xl rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none shadow-inner">
+                    <input type="password" maxlength="4" id="newPasscodePin" class="w-full p-3 text-center tracking-[0.5em] text-2xl rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none shadow-inner">
                 </div>
                 <div>
                     <label class="block mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">Passcode Hint</label>
-                    <input type="text" id="newPasscodeHint" placeholder="e.g. Last 4 digits of phone" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
+                    <input type="text" id="newPasscodeHint" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none">
                 </div>
                 <div class="pt-4 grid grid-cols-2 gap-4">
                     <button onclick="removePasscode()" class="w-full py-3 bg-surface-800 hover:bg-rose-900/50 text-rose-500 font-bold rounded-xl transition-all border border-rose-500/30">Remove PIN</button>
@@ -5043,7 +5049,7 @@
             <div class="p-4 rounded-2xl bg-surface-900/60 border border-surface-800 space-y-3">
                 <label class="block font-mono text-[10px] uppercase tracking-widest text-slate-400">Add New Item</label>
                 <div class="space-y-3">
-                    <input type="text" id="storageDocName" placeholder="Document Name / Title" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-xs font-mono">
+                    <input type="text" id="storageDocName" class="w-full p-3 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-brand-500 focus:outline-none text-xs font-mono">
                     <input type="file" id="storageFileInput" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-500/10 file:text-brand-500 hover:file:bg-brand-500/20 cursor-pointer">
                     <button onclick="saveStorageFile()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-surface-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Upload to Vault
@@ -5208,7 +5214,7 @@
 
                 <!-- Rich Text Document Editor Canvas (Strict Left-to-Right by default) -->
                 <div class="flex-1 min-h-[320px] relative rounded-2xl border border-surface-700/80 bg-surface-950/80 p-5 md:p-8 overflow-y-auto custom-scrollbar focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 transition-all shadow-inner">
-                    <div id="msNoteEditor" contenteditable="true" dir="ltr" style="direction: ltr !important; text-align: left !important; unicode-bidi: normal !important; writing-mode: horizontal-tb !important;" data-placeholder="Write detailed documentation, execution strategy, checkpoints, meeting logs, notes, or reflections for this milestone..." class="w-full h-full min-h-[280px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter text-left" oninput="updateMsNoteStats()"></div>
+                    <div id="msNoteEditor" contenteditable="true" dir="ltr" style="direction: ltr !important; text-align: left !important; unicode-bidi: normal !important; writing-mode: horizontal-tb !important;" class="w-full h-full min-h-[280px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter text-left" oninput="updateMsNoteStats()"></div>
                 </div>
             </div>
         </div>
@@ -5335,7 +5341,7 @@
 
                 <!-- Rich Text Document Editor Canvas (Strict Left-to-Right by default) -->
                 <div class="flex-1 min-h-[320px] relative rounded-2xl border border-surface-700/80 bg-surface-950/80 p-5 md:p-8 overflow-y-auto custom-scrollbar focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 transition-all shadow-inner">
-                    <div id="tradeNoteEditor" contenteditable="true" dir="ltr" style="direction: ltr !important; text-align: left !important; unicode-bidi: normal !important; writing-mode: horizontal-tb !important;" data-placeholder="Record trade strategy, entry/exit levels, technical indicators, setup analysis, takeaways, or market reflections..." class="w-full h-full min-h-[280px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter text-left"></div>
+                    <div id="tradeNoteEditor" contenteditable="true" dir="ltr" style="direction: ltr !important; text-align: left !important; unicode-bidi: normal !important; writing-mode: horizontal-tb !important;" class="w-full h-full min-h-[280px] outline-none text-slate-200 font-light leading-relaxed note-rich-content note-font-inter text-left"></div>
                 </div>
             </div>
         </div>
@@ -5410,7 +5416,7 @@
 
                         <div class="relative mt-2">
                             <i class="fa-solid fa-link absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                            <input type="text" id="favPhotoUrlInput" oninput="previewFavoritePhoto()" placeholder="Or paste Image URL (https://...)" class="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-mono focus:border-cyan-500 focus:outline-none transition-colors">
+                            <input type="text" id="favPhotoUrlInput" oninput="previewFavoritePhoto()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-mono focus:border-cyan-500 focus:outline-none transition-colors">
                         </div>
 
                         <!-- Image Preview Box -->
@@ -5427,7 +5433,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
                             Caption / Title (Optional)
                         </label>
-                        <input type="text" id="favPhotoCaptionInput" placeholder="e.g. Vacation with Family, Executive Retreat..." class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-cyan-500 focus:outline-none transition-colors">
+                        <input type="text" id="favPhotoCaptionInput" class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-cyan-500 focus:outline-none transition-colors">
                     </div>
                 </div>
 
@@ -5437,7 +5443,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
                             Quote / Words of Wisdom *
                         </label>
-                        <textarea id="favContentInput" rows="8" placeholder="Enter the inspiring quote or thought here..." class="w-full min-h-[160px] p-3.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans leading-relaxed focus:border-amber-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
+                        <textarea id="favContentInput" rows="8" class="w-full min-h-[160px] p-3.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans leading-relaxed focus:border-amber-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
                     </div>
 
                     <div class="space-y-1.5">
@@ -5446,7 +5452,7 @@
                         </label>
                         <div class="relative">
                             <i class="fa-solid fa-feather-pointed absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                            <input type="text" id="favAuthorInput" placeholder="e.g. Warren Buffett, Steve Jobs, Self..." class="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-amber-500 focus:outline-none transition-colors">
+                            <input type="text" id="favAuthorInput" class="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-amber-500 focus:outline-none transition-colors">
                         </div>
                     </div>
                 </div>
@@ -5484,7 +5490,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
                             Document Title *
                         </label>
-                        <input type="text" id="favWordTitleInput" placeholder="e.g. Executive Strategy Briefing, Advisory Mandate..." class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-blue-500 focus:outline-none transition-colors">
+                        <input type="text" id="favWordTitleInput" class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-blue-500 focus:outline-none transition-colors">
                     </div>
 
                     <!-- Notes / Description -->
@@ -5492,7 +5498,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
                             Notes / Executive Summary (Optional)
                         </label>
-                        <textarea id="favWordNotesInput" rows="3" placeholder="Key points, summary, or reminder about this document..." class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-blue-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
+                        <textarea id="favWordNotesInput" rows="3" class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-blue-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
                     </div>
 
                     <!-- Generate Sample Word or Pick from Vault Buttons -->
@@ -5542,7 +5548,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
                             Spreadsheet Title *
                         </label>
-                        <input type="text" id="favExcelTitleInput" placeholder="e.g. Asset Allocation Model, Monthly Cashflow..." class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-emerald-500 focus:outline-none transition-colors">
+                        <input type="text" id="favExcelTitleInput" class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-emerald-500 focus:outline-none transition-colors">
                     </div>
 
                     <!-- Notes / Description -->
@@ -5550,7 +5556,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
                             Notes / Description (Optional)
                         </label>
-                        <textarea id="favExcelNotesInput" rows="3" placeholder="Description of financial model, formula notes, or context..." class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-emerald-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
+                        <textarea id="favExcelNotesInput" rows="3" class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-emerald-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
                     </div>
 
                     <!-- Generate Sample Excel or Pick from Vault Buttons -->
@@ -5599,7 +5605,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
                             Document Title *
                         </label>
-                        <input type="text" id="favPdfTitleInput" placeholder="e.g. Sovereign Wealth Mandate, Quarterly Report..." class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-rose-500 focus:outline-none transition-colors">
+                        <input type="text" id="favPdfTitleInput" class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-rose-500 focus:outline-none transition-colors">
                     </div>
 
                     <!-- Notes / Description -->
@@ -5607,7 +5613,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">
                             Notes / Executive Summary (Optional)
                         </label>
-                        <textarea id="favPdfNotesInput" rows="3" placeholder="Key takeaways, filing number, or document purpose..." class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-rose-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
+                        <textarea id="favPdfNotesInput" rows="3" class="w-full p-2.5 rounded-xl border border-surface-700 bg-surface-950 text-white text-xs font-sans focus:border-rose-500 focus:outline-none transition-colors custom-scrollbar"></textarea>
                     </div>
 
                     <!-- Generate Sample PDF or Pick from Vault Buttons -->
@@ -5825,7 +5831,7 @@
                 <div class="flex items-center gap-2 shrink-0">
                     <div class="relative hidden sm:block w-36 sm:w-44">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                        <input type="text" id="favExcelSearchInput" oninput="filterFavExcelTable()" placeholder="Search sheet..." class="w-full pl-8 pr-2.5 py-1.5 rounded-xl border border-surface-700 bg-surface-950 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none font-mono">
+                        <input type="text" id="favExcelSearchInput" oninput="filterFavExcelTable()" class="w-full pl-8 pr-2.5 py-1.5 rounded-xl border border-surface-700 bg-surface-950 text-xs text-white focus:border-emerald-500 focus:outline-none font-mono">
                     </div>
                     <button onclick="downloadCurrentFavExcel()" title="Download .xlsx File" class="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/30 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer">
                         <i class="fa-solid fa-download text-xs"></i>
@@ -5991,7 +5997,7 @@
                 <!-- 1. Document Title -->
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Document Title / Name *</label>
-                    <input type="text" id="modalDocTitleInput" placeholder="e.g. Passport - Riyas Madathil / Villa Deed" class="w-full px-3.5 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
+                    <input type="text" id="modalDocTitleInput" class="w-full px-3.5 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
                 </div>
 
                 <!-- 2. Category & Date in 2 Cols -->
@@ -5999,13 +6005,13 @@
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Category *</label>
                         <select id="modalDocCategorySelect" class="w-full px-3 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs cursor-pointer">
-                            <option value="identity">Identity &amp; Passports</option>
-                            <option value="legal">Legal &amp; Property Deeds</option>
-                            <option value="financial">Financial &amp; Tax Records</option>
-                            <option value="business">Business &amp; Ventures</option>
-                            <option value="receipts">Invoices &amp; Receipts</option>
-                            <option value="personal">Photos &amp; Personal Media</option>
-                            <option value="medical">Medical &amp; Insurance</option>
+                            <option value="home">My Home</option>
+                            <option value="properties">Properties</option>
+                            <option value="identity">Identity</option>
+                            <option value="financial">Fin &amp; Tax</option>
+                            <option value="business">Business</option>
+                            <option value="bills">Bills &amp; Warranty</option>
+                            <option value="personal">Personal</option>
                         </select>
                     </div>
 
@@ -6018,7 +6024,7 @@
                 <!-- 3. Tags & Keywords -->
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Tags / Keywords (comma separated)</label>
-                    <input type="text" id="modalDocTagsInput" placeholder="#Passport, #Calicut, #Deed, #Tax2026" class="w-full px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
+                    <input type="text" id="modalDocTagsInput" class="w-full px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
                 </div>
 
                 <!-- 4. Confidential Toggle & Notes -->
@@ -6036,7 +6042,7 @@
 
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Executive Notes / Reference</label>
-                        <textarea id="modalDocNotesInput" rows="5" placeholder="Key details, renewal dates, policy numbers, or property notes..." class="w-full min-h-[120px] px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs resize-y custom-scrollbar"></textarea>
+                        <textarea id="modalDocNotesInput" rows="5" class="w-full min-h-[120px] px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs resize-y custom-scrollbar"></textarea>
                     </div>
                 </div>
             </div>
@@ -6107,7 +6113,7 @@
                 <!-- 1. Document Title -->
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Spreadsheet Title / Name <span class="text-rose-400">*</span></label>
-                    <input type="text" id="modalExcelTitleInput" placeholder="e.g. Q1 Portfolio Valuation / Budget Ledger 2026" class="w-full px-3.5 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
+                    <input type="text" id="modalExcelTitleInput" class="w-full px-3.5 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
                 </div>
 
                 <!-- 2. Category & Date in 2 Cols -->
@@ -6115,12 +6121,13 @@
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Category <span class="text-rose-400">*</span></label>
                         <select id="modalExcelCategorySelect" class="w-full px-3 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs cursor-pointer">
-                            <option value="financial">Financial &amp; Tax Records</option>
-                            <option value="business">Business &amp; Ventures</option>
-                            <option value="receipts">Invoices &amp; Receipts</option>
-                            <option value="legal">Legal &amp; Property Deeds</option>
-                            <option value="identity">Identity &amp; Passports</option>
-                            <option value="personal">Photos &amp; Personal Media</option>
+                            <option value="financial">Fin &amp; Tax</option>
+                            <option value="business">Business</option>
+                            <option value="bills">Bills &amp; Warranty</option>
+                            <option value="properties">Properties</option>
+                            <option value="home">My Home</option>
+                            <option value="identity">Identity</option>
+                            <option value="personal">Personal</option>
                         </select>
                     </div>
 
@@ -6133,7 +6140,7 @@
                 <!-- 3. Tags & Keywords -->
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Tags / Keywords (comma separated)</label>
-                    <input type="text" id="modalExcelTagsInput" placeholder="#Excel, #Finance, #Model, #Tax" value="#Excel, #Finance" class="w-full px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
+                    <input type="text" id="modalExcelTagsInput" value="" class="w-full px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs">
                 </div>
 
                 <!-- 4. Confidential Toggle & Notes -->
@@ -6151,7 +6158,7 @@
 
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Executive Notes / Reference</label>
-                        <textarea id="modalExcelNotesInput" rows="4" placeholder="Summary of formulas, data sources, balance totals, or audit trail..." class="w-full min-h-[90px] px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs resize-y custom-scrollbar"></textarea>
+                        <textarea id="modalExcelNotesInput" rows="4" class="w-full min-h-[90px] px-3.5 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white focus:border-emerald-500 focus:outline-none font-mono text-xs resize-y custom-scrollbar"></textarea>
                     </div>
                 </div>
             </div>
@@ -6297,27 +6304,27 @@
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Category <span class="text-rose-400">*</span></label>
                         <select id="credModalCategorySelect" class="w-full px-3 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none cursor-pointer">
-                            <option value="email">📧 Email &amp; Account (Gmail, Outlook, Yahoo)</option>
-                            <option value="apple">🍏 Apple ID &amp; iCloud Credentials</option>
-                            <option value="banking">🏦 Banking &amp; Financial (NetBanking, Cards, PINs)</option>
-                            <option value="pin">🔢 PINs &amp; Passcodes (Device, ATM, Locker, Door)</option>
-                            <option value="social">🌐 Social &amp; Media (Instagram, LinkedIn, Streaming)</option>
-                            <option value="server">☁️ Servers &amp; Cloud (AWS, GitHub, Domains, Hosting)</option>
-                            <option value="other">🔑 Other Digital Secrets &amp; Keys</option>
+                            <option value="email">📧 E-Mail (Gmail, Outlook, Yahoo)</option>
+                            <option value="banking">🏦 Banking (NetBanking, Cards, Accounts)</option>
+                            <option value="demats">📈 Demats (Zerodha, Upstox, Groww, Demat)</option>
+                            <option value="social">🌐 Social Media (Instagram, LinkedIn, X, Meta)</option>
+                            <option value="clouds">☁️ Clouds (AWS, GCP, GitHub, Domains, Hosting)</option>
+                            <option value="personal">👤 Personal (Apple ID, Passcodes, PINs)</option>
+                            <option value="others">🔑 Others (Digital Secrets, Licenses, Keys)</option>
                         </select>
                     </div>
 
                     <!-- Description Input -->
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Description</label>
-                        <input type="text" id="credModalDescriptionInput" placeholder="e.g. Primary Gmail, NetBanking Login" class="w-full px-3 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                        <input type="text" id="credModalDescriptionInput" class="w-full px-3 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
                     </div>
                 </div>
 
                 <!-- Username / Identifier Input -->
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Identifier</label>
-                    <input type="text" id="credModalUsernameInput" placeholder="Username, email address, or account ID" class="w-full px-3 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                    <input type="text" id="credModalUsernameInput" class="w-full px-3 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
                 </div>
 
                 <!-- Passcode & Secondary Code in 2 columns -->
@@ -6330,7 +6337,7 @@
                             </button>
                         </div>
                         <div class="relative">
-                            <input type="password" id="credModalSecretInput" placeholder="Enter passcode / secret" class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                            <input type="password" id="credModalSecretInput" class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
                             <button type="button" onclick="toggleCredPasscodeVisibility('credModalSecretInput', 'credModalEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
                                 <i id="credModalEyeIcon" class="fa-solid fa-eye text-xs"></i>
                             </button>
@@ -6343,7 +6350,7 @@
                             <label class="font-mono text-[10px] uppercase tracking-wider text-slate-400">Code <span class="text-slate-500 font-normal lowercase">(optional)</span></label>
                         </div>
                         <div class="relative">
-                            <input type="password" id="credModalSecondaryCodeInput" placeholder="PIN, OTP bypass, or secondary code" class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                            <input type="password" id="credModalSecondaryCodeInput" class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
                             <button type="button" onclick="toggleCredPasscodeVisibility('credModalSecondaryCodeInput', 'credModalSecondaryEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer" title="Show / Hide PIN">
                                 <i id="credModalSecondaryEyeIcon" class="fa-solid fa-eye text-xs"></i>
                             </button>
@@ -6357,7 +6364,7 @@
                         <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400">Note <span class="text-amber-400/80 font-normal lowercase">(expanded notes &amp; recovery details)</span></label>
                         <span class="text-[10px] font-mono text-slate-500">Supports multi-line text</span>
                     </div>
-                    <textarea id="credModalNotesInput" rows="8" placeholder="Security questions, recovery codes, server ports, 2FA backup keys, expiration dates, or special notes..." class="w-full min-h-[180px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none resize-y custom-scrollbar leading-relaxed"></textarea>
+                    <textarea id="credModalNotesInput" rows="8" class="w-full min-h-[180px] p-3.5 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none resize-y custom-scrollbar leading-relaxed"></textarea>
                 </div>
             </div>
 
@@ -6399,19 +6406,19 @@
             <div class="space-y-3 text-xs">
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Current Passcode <span class="text-rose-400">*</span></label>
-                    <input type="password" id="credChangeCurrentPasscode" placeholder="Enter current passcode" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                    <input type="password" id="credChangeCurrentPasscode" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">New Passcode / PIN <span class="text-rose-400">*</span></label>
-                    <input type="password" id="credChangeNewPasscode" placeholder="Enter new passcode (min 3 chars)" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                    <input type="password" id="credChangeNewPasscode" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Confirm New Passcode <span class="text-rose-400">*</span></label>
-                    <input type="password" id="credChangeConfirmPasscode" placeholder="Re-enter new passcode" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                    <input type="password" id="credChangeConfirmPasscode" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">Security Hint <span class="text-slate-500 font-normal lowercase">(optional)</span></label>
-                    <input type="text" id="credChangeHint" placeholder="e.g., Mom's birthday or car registration" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
+                    <input type="text" id="credChangeHint" class="w-full px-3 py-2 rounded-xl border border-surface-700 bg-surface-900 text-white font-mono text-xs focus:border-amber-500 focus:outline-none">
                 </div>
             </div>
 

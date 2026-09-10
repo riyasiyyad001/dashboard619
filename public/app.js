@@ -8912,8 +8912,7 @@ function toggleGoalModalFields() {
     if (genreInput) {
         if (cat === 'reading' || cat === 'travel' || cat === 'books') {
             genreInput.classList.remove('hidden');
-            if (cat === 'reading' || cat === 'books') genreInput.placeholder = 'e.g. Non-Fiction, Biography, Strategy';
-            else genreInput.placeholder = 'e.g. Itinerary, Holy sites, Cities';
+            genreInput.placeholder = '';
         } else {
             genreInput.classList.add('hidden');
         }
@@ -12649,7 +12648,7 @@ let docViewMode = (function() {
 let modalDocStagedFile = null;
 let modalExcelStagedFile = null;
 
-function openExcelUploadModal() {
+function openExcelUploadModal(source = 'documents') {
     modalExcelStagedFile = null;
     const titleInput = document.getElementById('modalExcelTitleInput');
     const catSelect = document.getElementById('modalExcelCategorySelect');
@@ -12661,10 +12660,16 @@ function openExcelUploadModal() {
     const fileChip = document.getElementById('modalExcelSelectedFileInfo');
 
     if (titleInput) titleInput.value = '';
-    if (catSelect) catSelect.value = (typeof docActiveSubCategory !== 'undefined' && docActiveSubCategory !== 'all' && docActiveSubCategory !== 'identity') ? docActiveSubCategory : 'financial';
+    if (catSelect) {
+        if (source === 'credentials') {
+            catSelect.value = 'personal';
+        } else {
+            catSelect.value = (typeof docActiveSubCategory !== 'undefined' && docActiveSubCategory !== 'all' && docActiveSubCategory !== 'identity') ? docActiveSubCategory : 'financial';
+        }
+    }
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-    if (tagsInput) tagsInput.value = '#Excel, #Financial';
-    if (confCheck) confCheck.checked = false;
+    if (tagsInput) tagsInput.value = '';
+    if (confCheck) confCheck.checked = (source === 'credentials');
     if (notesInput) notesInput.value = '';
     if (fileInput) fileInput.value = '';
     if (fileChip) fileChip.classList.add('hidden');
@@ -12896,7 +12901,7 @@ window.setDocumentCategoryFilter = setDocumentCategoryFilter;
 function setDocumentSubCategory(subCat) {
     docActiveSubCategory = subCat;
 
-    const cats = ['all', 'identity', 'legal', 'financial', 'business', 'receipts', 'personal'];
+    const cats = ['home', 'properties', 'identity', 'financial', 'business', 'bills', 'personal', 'all', 'legal', 'receipts'];
     cats.forEach(c => {
         const btn = document.getElementById(`btnDocCat-${c}`);
         if (btn) {
@@ -13156,7 +13161,26 @@ function renderDocumentsPage() {
         if (docActiveCategoryFilter === 'financial' && d.category !== 'financial' && d.category !== 'receipts') return false;
 
         // Subcategory pill filter
-        if (docActiveSubCategory !== 'all' && d.category !== docActiveSubCategory) return false;
+        if (docActiveSubCategory !== 'all') {
+            const cat = (d.category || '').toLowerCase();
+            if (docActiveSubCategory === 'home') {
+                if (cat !== 'home' && cat !== 'my_home') return false;
+            } else if (docActiveSubCategory === 'properties') {
+                if (cat !== 'properties' && cat !== 'property' && cat !== 'legal') return false;
+            } else if (docActiveSubCategory === 'identity') {
+                if (cat !== 'identity') return false;
+            } else if (docActiveSubCategory === 'financial') {
+                if (cat !== 'financial' && cat !== 'fin_tax' && cat !== 'tax') return false;
+            } else if (docActiveSubCategory === 'business') {
+                if (cat !== 'business') return false;
+            } else if (docActiveSubCategory === 'bills') {
+                if (cat !== 'bills' && cat !== 'bills_warranty' && cat !== 'warranty' && cat !== 'receipts') return false;
+            } else if (docActiveSubCategory === 'personal') {
+                if (cat !== 'personal' && cat !== 'photo') return false;
+            } else if (cat !== docActiveSubCategory) {
+                return false;
+            }
+        }
 
         // Search filter
         if (searchVal) {
@@ -13422,16 +13446,26 @@ window.toggleDocumentFavorite = toggleDocumentFavorite;
 
 function getDocCategoryBadge(cat) {
     switch ((cat || '').toLowerCase()) {
+        case 'home':
+        case 'my_home':
+            return '<span class="px-2 py-0.5 rounded-md bg-sky-500/15 border border-sky-500/30 text-sky-300 font-mono text-[9px] uppercase tracking-wider font-semibold">My Home</span>';
+        case 'properties':
+        case 'property':
+        case 'legal':
+            return '<span class="px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/30 text-purple-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Properties</span>';
         case 'identity':
             return '<span class="px-2 py-0.5 rounded-md bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Identity</span>';
-        case 'legal':
-            return '<span class="px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/30 text-purple-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Legal Deed</span>';
         case 'financial':
-            return '<span class="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Financial</span>';
+        case 'fin_tax':
+        case 'tax':
+            return '<span class="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Fin &amp; Tax</span>';
         case 'business':
             return '<span class="px-2 py-0.5 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Business</span>';
+        case 'bills':
+        case 'bills_warranty':
+        case 'warranty':
         case 'receipts':
-            return '<span class="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Receipts</span>';
+            return '<span class="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Bills &amp; Warranty</span>';
         case 'personal':
             return '<span class="px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-300 font-mono text-[9px] uppercase tracking-wider font-semibold">Personal</span>';
         case 'medical':
@@ -14790,62 +14824,67 @@ function escapeCredHtml(str) {
 
 function getCredentialCategoryMeta(cat) {
     switch ((cat || '').toLowerCase()) {
-        case 'apple':
-            return {
-                name: 'Apple ID',
-                icon: 'fa-apple',
-                brandIcon: true,
-                badgeClass: 'bg-slate-500/15 text-slate-200 border-slate-500/30',
-                accentColor: 'text-slate-200',
-                accentBg: 'bg-slate-500/10'
-            };
-        case 'banking':
-            return {
-                name: 'Banking & Cards',
-                icon: 'fa-building-columns',
-                badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-                accentColor: 'text-emerald-400',
-                accentBg: 'bg-emerald-500/10'
-            };
-        case 'pin':
-            return {
-                name: 'PINs & Passcodes',
-                icon: 'fa-hashtag',
-                badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-                accentColor: 'text-amber-400',
-                accentBg: 'bg-amber-500/10'
-            };
-        case 'social':
-            return {
-                name: 'Social & Media',
-                icon: 'fa-globe',
-                badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
-                accentColor: 'text-blue-400',
-                accentBg: 'bg-blue-500/10'
-            };
-        case 'server':
-            return {
-                name: 'Servers & Cloud',
-                icon: 'fa-server',
-                badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
-                accentColor: 'text-purple-400',
-                accentBg: 'bg-purple-500/10'
-            };
         case 'email':
             return {
-                name: 'Email & Account',
+                name: 'E-Mail',
                 icon: 'fa-envelope',
                 badgeClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
                 accentColor: 'text-cyan-400',
                 accentBg: 'bg-cyan-500/10'
             };
-        default:
+        case 'banking':
             return {
-                name: 'Other Secret',
-                icon: 'fa-key',
+                name: 'Banking',
+                icon: 'fa-building-columns',
+                badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+                accentColor: 'text-emerald-400',
+                accentBg: 'bg-emerald-500/10'
+            };
+        case 'demats':
+        case 'demat':
+            return {
+                name: 'Demats',
+                icon: 'fa-chart-line',
+                badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+                accentColor: 'text-indigo-400',
+                accentBg: 'bg-indigo-500/10'
+            };
+        case 'social':
+            return {
+                name: 'Social Media',
+                icon: 'fa-globe',
+                badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+                accentColor: 'text-blue-400',
+                accentBg: 'bg-blue-500/10'
+            };
+        case 'clouds':
+        case 'server':
+            return {
+                name: 'Clouds',
+                icon: 'fa-cloud',
+                badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+                accentColor: 'text-purple-400',
+                accentBg: 'bg-purple-500/10'
+            };
+        case 'personal':
+        case 'apple':
+        case 'pin':
+            return {
+                name: 'Personal',
+                icon: 'fa-user-shield',
                 badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
                 accentColor: 'text-amber-400',
                 accentBg: 'bg-amber-500/10'
+            };
+        case 'others':
+        case 'other':
+        default:
+            return {
+                name: 'Others',
+                icon: 'fa-key',
+                badgeClass: 'bg-slate-500/15 text-slate-200 border-slate-500/30',
+                accentColor: 'text-slate-300',
+                accentBg: 'bg-slate-500/10'
             };
     }
 }
@@ -14872,7 +14911,7 @@ function renderCredentialsVault() {
     if (!Array.isArray(db.credentials)) db.credentials = [];
 
     // Update category pills
-    const cats = ['email', 'apple', 'banking', 'pin', 'social', 'server', 'other', 'all'];
+    const cats = ['email', 'banking', 'demats', 'social', 'clouds', 'personal', 'others', 'all', 'apple', 'pin', 'server', 'other'];
     cats.forEach(c => {
         const btn = document.getElementById(`btnCredCat-${c}`);
         if (btn) {
@@ -14889,8 +14928,25 @@ function renderCredentialsVault() {
     const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
     const filtered = db.credentials.filter(item => {
-        if (window.activeCredCategory !== 'all' && item.category !== window.activeCredCategory) {
-            return false;
+        if (window.activeCredCategory !== 'all') {
+            const cat = (item.category || '').toLowerCase();
+            if (window.activeCredCategory === 'email') {
+                if (cat !== 'email') return false;
+            } else if (window.activeCredCategory === 'banking') {
+                if (cat !== 'banking') return false;
+            } else if (window.activeCredCategory === 'demats') {
+                if (cat !== 'demats' && cat !== 'demat' && cat !== 'trading') return false;
+            } else if (window.activeCredCategory === 'social') {
+                if (cat !== 'social' && cat !== 'social media') return false;
+            } else if (window.activeCredCategory === 'clouds') {
+                if (cat !== 'clouds' && cat !== 'cloud' && cat !== 'server' && cat !== 'servers') return false;
+            } else if (window.activeCredCategory === 'personal') {
+                if (cat !== 'personal' && cat !== 'apple' && cat !== 'pin') return false;
+            } else if (window.activeCredCategory === 'others') {
+                if (cat !== 'others' && cat !== 'other') return false;
+            } else if (cat !== window.activeCredCategory) {
+                return false;
+            }
         }
         if (!query) return true;
         const inDesc = (item.description || '').toLowerCase().includes(query);
